@@ -1,0 +1,5 @@
+#ifndef ACTIONSCOPE_P_H
+#define ACTIONSCOPE_P_H
+
+
+#endif // ACTIONSCOPE_P_H
