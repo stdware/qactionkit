@@ -1,11 +1,19 @@
 #include "actionextension.h"
-
 #include "actionextension_p.h"
+
+#include <QtCore/QLoggingCategory>
+
+Q_LOGGING_CATEGORY(qActionKitLog, "qactionkit")
 
 namespace QAK {
 
+    /*!
+        \namespace QAK
+        \brief QActionKit namespace
+    */
+
     static ActionItemInfoData sharedNullItemInfoData = {
-        {}, {}, {}, {}, {}, {}, {}, {}, {},
+        {}, {}, {}, {}, {}, {}, {}, {}, {}, {},
     };
 
     static ActionLayoutInfoEntry sharedLayoutInfoEntry = {
@@ -52,10 +60,13 @@ namespace QAK {
     QString ActionItemInfo::description() const {
         return e->items[i].description;
     }
-    QStringList ActionItemInfo::shortcuts() const {
+    QString ActionItemInfo::icon() const {
+        return e->items[i].icon;
+    }
+    QList<QKeySequence> ActionItemInfo::shortcuts() const {
         return e->items[i].shortcuts;
     }
-    QStringList ActionItemInfo::catalog() const {
+    QString ActionItemInfo::catalog() const {
         return e->items[i].catalog;
     }
     bool ActionItemInfo::topLevel() const {

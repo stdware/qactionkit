@@ -1,6 +1,11 @@
 cmake_minimum_required(VERSION 3.19)
 
-project(QActionKit VERSION 1.0.0.0 LANGUAGES CXX)
+project(QActionKit
+    VERSION 1.0.0.0
+    LANGUAGES CXX
+    HOMEPAGE_URL "https://github.com/stdware/qactionkit"
+    DESCRIPTION "Declarative menu/action framework for Qt"
+)
 
 # ----------------------------------
 # Build Options
@@ -15,7 +20,6 @@ option(QACTIONKIT_INSTALL "Install library" ON)
 option(QACTIONKIT_ENABLE_QT_WINDOW_CONTEXT "Enable Qt Window Context anyway" OFF)
 option(QACTIONKIT_ENABLE_WINDOWS_SYSTEM_BORDERS "Enable system borders on Windows" ON)
 option(QACTIONKIT_ENABLE_STYLE_AGENT "Enable building style agent" ON)
-
 
 # ----------------------------------
 # CMake Settings
@@ -45,33 +49,40 @@ endif()
 set(QACTIONKIT_VERSION ${PROJECT_VERSION})
 set(QACTIONKIT_INSTALL_NAME ${PROJECT_NAME})
 
+string(TIMESTAMP _QACTIONKIT_CURRENT_YEAR "%Y")
+set(QACTIONKIT_COPYRIGHT "Copyright 2024-${_QACTIONKIT_CURRENT_YEAR} Stdware Collections")
+set(QACTIONKIT_DESCRIPTION ${PROJECT_DESCRIPTION})
+
 # ----------------------------------
 # Find basic dependencies
 # ----------------------------------
-# find_package(qmsetup QUIET)
+if(FALSE)
+    find_package(qmsetup QUIET)
 
-# if(NOT TARGET qmsetup::library)
-#     # Modify this variable according to your project structure
-#     set(_source_dir ${CMAKE_CURRENT_SOURCE_DIR}/qmsetup)
+    if(NOT TARGET qmsetup::library)
+        # Modify this variable according to your project structure
+        set(_source_dir ${CMAKE_CURRENT_SOURCE_DIR}/qmsetup)
 
-#     # Import install function
-#     include("${_source_dir}/cmake/modules/private/InstallPackage.cmake")
+        # Import install function
+        include("${_source_dir}/cmake/modules/private/InstallPackage.cmake")
 
-#     # Install package in place
-#     set(_package_path)
-#     qm_install_package(qmsetup
-#         SOURCE_DIR ${_source_dir}
-#         BUILD_TYPE Release
-#         RESULT_PATH _package_path
-#     )
+        # Install package in place
+        set(_package_path)
+        qm_install_package(qmsetup
+            SOURCE_DIR ${_source_dir}
+            BUILD_TYPE Release
+            RESULT_PATH _package_path
+        )
 
-#     # Find package again
-#     find_package(qmsetup REQUIRED PATHS ${_package_path})
+        # Find package again
+        find_package(qmsetup REQUIRED PATHS ${_package_path})
 
-#     # Update import path
-#     set(qmsetup_DIR ${_package_path} CACHE PATH "" FORCE)
-# endif()
-find_package(qmsetup REQUIRED)
+        # Update import path
+        set(qmsetup_DIR ${_package_path} CACHE PATH "" FORCE)
+    endif()
+else()
+    find_package(qmsetup REQUIRED)
+endif()
 
 qm_import(Filesystem)
 qm_init_directories()

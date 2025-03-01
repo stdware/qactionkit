@@ -3,12 +3,13 @@
 
 #include <QtCore/QMap>
 #include <QtCore/QStringList>
+#include <QtGui/QKeySequence>
 
 #include <QAKCore/qakglobal.h>
 
 namespace QAK {
 
-    class ActionScope;
+    class ActionRegistry;
 
     class ActionItemInfo;
 
@@ -26,6 +27,7 @@ namespace QAK {
         bool isNull() const;
 
         enum Type {
+            Phony,
             Action,
             Group,
             Menu,
@@ -37,9 +39,9 @@ namespace QAK {
         QString text() const;
         QString actionClass() const;
         QString description() const;
-
-        QStringList shortcuts() const;
-        QStringList catalog() const;
+        QString icon() const; // icon id
+        QList<QKeySequence> shortcuts() const;
+        QString catalog() const;
 
         bool topLevel() const;
 
@@ -50,7 +52,7 @@ namespace QAK {
         int i;
 
         friend class ActionExtension;
-        friend class ActionScope;
+        friend class ActionRegistry;
     };
 
     class QAK_CORE_EXPORT ActionLayoutInfo {
@@ -60,6 +62,8 @@ namespace QAK {
 
         enum Type {
             Action,
+            Group,
+            Menu,
             Separator,
             Stretch,
         };
@@ -76,7 +80,7 @@ namespace QAK {
 
         friend class ActionInsertion;
         friend class ActionExtension;
-        friend class ActionScope;
+        friend class ActionRegistry;
     };
 
     class QAK_CORE_EXPORT ActionInsertion {
@@ -104,7 +108,7 @@ namespace QAK {
         int i;
 
         friend class ActionExtension;
-        friend class ActionScope;
+        friend class ActionRegistry;
     };
 
     class QAK_CORE_EXPORT ActionExtension {

@@ -2,8 +2,6 @@ qm_import(Preprocess)
 
 string(TIMESTAMP _current_year "%Y")
 
-set(QACTIONKIT_PROJECT_DESCRIPTION "Declarative menu/action framework for Qt")
-set(QACTIONKIT_PROJECT_COPYRIGHT "Copyright 2024-${_current_year} Stdware Collections")
 set(QACTIONKIT_GENERATED_INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/../include)
 set(QACTIONKIT_BUILD_INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/../etc/include)
 
@@ -50,8 +48,8 @@ macro(qak_add_library _target)
     if(WIN32 AND NOT FUNC_NO_WIN_RC AND(${_type} STREQUAL "SHARED"))
         qm_add_win_rc(${_target}
             NAME ${QACTIONKIT_INSTALL_NAME}
-            DESCRIPTION ${QACTIONKIT_PROJECT_DESCRIPTION}
-            COPYRIGHT ${QACTIONKIT_PROJECT_COPYRIGHT}
+            DESCRIPTION ${QACTIONKIT_DESCRIPTION}
+            COPYRIGHT ${QACTIONKIT_COPYRIGHT}
         )
     endif()
 
@@ -120,6 +118,8 @@ endmacro()
 # ----------------------------------
 # Main Project
 # ----------------------------------
+add_subdirectory(3rdparty)
+
 add_subdirectory(core)
 
 add_subdirectory(tools)
@@ -156,7 +156,7 @@ if(QACTIONKIT_BUILD_DOCUMENTATIONS)
     qm_import(Doxygen)
     qm_setup_doxygen(QActionKit_RunDoxygen
         NAME "QActionKit"
-        DESCRIPTION "${QACTIONKIT_PROJECT_DESCRIPTION}"
+        DESCRIPTION "${QACTIONKIT_DESCRIPTION}"
         MDFILE ../README.md
         OUTPUT_DIR ${CMAKE_BUILD_SHARE_DIR}/doc/${QACTIONKIT_INSTALL_NAME}
         INPUT ${QACTIONKIT_ENABLED_SUBDIRECTORIES}

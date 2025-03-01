@@ -3,23 +3,13 @@ project(QAKCore
     LANGUAGES CXX
 )
 
-set(_src
-    qakglobal.h
-    action.h
-    action_p.h
-    action.cpp
-    actionextension.h
-    actionextension_p.h
-    actionextension.cpp
-    actionscope.h
-    actionscope_p.h
-    actionscope.cpp
-)
+file(GLOB_RECURSE _src *.h *.cpp)
 
 qak_add_library(${PROJECT_NAME} AUTOGEN
     SOURCES ${_src}
     FEATURES cxx_std_17
     QT_LINKS Core Gui
+    LINKS_PRIVATE $<BUILD_INTERFACE:stdcorelib> $<BUILD_INTERFACE:util>
     INCLUDE_PRIVATE *
     PREFIX QAK_CORE
 )

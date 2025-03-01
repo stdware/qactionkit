@@ -12,11 +12,15 @@ namespace QAK {
         QString text;
         QString actionClass;
         QString description;
-
-        QStringList shortcuts;
-        QStringList catalog;
+        QString icon;
+        QList<QKeySequence> shortcuts;
+        QString catalog;
 
         bool topLevel;
+        
+        QString textTranslationContext;
+        QString actionClassTranslationContext;
+        QString descriptionTranslationContext;
 
         QMap<QString, QString> attributes;
     };
