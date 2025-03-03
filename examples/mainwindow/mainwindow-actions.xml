@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<actionExtension>
+
+    <!-- Action extension version, required -->
+    <version>1.0</version>
+
+    <!-- Action extension ID, required -->
+    <id>com.example.mainWindow</id>
+
+    <!-- Configuration, optional -->
+    <configuration>
+        <!-- Default catalog ID, default to empty -->
+        <defaultCatalog>Others</defaultCatalog>
+
+        <!-- Qt translation contexts:
+             - text (optional)
+             - class (optional)
+             - description (optional)
+        -->
+        <translationContext 
+        text="MainWindow::ActionText" 
+        class="MainWindow::ActionClass" 
+        description="MainWindow::ActionDescription" 
+        />
+
+        <!-- Pre-defined variables -->
+        <vars>
+            <!-- Variable item
+                 - key (required)
+                 - value (required)
+            -->
+            <var key="APP_NAME" value="MainWindow" />
+
+            <!-- reserved keys: 
+                 - _ID_: id
+                 - _VERSION_: version
+                 - _IDENTIFIER_: identifier
+                 - _FILENAME_: file name
+                 - _FILEBASENAME_: file base name
+            -->
+        </vars>
+    </configuration>
+
+    <!-- Declaration: core items -->
+    <items>
+        <!-- Action item: action/menu/group/phony
+             - id (required)
+             = text (optional): action text, default: last part of id with space separated (big-camel style)
+             - description (optional)
+             - icon (optional): icon id, default: id
+             - class (optional): action category
+             - shortcut/shortcuts (optional)
+             - textTr (optional): text translation context
+             - descriptionTr (optional): description translation context
+        -->
+
+        <!-- Example: core actions -->
+        <action id="core.openFile" text="Open File" class="File" shortcut="Ctrl+N" />
+        <action id="core.saveFile" text="Save File" class="File" shortcut="Ctrl+S" catalog="core.file" />
+
+        <!-- Example: configurable top level item -->
+        <menu id="core.mainMenu" topLevel="true" />
+    </items>
+
+    <!-- Declaration: core layouts -->
+    <layouts>
+        <menu id="core.mainMenu">
+            <menu id="core.file">
+                <group id="core.fileOpenActions">
+                    <action id="core.openFile" />
+                    <action id="core.saveFile" />
+                </group>
+            </menu>
+            <menu id="core.help">
+                <action id="core.documentations" />
+                <separator />
+                <action id="core.aboutApp" text="About ${APP_NAME}" />
+                <action id="core.aboutQt" />
+            </menu>
+        </menu>
+
+        <menu id="core.mainToolbar">
+            <menu id="core.file" />
+        </menu>
+    </layouts>
+
+</actionExtension>

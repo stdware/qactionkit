@@ -1,10 +1,47 @@
-if(NOT CK_CKAEC_EXECUTABLE)
+if(NOT QAK_AEC_EXECUTABLE)
     if(TARGET QActionKit::qak_aec)
-        get_target_property(CK_CKAEC_EXECUTABLE QActionKit::qak_aec LOCATION)
+        get_target_property(QAK_AEC_EXECUTABLE QActionKit::qak_aec LOCATION)
     else()
         message(FATAL_ERROR "QActionKit: tool \"qak_aec\" not found!")
     endif()
 endif()
+
+#[[
+    Create the names of output files preserving relative dirs. (Ported from MOC command)
+
+    qak_make_output_file(<infile> <prefix> <ext> <OUT>)
+
+    OUT: output source file paths
+#]]
+function(qak_make_output_file _infile _prefix _ext _out)
+    string(LENGTH ${CMAKE_CURRENT_BINARY_DIR} _binlength)
+    string(LENGTH ${_infile} _infileLength)
+    set(_checkinfile ${CMAKE_CURRENT_SOURCE_DIR})
+
+    if(_infileLength GREATER _binlength)
+        string(SUBSTRING "${_infile}" 0 ${_binlength} _checkinfile)
+
+        if(_checkinfile STREQUAL "${CMAKE_CURRENT_BINARY_DIR}")
+            file(RELATIVE_PATH _rel ${CMAKE_CURRENT_BINARY_DIR} ${_infile})
+        else()
+            file(RELATIVE_PATH _rel ${CMAKE_CURRENT_SOURCE_DIR} ${_infile})
+        endif()
+    else()
+        file(RELATIVE_PATH _rel ${CMAKE_CURRENT_SOURCE_DIR} ${_infile})
+    endif()
+
+    if(CMAKE_HOST_WIN32 AND _rel MATCHES "^([a-zA-Z]):(.*)$") # absolute path
+        set(_rel "${CMAKE_MATCH_1}_${CMAKE_MATCH_2}")
+    endif()
+
+    set(_outfile "${CMAKE_CURRENT_BINARY_DIR}/${_rel}")
+    string(REPLACE ".." "__" _outfile ${_outfile})
+    get_filename_component(_outpath ${_outfile} PATH)
+    get_filename_component(_outfile ${_outfile} NAME_WLE)
+
+    file(MAKE_DIRECTORY ${_outpath})
+    set(${_out} ${_outpath}/${_prefix}${_outfile}.${_ext} PARENT_SCOPE)
+endfunction()
 
 #[[
 Add an action extension generating target.
@@ -21,6 +58,10 @@ function(qak_add_action_extension _outfiles _manifest)
     set(oneValueArgs IDENTIFIER)
     set(multiValueArgs DEFINES DEPENDS OPTIONS)
     cmake_parse_arguments(FUNC "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
+
+    if(NOT TARGET Qt${QT_VERSION_MAJOR}::Core)
+        message(FATAL_ERROR "qak_add_action_extension: qt library not defined. Add find_package(Qt5 COMPONENTS Core) to CMake to enable.")
+    endif()
 
     # helper macro to set up a moc rule
     function(_create_command _infile _outfile _options _depends)
@@ -71,7 +112,7 @@ function(qak_add_action_extension _outfiles _manifest)
 
     set(_outfile)
     get_filename_component(_manifest ${_manifest} ABSOLUTE)
-    qm_make_output_file(${_manifest} ckaec_ cpp _outfile)
+    qak_make_output_file(${_manifest} qak_ cpp _outfile)
 
     # Create command
     _create_command(${_manifest} ${_outfile} "${_options}" "${FUNC_DEPENDS}")

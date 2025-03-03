@@ -120,7 +120,6 @@ static QByteArray escapeString(const QByteArray &bytes) {
     fprintf(out, STRING_12_SPACE "%s,\n", VALUE ? "true" : "false");
 
 class GeneratorPrivate {
-
 public:
     GeneratorPrivate(Generator &q) : q(q) {}
 
@@ -181,7 +180,7 @@ public:
             fprintf(out, STRING_8_SPACE "{\n");
             fprintf(out, "            // index %d\n", i++);
 
-            GENERATE_ENUM(type, "ActionInsertion", insertionAnchorToString(item.anchor));
+            GENERATE_ENUM(anchor, "ActionInsertion", insertionAnchorToString(item.anchor));
             GENERATE_STRING(target, item.target);
             GENERATE_STRING(relativeTo, item.relativeTo);
 

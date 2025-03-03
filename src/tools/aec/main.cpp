@@ -100,10 +100,11 @@ int main(int argc, char *argv[]) {
         identifier = QFileInfo(filename).baseName();
     }
     for (auto &ch : identifier) {
-        if (!ch.isLetterOrNumber() && ch!= '_') {
+        if (!ch.isLetterOrNumber() && ch != '_') {
             ch = '_';
         }
     }
+    pp.identifier = identifier;
 
     QString output = parser.value(outputOption);
 
@@ -115,7 +116,7 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    // If there's error, the program will exit right away.
+    // Override configuration with command line options
     auto parseResult = pp.parse(in.readAll());
     if (auto ctx = parser.value(textTranslationContextOption); !ctx.isEmpty()) {
         parseResult.textTranslationContext = ctx;

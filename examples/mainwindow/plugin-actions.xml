@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<actionExtension>
+
+    <!-- Action extension version, required -->
+    <version>1.0</version>
+
+    <!-- Action extension ID, required -->
+    <id>com.example.plugin</id>
+
+    <!-- Configuration, optional -->
+    <configuration>
+        <defaultCatalog>Plugins</defaultCatalog>
+
+        <translationContext
+            text="Plugin::ActionText"
+            class="Plugin::ActionClass"
+            description="Plugin::ActionDescription"
+        />
+
+        <vars>
+            <var key="PLUGIN_NAME" value="Plugin" />
+        </vars>
+    </configuration>
+
+    <!-- Declaration: plugin items -->
+    <items>
+        <!-- Example: plugin actions -->
+        <action id="plugin.showHello" text="Show Hello" catalog="core.plugins"
+            description="Show Hello Text" />
+    </items>
+
+    <!-- Declaration: plugin insertions -->
+    <insertions>
+        <!-- Insertion item
+             - target (required)
+             - anchor (optional, values: first/front/last/back/before/after, default: last)
+             - relativeTo (required when anchor is before or after)
+        -->
+        <insertion target="core.help" anchor="after" relativeTo="core.documentations">
+            <action id="plugin.showHello" />
+            <separator />
+        </insertion>
+    </insertions>
+
+</actionExtension>

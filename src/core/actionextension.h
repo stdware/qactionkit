@@ -125,4 +125,12 @@ namespace QAK {
 
 }
 
+// WARNING: this macro cannot be used in a namespace.
+#define QAK_STATIC_ACTION_EXTENSION(name)                                                          \
+    []() {                                                                                         \
+        extern const QAK::ActionExtension *QT_MANGLE_NAMESPACE(                                    \
+            qakGetStaticActionExtension_##name)();                                                 \
+        return QT_MANGLE_NAMESPACE(qakGetStaticActionExtension_##name)();                          \
+    }()
+
 #endif // ACTIONEXTENSION_H

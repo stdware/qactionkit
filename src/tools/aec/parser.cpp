@@ -8,6 +8,7 @@
 #include <QtCore/QRegularExpression>
 #include <QtCore/QStringView>
 #include <QtCore/QFile>
+#include <QtCore/QFileInfo>
 
 #include <qmxmladaptor/qmxmladaptor.h>
 #include <stdcorelib/linked_map.h>
@@ -122,7 +123,9 @@ struct ParserPrivate {
     QString defaultCatalog;
 
     // Parse configuration, fix parser members
-    void parseConfiguration(const QMXmlAdaptorElement &e) {
+    void parseConfiguration(const QMXmlAdaptorElement &e,
+                            const QHash<QString, QString> &reservedVars) {
+        QHash<QString, QString> vars;
         for (const auto &item : e.children) {
             if (item->name == QStringLiteral("defaultCatalog")) {
                 defaultCatalog = resolve(item->value);
@@ -148,12 +151,18 @@ struct ParserPrivate {
                 for (const auto &subItem : item->children) {
                     auto key = resolve(subItem->properties.value(QStringLiteral("key")));
                     auto value = resolve(subItem->properties.value(QStringLiteral("value")));
-                    if (!key.isEmpty()) {
-                        q.variables.insert(key, value);
+                    if (!key.isEmpty() && !reservedVars.contains(key)) {
+                        vars.insert(key, value);
                     }
                 }
             }
         }
+
+        // Override configuration with command line options
+        for (auto it = q.variables.begin(); it != q.variables.end(); ++it) {
+            vars.insert(it.key(), it.value());
+        }
+        q.variables = std::move(vars);
     }
 
     // Intermediate data
@@ -173,9 +182,6 @@ struct ParserPrivate {
             info.type = QAK::ActionItemInfo::Group;
         } else if (name == QStringLiteral("menu")) {
             info.type = QAK::ActionItemInfo::Menu;
-            if (resolve(e.properties.value(QStringLiteral("topLevel"))) == QStringLiteral("true")) {
-                info.topLevel = true;
-            }
         } else if (name == QStringLiteral("menuBar") || name == QStringLiteral("toolBar")) {
             info.type = QAK::ActionItemInfo::Menu;
             info.topLevel = true;
@@ -185,6 +191,9 @@ struct ParserPrivate {
             error("%s: %s item \"%s\" has an unknown tag \"%s\"\n", qPrintable(q.fileName), field,
                   qPrintable(info.id), qPrintable(e.name));
             std::exit(1);
+        }
+        if (resolve(e.properties.value(QStringLiteral("topLevel"))) == QStringLiteral("true")) {
+            info.topLevel = true;
         }
 
         info.tag = e.name;
@@ -203,20 +212,6 @@ struct ParserPrivate {
             }
             info.attributes.insert(key, resolve(it.value()));
         }
-    }
-
-    ActionItemInfoMessage parseItem(const QMXmlAdaptorElement &e) {
-        ActionItemInfoMessage info;
-        auto id = resolve(e.properties.value(QStringLiteral("id")));
-        if (id.isEmpty()) {
-            error("%s: item element \"%s\" doesn't have an \"id\" field\n", qPrintable(q.fileName),
-                  qPrintable(e.name));
-            std::exit(1);
-        }
-        info.id = id;
-
-        // type
-        parseItemAttrs(e, info, "item");
 
         // text
         if (auto text = resolve(e.properties.value(QStringLiteral("text"))); !text.isEmpty()) {
@@ -231,7 +226,7 @@ struct ParserPrivate {
             info.actionClass = actionClass;
         }
 
-        // class
+        // description
         if (auto description = resolve(e.properties.value(QStringLiteral("description")));
             !description.isEmpty()) {
             info.description = description;
@@ -258,6 +253,19 @@ struct ParserPrivate {
             !catalog.isEmpty()) {
             info.catalog = resolve(catalog);
         }
+    }
+
+    ActionItemInfoMessage parseItem(const QMXmlAdaptorElement &e) {
+        ActionItemInfoMessage info;
+        auto id = resolve(e.properties.value(QStringLiteral("id")));
+        if (id.isEmpty()) {
+            error("%s: item element \"%s\" doesn't have an \"id\" field\n", qPrintable(q.fileName),
+                  qPrintable(e.name));
+            std::exit(1);
+        }
+        info.id = id;
+
+        parseItemAttrs(e, info, "item");
 
         if (!e.children.isEmpty()) {
             error("%s: item declaration element \"%s\" shouldn't have children\n",
@@ -269,7 +277,7 @@ struct ParserPrivate {
 
     // Create new item when encountering a new ID in layouts or insertions
     ActionItemInfoMessage &findOrInsertItemInfo(const QMXmlAdaptorElement *e,
-                                                const QString &parentId, const char *field) {
+                                                const QString &upperCatalog, const char *field) {
         auto id = resolve(e->properties.value(QStringLiteral("id")));
         if (id.isEmpty()) {
             error("%s: %s element \"%s\" doesn't have an \"id\" field\n", qPrintable(q.fileName),
@@ -328,7 +336,7 @@ struct ParserPrivate {
 
             if (info.catalog.isEmpty()) {
                 // The item doesn't have a specified category, use the current one
-                info.catalog = parentId;
+                info.catalog = upperCatalog;
             }
             pInfo = &info;
         } else {
@@ -339,8 +347,9 @@ struct ParserPrivate {
             if (info.type == QAK::ActionItemInfo::Phony) {
                 errorPhony();
             }
-            info.text = itemIdToText(id);
-            info.catalog = parentId;
+            if (info.catalog.isEmpty()) {
+                info.catalog = upperCatalog;
+            }
 
             auto insertResult = itemInfoMap.append(id.toLower(), info);
             pInfo = &insertResult.first.value();
@@ -349,7 +358,8 @@ struct ParserPrivate {
     }
 
     ActionLayoutEntryMessage parseLayoutRecursively(const QMXmlAdaptorElement *e,
-                                                    const QString &parentId, QStringList &path) {
+                                                    const QString &upperCatalog,
+                                                    QStringList &path) {
         const auto &checkChildren = [this, e](const char *typeName) {
             if (!e->children.isEmpty()) {
                 error("%s: layout element of %s type shouldn't have children\n",
@@ -369,7 +379,7 @@ struct ParserPrivate {
             return entry;
         }
 
-        auto &info = findOrInsertItemInfo(e, parentId, "layout");
+        auto &info = findOrInsertItemInfo(e, upperCatalog, "layout");
         QString id = info.id;
 
         // Recursive path chain detected?
@@ -481,7 +491,7 @@ struct ParserPrivate {
             } else if (e.name == QStringLiteral("stretch")) {
                 entry.type = QAK::ActionLayoutEntry::Stretch;
             } else {
-                auto &info = findOrInsertItemInfo(&e, defaultCatalog, "insertion");
+                auto &info = findOrInsertItemInfo(&e, {}, "insertion");
                 auto id = info.id;
                 if (!e.children.isEmpty()) {
                     error("%s: insertion element \"%s\" shouldn't have children\n",
@@ -538,7 +548,7 @@ struct ParserPrivate {
         // Collect elements and attributes
         QString version;
         QString id;
-        bool hasParserConfig = false;
+        QMXmlAdaptorElement *configElement = nullptr;
         for (const auto &item : std::as_const(root.children)) {
             if (item->name == QStringLiteral("items")) {
                 for (const auto &subItem : std::as_const(item->children)) {
@@ -567,12 +577,11 @@ struct ParserPrivate {
                 continue;
             }
             if (item->name == QStringLiteral("configuration")) {
-                if (hasParserConfig) {
+                if (configElement) {
                     error("%s: duplicated configuration elements\n", qPrintable(q.fileName));
                     std::exit(1);
                 }
-                parseConfiguration(*item);
-                hasParserConfig = true;
+                configElement = item.data();
                 continue;
             }
         }
@@ -591,6 +600,17 @@ struct ParserPrivate {
         result.extension.id = id;
         result.extension.hash = calculateContentSha256(data);
 
+        // Parse configuration
+        const QHash<QString, QString> reservedVars = {
+            {QStringLiteral("_ID_"),           id                              },
+            {QStringLiteral("_VERSION_"),      version                         },
+            {QStringLiteral("_IDENTIFIER_"),   q.identifier                    },
+            {QStringLiteral("_FILENAME_"),     QFileInfo(q.fileName).fileName()},
+            {QStringLiteral("_FILEBASENAME_"), QFileInfo(q.fileName).baseName()},
+        };
+        q.variables = reservedVars;
+        parseConfiguration(*configElement, reservedVars);
+
         // Parse items
         for (const auto &item : std::as_const(objElements)) {
             auto entity = parseItem(*item);
@@ -604,7 +624,7 @@ struct ParserPrivate {
         // Parse layouts
         for (const auto &item : std::as_const(layoutElements)) {
             QStringList path;
-            std::ignore = parseLayoutRecursively(item, defaultCatalog, path);
+            std::ignore = parseLayoutRecursively(item, {}, path);
         }
 
         // Parse build routines
@@ -612,9 +632,13 @@ struct ParserPrivate {
             result.extension.insertions.append(parseInsertion(*item));
         }
 
-        // Collect objects
-        for (const auto &pair : std::as_const(itemInfoMap)) {
-            result.extension.items.append(pair.second);
+        // Collect items
+        for (auto &pair : itemInfoMap) {
+            auto &info = pair.second;
+            if (!info.topLevel && info.catalog.isEmpty()) {
+                info.catalog = defaultCatalog; // fallback to default catalog
+            }
+            result.extension.items.append(info);
         }
     }
 };

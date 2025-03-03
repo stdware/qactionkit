@@ -67,6 +67,7 @@ public:
     ParseResult parse(const QByteArray &data);
 
     QString fileName;
+    QString identifier;
     QHash<QString, QString> variables;
 };
 
