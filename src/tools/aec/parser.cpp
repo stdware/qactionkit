@@ -562,7 +562,7 @@ struct ParserPrivate {
         // Collect elements and attributes
         QString version;
         QString id;
-        QMXmlAdaptorElement *configElement = nullptr;
+        const QMXmlAdaptorElement *configElement = nullptr;
         for (const auto &item : std::as_const(root.children)) {
             if (item->name == QStringLiteral("items")) {
                 for (const auto &subItem : std::as_const(item->children)) {
@@ -628,8 +628,10 @@ struct ParserPrivate {
             {QStringLiteral("_FILENAME_"),     QFileInfo(q.fileName).fileName()},
             {QStringLiteral("_FILEBASENAME_"), QFileInfo(q.fileName).baseName()},
         };
-        q.variables = reservedVars;
-        parseConfiguration(*configElement, reservedVars);
+        q.variables.insert(reservedVars);
+        if (configElement) {
+            parseConfiguration(*configElement, reservedVars);
+        }
 
         // Parse items
         for (const auto &item : std::as_const(objElements)) {
@@ -647,7 +649,7 @@ struct ParserPrivate {
             std::ignore = parseLayoutRecursively(item, {}, path);
         }
 
-        // Parse build routines
+        // Parse insertions
         for (const auto &item : std::as_const(insertionElements)) {
             result.extension.insertions.append(parseInsertion(*item));
         }

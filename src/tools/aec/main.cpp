@@ -81,8 +81,8 @@ int main(int argc, char *argv[]) {
     }
 
     for (const QString &arg : parser.values(defineOption)) {
-        QByteArray name = arg.toLocal8Bit();
-        QByteArray value = name;
+        QString name = arg;
+        QString value = name;
         int eq = name.indexOf('=');
         if (eq >= 0) {
             value = name.mid(eq + 1);
@@ -92,7 +92,7 @@ int main(int argc, char *argv[]) {
             error("Missing key name");
             parser.showHelp(1);
         }
-        pp.variables.insert(QString::fromLatin1(name), QString::fromLatin1(value));
+        pp.variables.insert(name, value);
     }
 
     QString identifier = parser.value(identifierOption);

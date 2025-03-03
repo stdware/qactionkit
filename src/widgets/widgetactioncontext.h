@@ -4,7 +4,6 @@
 #include <QtWidgets/QMenu>
 #include <QtWidgets/QMenuBar>
 #include <QtWidgets/QToolBar>
-#include <QtWidgets/QWidgetAction>
 
 #include <QAKCore/actioncontext.h>
 #include <QAKWidgets/qakwidgetsglobal.h>

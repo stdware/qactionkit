@@ -51,6 +51,9 @@ namespace QAK {
     }
 
     void WidgetActionContext::updateLayouts() {
+        Q_D(WidgetActionContext);
+
+        Q_ASSERT(d->registry);
     }
 
     void WidgetActionContext::updateTexts() {

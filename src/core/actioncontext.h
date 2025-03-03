@@ -30,6 +30,8 @@ namespace QAK {
         ActionContext(ActionContextPrivate &d, QObject *parent = nullptr);
 
         std::unique_ptr<ActionContextPrivate> d_ptr;
+
+        friend class ActionRegistry;
     };
 
 }

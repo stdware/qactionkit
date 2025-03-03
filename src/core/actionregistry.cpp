@@ -4,6 +4,7 @@
 #include <utility>
 
 #include "qakglobal_p.h"
+#include "actioncontext_p.h"
 
 namespace QAK {
 
@@ -14,6 +15,9 @@ namespace QAK {
     }
 
     void ActionRegistryPrivate::flushActionItems() const {
+        if (!actionItemsDirty) {
+            return;
+        }
         catalog.clear();
         layouts.clear();
         actionItems.clear();
@@ -21,10 +25,11 @@ namespace QAK {
             auto &e = pair.second;
             for (int i = 0; i < e->itemCount(); ++i) {
                 const auto &item = e->item(i);
-                if (actionItems.contains(item.id())) {
+                auto id = item.id().toLower();
+                if (actionItems.contains(id)) {
                     continue;
                 }
-                actionItems.append(item.id(), item);
+                actionItems.append(id, item);
             }
         }
         actionItemsDirty = false;
@@ -77,27 +82,31 @@ namespace QAK {
 
     QStringList ActionRegistry::actionIds() const {
         Q_D(const ActionRegistry);
-        return d->actionItems.keys_qlist();
+
+        d->flushActionItems();
+
+        QStringList result;
+        for (const auto &pair : std::as_const(d->actionItems)) {
+            result.append(pair.second.id());
+        }
+        return result;
     }
 
     ActionItemInfo ActionRegistry::actionInfo(const QString &id) const {
         Q_D(const ActionRegistry);
-        return d->actionItems.value(id);
+        d->flushActionItems();
+        return d->actionItems.value(id.toLower());
     }
 
     ActionRegistry::Catalog ActionRegistry::catalog() const {
         Q_D(const ActionRegistry);
-        if (d->actionItemsDirty) {
-            d->flushActionItems();
-        }
+        d->flushActionItems();
         return d->catalog;
     }
 
     ActionRegistry::Layouts ActionRegistry::layouts() const {
         Q_D(const ActionRegistry);
-        if (d->actionItemsDirty) {
-            d->flushActionItems();
-        }
+        d->flushActionItems();
         return d->layouts;
     }
 
@@ -111,9 +120,7 @@ namespace QAK {
 
     void ActionRegistry::resetLayouts() {
         Q_D(ActionRegistry);
-        if (d->actionItemsDirty) {
-            d->flushActionItems();
-        }
+        d->flushActionItems();
         d->layouts = d->defaultLayouts();
     }
 
@@ -129,21 +136,63 @@ namespace QAK {
         : ActionFamily(d, parent) {
     }
 
-    void ActionRegistry::addContext(ActionContext *builder) {
+    void ActionRegistry::addContext(ActionContext *ctx) {
+        Q_D(ActionRegistry);
+        d->contexts.removeAll(nullptr);
+        d->contexts.removeAll(ctx);
+        d->contexts.append(ctx);
+
+        auto &reg = ctx->d_func()->registry;
+        if (reg) {
+            reg->removeContext(ctx);
+        }
+        reg = this;
     }
 
-    void ActionRegistry::removeContext(ActionContext *builder) {
+    void ActionRegistry::removeContext(ActionContext *ctx) {
+        Q_D(ActionRegistry);
+        for (auto &item : d->contexts) {
+            if (item == ctx) {
+                item = nullptr;
+            }
+        }
+        ctx->d_func()->registry = nullptr;
     }
 
     void ActionRegistry::updateContextLayouts() {
+        Q_D(ActionRegistry);
+        for (auto &ctx : d->contexts) {
+            if (ctx) {
+                ctx->updateLayouts();
+            }
+        }
     }
 
     void ActionRegistry::updateContextTexts() {
+        Q_D(ActionRegistry);
+        for (auto &ctx : d->contexts) {
+            if (ctx) {
+                ctx->updateTexts();
+            }
+        }
     }
 
     void ActionRegistry::updateContextKeymap() {
+        Q_D(ActionRegistry);
+        for (auto &ctx : d->contexts) {
+            if (ctx) {
+                ctx->updateKeymap();
+            }
+        }
     }
 
     void ActionRegistry::updateContextIcons() {
+        Q_D(ActionRegistry);
+        for (auto &ctx : d->contexts) {
+            if (ctx) {
+                ctx->updateIcons();
+            }
+        }
     }
+
 }

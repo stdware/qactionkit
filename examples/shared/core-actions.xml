@@ -57,11 +57,11 @@
 
         <!-- Example: core actions -->
         <action id="core.openFile" text="Open File" class="File" shortcut="Ctrl+N" />
-        <action id="core.saveFile" text="Save File" class="File" shortcut="Ctrl+S"
-            catalog="core.file" />
+        <action id="core.saveFile" text="Save File" class="File" shortcut="Ctrl+S" />
 
         <!-- Example: configurable top level item -->
         <menu id="core.mainMenu" topLevel="true" />
+        <menu id="core.mainToolBar" topLevel="true" />
 
         <!-- Example: catalogs -->
         <phony id="core.catalog.plugins" />
@@ -80,13 +80,16 @@
             <menu id="core.help">
                 <action id="core.documentations" />
                 <separator />
-                <action id="core.aboutApp" text="About ${APP_NAME}" />
-                <action id="core.aboutQt" />
+                <group id="core.aboutActions">
+                    <action id="core.aboutApp" text="About ${APP_NAME}" />
+                    <action id="core.aboutQt" />
+                </group>
             </menu>
         </menu>
 
-        <menu id="core.mainToolbar">
-            <menu id="core.file" />
+        <menu id="core.mainToolBar">
+            <action id="core.openFile" />
+            <action id="core.saveFile" />
         </menu>
     </layouts>
 

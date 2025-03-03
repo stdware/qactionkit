@@ -43,8 +43,8 @@ namespace QAK {
         static Layouts layoutsFromJson(const QJsonObject &obj);
 
     public:
-        void addContext(ActionContext *builder);
-        void removeContext(ActionContext *builder);
+        void addContext(ActionContext *ctx);
+        void removeContext(ActionContext *ctx);
 
         void updateContextLayouts();
         void updateContextTexts();
