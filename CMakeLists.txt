@@ -17,9 +17,7 @@ option(QACTIONKIT_BUILD_EXAMPLES "Build examples" OFF)
 option(QACTIONKIT_BUILD_DOCUMENTATIONS "Build documentations" OFF)
 option(QACTIONKIT_INSTALL "Install library" ON)
 
-option(QACTIONKIT_ENABLE_QT_WINDOW_CONTEXT "Enable Qt Window Context anyway" OFF)
-option(QACTIONKIT_ENABLE_WINDOWS_SYSTEM_BORDERS "Enable system borders on Windows" ON)
-option(QACTIONKIT_ENABLE_STYLE_AGENT "Enable building style agent" ON)
+option(QACTIONKIT_VCPKG_TOOLS_HINT "Install executables to tools directory" OFF)
 
 # ----------------------------------
 # CMake Settings
@@ -37,6 +35,8 @@ elseif(MINGW)
     set(CMAKE_STATIC_LIBRARY_PREFIX "")
     set(CMAKE_SHARED_LIBRARY_PREFIX "")
 endif()
+
+set(CMAKE_INSTALL_RPATH_USE_LINK_PATH ON)
 
 if(QACTIONKIT_INSTALL)
     include(GNUInstallDirs)

@@ -5,16 +5,14 @@
 
 class Generator {
 public:
-    Generator(FILE *out, const QByteArray &inputFileName, const QByteArray &identifier,
-              const ActionExtensionMessage &message);
+    Generator(FILE *out, const QString &inputFileName, const QString &identifier,
+              const ParseResult &parseResult);
+    void generate();
 
-    void generateCode();
-
-private:
     FILE *out;
-    QByteArray inputFileName;
-    QByteArray identifier;
-    ActionExtensionMessage msg;
+    QString inputFileName;
+    QString identifier;
+    ParseResult parseResult;
 };
 
 #endif // GENERATOR_H

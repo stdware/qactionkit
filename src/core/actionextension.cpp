@@ -16,32 +16,20 @@ namespace QAK {
         {}, {}, {}, {}, {}, {}, {}, {}, {}, {},
     };
 
-    static ActionLayoutInfoEntry sharedLayoutInfoEntry = {
-        {},
-        {},
-        {0},
-    };
-
     static int sharedNullLayoutEntryIndex = 0;
 
     static ActionInsertionData sharedNullInsertion = {
         {},
         {},
         {},
-        {0},
+        {},
     };
 
     static ActionExtensionData sharedNullExtensionData = {
-        QAK_ACTION_EXTENSION_VERSION, QStringLiteral(""),
-        QStringLiteral(""),           0,
-        &sharedNullItemInfoData,      0,
-        &sharedLayoutInfoEntry,       0,
-        &sharedNullLayoutEntryIndex,  0,
-        &sharedNullInsertion,
+        QAK_ACTION_EXTENSION_VERSION, {}, {}, 0, &sharedNullItemInfoData, 0, &sharedNullInsertion,
     };
 
-    ActionItemInfo::ActionItemInfo() : e(&sharedNullExtensionData), i(0) {
-    }
+    ActionItemInfo::ActionItemInfo() : e(&sharedNullExtensionData), i(0) {}
     bool ActionItemInfo::isNull() const {
         return e != &sharedNullExtensionData;
     }
@@ -75,28 +63,10 @@ namespace QAK {
     QMap<QString, QString> ActionItemInfo::attributes() const {
         return e->items[i].attributes;
     }
-    ActionLayoutInfo::ActionLayoutInfo() : e(&sharedNullExtensionData), i(0) {
+    QVector<ActionLayoutEntry> ActionItemInfo::children() const {
+        return e->items[i].children;
     }
-    bool ActionLayoutInfo::isNull() const {
-        return e != &sharedNullExtensionData;
-    }
-    QString ActionLayoutInfo::id() const {
-        return e->layoutEntries[i].id;
-    }
-    ActionLayoutInfo::Type ActionLayoutInfo::type() const {
-        return e->layoutEntries[i].type;
-    }
-    int ActionLayoutInfo::childCount() const {
-        return static_cast<int>(e->layoutEntries[i].childIndexes.size());
-    }
-    ActionLayoutInfo ActionLayoutInfo::child(int index) const {
-        ActionLayoutInfo result;
-        result.e = e;
-        result.i = e->layoutEntries[i].childIndexes[index];
-        return result;
-    }
-    ActionInsertion::ActionInsertion() : e(&sharedNullExtensionData), i(0) {
-    }
+    ActionInsertion::ActionInsertion() : e(&sharedNullExtensionData), i(0) {}
     bool ActionInsertion::isNull() const {
         return e != &sharedNullExtensionData;
     }
@@ -109,14 +79,8 @@ namespace QAK {
     QString ActionInsertion::relativeTo() const {
         return e->insertions[i].relativeTo;
     }
-    int ActionInsertion::itemCount() const {
-        return static_cast<int>(e->insertions[i].entryIndexes.size());
-    }
-    ActionLayoutInfo ActionInsertion::item(int index) const {
-        ActionLayoutInfo result;
-        result.e = e;
-        result.i = e->insertions[i].entryIndexes[index];
-        return result;
+    QVector<ActionLayoutEntry> ActionInsertion::items() const {
+        return e->insertions[i].items;
     }
     QString ActionExtension::version() const {
         return d.data->version;
@@ -132,15 +96,6 @@ namespace QAK {
     }
     ActionItemInfo ActionExtension::item(int index) const {
         ActionItemInfo result;
-        result.e = d.data;
-        result.i = index;
-        return result;
-    }
-    int ActionExtension::layoutCount() const {
-        return d.data->layoutCount;
-    }
-    ActionLayoutInfo ActionExtension::layout(int index) const {
-        ActionLayoutInfo result;
         result.e = d.data;
         result.i = index;
         return result;

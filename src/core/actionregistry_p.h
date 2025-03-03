@@ -15,7 +15,7 @@ namespace QAK {
     class ActionLayoutData : public QSharedData {
     public:
         QString id;
-        ActionLayoutInfo::Type type = ActionLayoutInfo::Action;
+        ActionLayoutEntry::Type type = ActionLayoutEntry::Action;
         QList<ActionLayout> children;
     };
 

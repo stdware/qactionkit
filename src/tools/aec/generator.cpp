@@ -2,8 +2,6 @@
 
 #include <QSet>
 
-void error(const char *msg);
-
 template <template <class> class Array, class T>
 static QString joinNumbers(const Array<T> &arr, const QString &glue) {
     QStringList list;
@@ -14,10 +12,62 @@ static QString joinNumbers(const Array<T> &arr, const QString &glue) {
     return list.join(glue);
 }
 
-Generator::Generator(FILE *out, const QByteArray &inputFileName, const QByteArray &identifier,
-                     const ActionExtensionMessage &message)
-    : out(out), inputFileName(inputFileName), identifier(identifier), msg(message) {
+static QString itemInfoTypeToString(QAK::ActionItemInfo::Type type) {
+    switch (type) {
+        case QAK::ActionItemInfo::Action:
+            return QStringLiteral("Action");
+        case QAK::ActionItemInfo::Group:
+            return QStringLiteral("Group");
+        case QAK::ActionItemInfo::Menu:
+            return QStringLiteral("Menu");
+        case QAK::ActionItemInfo::Phony:
+            return QStringLiteral("Phony");
+        default:
+            Q_UNREACHABLE();
+            break;
+    }
+    return {};
 }
+
+static QString layoutEntryTypeToString(QAK::ActionLayoutEntry::Type type) {
+    switch (type) {
+        case QAK::ActionLayoutEntry::Action:
+            return QStringLiteral("Action");
+        case QAK::ActionLayoutEntry::Group:
+            return QStringLiteral("Group");
+        case QAK::ActionLayoutEntry::Menu:
+            return QStringLiteral("Menu");
+        case QAK::ActionLayoutEntry::Separator:
+            return QStringLiteral("Separator");
+        case QAK::ActionLayoutEntry::Stretch:
+            return QStringLiteral("Stretch");
+        default:
+            Q_UNREACHABLE();
+            break;
+    }
+    return {};
+}
+
+static QString insertionAnchorToString(QAK::ActionInsertion::Anchor anchor) {
+    switch (anchor) {
+        case QAK::ActionInsertion::Last:
+            return QStringLiteral("Last");
+        case QAK::ActionInsertion::First:
+            return QStringLiteral("First");
+        case QAK::ActionInsertion::After:
+            return QStringLiteral("After");
+        case QAK::ActionInsertion::Before:
+            return QStringLiteral("Before");
+        default:
+            Q_UNREACHABLE();
+            break;
+    }
+    return {};
+}
+
+Generator::Generator(FILE *out, const QString &inputFileName, const QString &identifier,
+                     const ParseResult &parseResult)
+    : out(out), inputFileName(inputFileName), identifier(identifier), parseResult(parseResult) {}
 
 static QByteArray escapeString(const QByteArray &bytes) {
     QByteArray res;
@@ -50,364 +100,330 @@ static QByteArray escapeString(const QByteArray &bytes) {
     return res;
 }
 
-static void generateObjects(FILE *out, const QVector<ActionObjectInfoMessage> &objects) {
-    int i = 0;
-    for (const auto &item : std::as_const(objects)) {
-        fprintf(out, "        {\n");
-        fprintf(out, "            // index %d\n", i++);
-        fprintf(out, "            // id\n");
-        fprintf(out, "            QStringLiteral(\"%s\"),\n",
-                escapeString(item.id.toLocal8Bit()).data());
-        fprintf(out, "            // type\n");
-        fprintf(out, "            ActionObjectInfo::%s,\n",
-                ActionObjectInfoMessage::typeToString(item.type).toLocal8Bit().data());
-        fprintf(out, "            // shape\n");
-        fprintf(out, "            ActionObjectInfo::%s,\n",
-                ActionObjectInfoMessage::modeToString(item.mode).toLocal8Bit().data());
-        fprintf(out, "            // text\n");
-        fprintf(out, "            QByteArrayLiteral(\"%s\"),\n",
-                escapeString(item.text.toLocal8Bit()).data());
-        fprintf(out, "            // commandClass\n");
-        if (item.commandClass.isEmpty()) {
-            fprintf(out, "            QByteArray(),\n");
-        } else {
-            fprintf(out, "            QByteArrayLiteral(\"%s\"),\n",
-                    escapeString(item.commandClass.toLocal8Bit()).data());
-        }
-        fprintf(out, "            // shortcuts\n");
-        fprintf(out, "            {\n");
-        for (const auto &subItem : std::as_const(item.shortcutTokens)) {
-            fprintf(out, "                QKeySequence(QStringLiteral(\"%s\")),\n",
-                    subItem.trimmed().toLocal8Bit().data());
-        }
-        fprintf(out, "            },\n");
-        fprintf(out, "            // categories\n");
-        fprintf(out, "            {\n");
-        for (const auto &subItem : std::as_const(item.categories)) {
-            fprintf(out, "                QByteArrayLiteral(\"%s\"),\n",
-                    escapeString(subItem.toLocal8Bit()).data());
-        }
-        fprintf(out, "            },\n");
-        fprintf(out, "        },\n");
-    }
-}
+#define escPrintable(STR) escapeString((STR).toLocal8Bit()).constData()
 
-static void generateLayouts(FILE *out, const QVector<ActionLayoutEntryMessage> &layouts) {
-    int i = 0;
-    for (const auto &subItem : std::as_const(layouts)) {
-        fprintf(out, "        {\n");
-        fprintf(out, "            // index %d\n", i++);
-        fprintf(out, "            // id\n");
-        if (subItem.id.isEmpty()) {
-            fprintf(out, "            QString(),\n");
-        } else {
-            fprintf(out, "            QStringLiteral(\"%s\"),\n",
-                    escapeString(subItem.id.toLocal8Bit()).data());
-        }
-        fprintf(out, "            // type\n");
-        fprintf(out, "            ActionLayoutInfo::%s,\n",
-                ActionObjectInfoMessage::typeToString(subItem.type).toLocal8Bit().data());
-        fprintf(out, "            // childIndexes\n");
-        fprintf(out, "            {%s},\n",
-                joinNumbers(subItem.childIndexes, QStringLiteral(", ")).toLocal8Bit().data());
-        fprintf(out, "        },\n");
-    }
-}
+#define STRING_4_SPACE  "    "
+#define STRING_8_SPACE  "        "
+#define STRING_12_SPACE "            "
+#define STRING_16_SPACE "                "
 
-static void generateBuildRoutines(FILE *out, const QVector<ActionBuildRoutineMessage> &routines) {
-    int i = 0;
-    for (const auto &item : std::as_const(routines)) {
-        fprintf(out, "        {\n");
-        fprintf(out, "            // index %d\n", i++);
-        fprintf(out, "            // anchorToken\n");
-        fprintf(out, "            ActionBuildRoutine::%s,\n",
-                item.anchorToken.toLocal8Bit().data());
-        fprintf(out, "            // parent\n");
-        fprintf(out, "            QStringLiteral(\"%s\"),\n",
-                escapeString(item.parent.toLocal8Bit()).data());
-        fprintf(out, "            // relativeTo\n");
-        if (item.relativeTo.isEmpty()) {
-            fprintf(out, "            QString(),\n");
-        } else {
-            fprintf(out, "            QStringLiteral(\"%s\"),\n",
-                    escapeString(item.relativeTo.toLocal8Bit()).data());
-        }
+#define GENERATE_STRING(NAME, VAR)                                                                 \
+    fprintf(out, STRING_12_SPACE "// " #NAME "\n");                                                \
+    fprintf(out, STRING_12_SPACE "QStringLiteral(\"%s\"),\n", escPrintable(VAR));
 
-        fprintf(out, "            // entryIndexes\n");
-        fprintf(out, "            {%s},\n",
-                joinNumbers(item.entryIndexes, QStringLiteral(", ")).toLocal8Bit().data());
-        fprintf(out, "        },\n");
-    }
-}
+#define GENERATE_ENUM(NAME, SCOPE, VALUE)                                                          \
+    fprintf(out, STRING_12_SPACE "// " #NAME "\n");                                                \
+    fprintf(out, STRING_12_SPACE SCOPE "::%s,\n", qPrintable(VALUE));
 
-static void generateTranslations(FILE *out, const QVector<ActionObjectInfoMessage> &objects) {
-    fprintf(out, "    // Action Text\n");
-    QSet<QString> texts{{}};
-    for (const auto &item : std::as_const(objects)) {
-        if (item.text.isEmpty())
-            continue;
-        texts.insert(item.commandClass);
-        fprintf(out, "    QCoreApplication::translate(\"ChorusKit::ActionText\", \"%s\");\n",
-                escapeString(item.text.toLocal8Bit()).data());
-    }
-    fprintf(out, "\n");
+#define GENERATE_BOOL(NAME, VALUE)                                                                 \
+    fprintf(out, STRING_12_SPACE "// " #NAME "\n");                                                \
+    fprintf(out, STRING_12_SPACE "%s,\n", VALUE ? "true" : "false");
 
-    fprintf(out, "    // Action Class\n");
-    QSet<QString> commandClasses{{}};
-    for (const auto &item : std::as_const(objects)) {
-        if (commandClasses.contains(item.commandClass))
-            continue;
-        commandClasses.insert(item.commandClass);
-        fprintf(out, "    QCoreApplication::translate(\"ChorusKit::ActionClass\", \"%s\");\n",
-                escapeString(item.commandClass.toLocal8Bit()).data());
-    }
-    fprintf(out, "\n");
+class GeneratorPrivate {
 
-    fprintf(out, "    // Action Category\n");
-    QSet<QString> categories{{}};
-    for (const auto &item : std::as_const(objects)) {
-        for (const auto &subItem : std::as_const(item.categories)) {
-            if (categories.contains(subItem))
-                continue;
-            categories.insert(subItem);
-            fprintf(out,
-                    "    QCoreApplication::translate(\"ChorusKit::ActionCategory\", \"%s\");\n",
-                    escapeString(subItem.toLocal8Bit()).data());
+public:
+    GeneratorPrivate(Generator &q) : q(q) {}
+
+    Generator &q;
+
+    void generateItems(FILE *out, const QVector<ActionItemInfoMessage> &objects) {
+        int i = 0;
+        for (const auto &item : std::as_const(objects)) {
+            fprintf(out, STRING_8_SPACE "{\n");
+            fprintf(out, STRING_12_SPACE "// index %d\n", i++);
+
+            GENERATE_STRING(id, item.id);
+            GENERATE_ENUM(type, "ActionItemInfo", itemInfoTypeToString(item.type));
+            GENERATE_STRING(text, item.text);
+            GENERATE_STRING(actionClass, item.actionClass);
+            GENERATE_STRING(description, item.description);
+            GENERATE_STRING(icon, item.icon);
+
+            // shortcuts
+            fprintf(out, STRING_12_SPACE "// shortcuts\n");
+            fprintf(out, STRING_12_SPACE "{\n");
+            for (const auto &key : std::as_const(item.shortcutTokens)) {
+                fprintf(out, STRING_16_SPACE "QKeySequence(QStringLiteral(\"%s\")),\n",
+                        escPrintable(key.trimmed()));
+            }
+            fprintf(out, STRING_12_SPACE "},\n");
+
+            GENERATE_STRING(catalog, item.catalog);
+            GENERATE_BOOL(topLevel, item.topLevel);
+
+            // attributes
+            fprintf(out, STRING_12_SPACE "// attributes\n");
+            fprintf(out, STRING_12_SPACE "{\n");
+            for (auto it = item.attributes.begin(); it != item.attributes.end(); ++it) {
+                fprintf(out,
+                        STRING_16_SPACE "{ QStringLiteral(\"%s\"), QStringLiteral(\"%s\") },\n",
+                        escPrintable(it.key()), escPrintable(it.value()));
+            }
+            fprintf(out, STRING_12_SPACE "},\n");
+
+            // children
+            fprintf(out, STRING_12_SPACE "// children\n");
+            fprintf(out, STRING_12_SPACE "{\n");
+            for (const auto &child : std::as_const(item.children)) {
+                fprintf(out,
+                        STRING_16_SPACE "{ QStringLiteral(\"%s\"), ActionLayoutEntry::%s },\n",
+                        escPrintable(child.id), qPrintable(layoutEntryTypeToString(child.type)));
+            }
+            fprintf(out, STRING_12_SPACE "},\n");
+
+            fprintf(out, STRING_8_SPACE "},\n");
         }
     }
-}
 
-static void generateExtraInformation(FILE *out, const QVector<ActionObjectInfoMessage> &objects) {
-    QVector<ActionObjectInfoMessage> actions;
-    QVector<ActionObjectInfoMessage> widgets;
-    QVector<ActionObjectInfoMessage> groups;
-    QVector<ActionObjectInfoMessage> menus;
-    QVector<ActionObjectInfoMessage> topLevels;
+    void generateInsertions(FILE *out, const QVector<ActionInsertionMessage> &routines) {
+        int i = 0;
+        for (const auto &item : std::as_const(routines)) {
+            fprintf(out, STRING_8_SPACE "{\n");
+            fprintf(out, "            // index %d\n", i++);
 
-    for (const auto &item : objects) {
-        if (item.type == ActionObjectInfoMessage::Action) {
-            if (item.mode == ActionObjectInfoMessage::Plain) {
+            GENERATE_ENUM(type, "ActionInsertion", insertionAnchorToString(item.anchor));
+            GENERATE_STRING(target, item.target);
+            GENERATE_STRING(relativeTo, item.relativeTo);
+
+            // children
+            fprintf(out, STRING_12_SPACE "// items\n");
+            fprintf(out, STRING_12_SPACE "{\n");
+            for (const auto &item : std::as_const(item.items)) {
+                fprintf(out,
+                        STRING_16_SPACE "{ QStringLiteral(\"%s\"), ActionLayoutEntry::%s },\n",
+                        escPrintable(item.id), qPrintable(layoutEntryTypeToString(item.type)));
+            }
+            fprintf(out, STRING_12_SPACE "},\n");
+
+            fprintf(out, STRING_8_SPACE "},\n");
+        }
+    }
+
+    void generateTranslations(FILE *out, const QVector<ActionItemInfoMessage> &items) {
+        {
+            QSet<QString> texts{{}};
+            fprintf(out, "    // Action Text\n");
+            for (const auto &item : std::as_const(items)) {
+                if (item.text.isEmpty() || texts.contains(item.text))
+                    continue;
+                texts.insert(item.text);
+
+                QString ctx;
+                if (auto it = item.attributes.find(QStringLiteral("textTr"));
+                    it != item.attributes.end()) {
+                    ctx = it.value();
+                }
+                if (ctx.isEmpty()) {
+                    ctx = q.parseResult.textTranslationContext;
+                }
+
+                fprintf(out, STRING_4_SPACE "QCoreApplication::translate(\"%s\", \"%s\");\n",
+                        qPrintable(ctx), escPrintable(item.text));
+            }
+            fprintf(out, "\n");
+        }
+
+        {
+            QSet<QString> actionClasses{{}};
+            fprintf(out, STRING_4_SPACE "// Action Class\n");
+            for (const auto &item : std::as_const(items)) {
+                if (item.actionClass.isEmpty() || actionClasses.contains(item.actionClass))
+                    continue;
+                actionClasses.insert(item.text);
+
+                QString ctx;
+                if (auto it = item.attributes.find(QStringLiteral("classTr"));
+                    it != item.attributes.end()) {
+                    ctx = it.value();
+                }
+                if (ctx.isEmpty()) {
+                    ctx = q.parseResult.classTranslationContext;
+                }
+
+                fprintf(out, STRING_4_SPACE "QCoreApplication::translate(\"%s\", \"%s\");\n",
+                        qPrintable(ctx), escPrintable(item.actionClass));
+            }
+            fprintf(out, "\n");
+        }
+
+        {
+            QSet<QString> descriptions{{}};
+            fprintf(out, "    // Action Description\n");
+            for (const auto &item : std::as_const(items)) {
+                if (item.description.isEmpty() || descriptions.contains(item.description))
+                    continue;
+                descriptions.insert(item.description);
+
+                QString ctx;
+                if (auto it = item.attributes.find(QStringLiteral("descriptionTr"));
+                    it != item.attributes.end()) {
+                    ctx = it.value();
+                }
+                if (ctx.isEmpty()) {
+                    ctx = q.parseResult.descriptionTranslationContext;
+                }
+
+                fprintf(out, STRING_4_SPACE "QCoreApplication::translate(\"%s\", \"%s\");\n",
+                        qPrintable(ctx), escPrintable(item.description));
+            }
+            fprintf(out, "\n");
+        }
+    }
+
+    void generateExtraInformation(FILE *out, const QVector<ActionItemInfoMessage> &objects) {
+        QVector<ActionItemInfoMessage> actions;
+        QVector<ActionItemInfoMessage> groups;
+        QVector<ActionItemInfoMessage> menus;
+        QVector<ActionItemInfoMessage> phonies;
+
+        for (const auto &item : objects) {
+            if (item.type == QAK::ActionItemInfo::Action) {
                 actions.append(item);
-            } else {
-                widgets.append(item);
-            }
-        } else if (item.type == ActionObjectInfoMessage::Group) {
-            groups.append(item);
-        } else if (item.type == ActionObjectInfoMessage::Menu) {
-            if (item.mode == ActionObjectInfoMessage::Plain) {
+            } else if (item.type == QAK::ActionItemInfo::Group) {
+                groups.append(item);
+            } else if (item.type == QAK::ActionItemInfo::Menu) {
                 menus.append(item);
-            } else {
-                topLevels.append(item);
+            } else if (item.type == QAK::ActionItemInfo::Phony) {
+                phonies.append(item);
             }
         }
-    }
 
-    fprintf(out, "/*\n");
+        fprintf(out, "/*\n");
 
-    // // Actions
-    // fprintf(out, "    [Action]\n");
-    // for (const auto &item : std::as_const(actions)) {
-    //     fprintf(out, "    %s\n", item.id.toLocal8Bit().data());
-    // }
-    // fprintf(out, "\n");
-
-    // // Widgets
-    // fprintf(out, "    [Widget]\n");
-    // for (const auto &item : std::as_const(widgets)) {
-    //     fprintf(out, "    %s\n", item.id.toLocal8Bit().data());
-    // }
-    // fprintf(out, "\n");
-
-    // // Groups
-    // fprintf(out, "    [Group]\n");
-    // for (const auto &item : std::as_const(groups)) {
-    //     if (item.typeToken == QStringLiteral("Group")) {
-    //         fprintf(out, "    %s\n", item.id.toLocal8Bit().data());
-    //     }
-    // }
-    // fprintf(out, "\n");
-
-    // // Menus
-    // fprintf(out, "    [Menu]\n");
-    // for (const auto &item : std::as_const(menus)) {
-    //     fprintf(out, "    %s\n", item.id.toLocal8Bit().data());
-    // }
-    // fprintf(out, "\n");
-
-    // // TopLevels
-    // fprintf(out, "    [TopLevel]\n");
-    // for (const auto &item : std::as_const(topLevels)) {
-    //     fprintf(out, "    %s\n", item.id.toLocal8Bit().data());
-    // }
-    // fprintf(out, "\n");
-
-    // Hint
-    fprintf(out, "    You can define a struct representing the corresponding instances "
-                 "with this extension:\n\n");
-
-    if (!actions.isEmpty()) {
-        fprintf(out, "    struct ActionItems {\n");
+        // Actions
+        fprintf(out, STRING_4_SPACE "[Action]\n");
         for (const auto &item : std::as_const(actions)) {
-            fprintf(out, "        Core::ActionItem *%s;\n", item.id.toLocal8Bit().data());
+            fprintf(out, STRING_4_SPACE "%s\n", qPrintable(item.id));
         }
-        fprintf(out, "    };\n");
         fprintf(out, "\n");
-    }
 
-    if (!widgets.isEmpty()) {
-        fprintf(out, "    struct WidgetItems {\n");
-        for (const auto &item : std::as_const(widgets)) {
-            fprintf(out, "        Core::ActionItem *%s;\n", item.id.toLocal8Bit().data());
-        }
-        fprintf(out, "    };\n");
-        fprintf(out, "\n");
-    }
-
-    if (!groups.isEmpty()) {
-        fprintf(out, "    struct GroupItemes {\n");
+        // // Groups
+        fprintf(out, STRING_4_SPACE "[Group]\n");
         for (const auto &item : std::as_const(groups)) {
-            fprintf(out, "        Core::ActionItem *%s;\n", item.id.toLocal8Bit().data());
+            fprintf(out, STRING_4_SPACE "%s\n", qPrintable(item.id));
         }
-        fprintf(out, "    };\n");
         fprintf(out, "\n");
-    }
 
-    if (!menus.isEmpty()) {
-        fprintf(out, "    struct MenuItems {\n");
+        // Menus
+        fprintf(out, STRING_4_SPACE "[Menu]\n");
         for (const auto &item : std::as_const(menus)) {
-            fprintf(out, "        Core::ActionItem *%s;\n", item.id.toLocal8Bit().data());
+            fprintf(out, STRING_4_SPACE "%s\n", qPrintable(item.id));
         }
-        fprintf(out, "    };\n");
         fprintf(out, "\n");
-    }
 
-    if (!topLevels.isEmpty()) {
-        fprintf(out, "    struct TopLevelItems {\n");
-        for (const auto &item : std::as_const(topLevels)) {
-            fprintf(out, "        Core::ActionItem *%s;\n", item.id.toLocal8Bit().data());
+        // Phonies
+        fprintf(out, STRING_4_SPACE "[Phony]\n");
+        for (const auto &item : std::as_const(phonies)) {
+            fprintf(out, "    %s\n", item.id.toLocal8Bit().data());
         }
-        fprintf(out, "    };\n");
+        fprintf(out, "\n");
+
+        fprintf(out, "*/\n");
     }
 
-    fprintf(out, "*/\n");
-}
+    void generate() {
+        auto &msg = q.parseResult.extension;
+        auto out = q.out;
 
-void Generator::generateCode() {
-    // Warning
-    fprintf(out,
-            "/****************************************************************************\n"
-            "** Action extension structure code from reading XML file '%s'\n**\n",
-            inputFileName.constData());
-    fprintf(out, "** Created by: ChorusKit Action Extension Compiler version %s (Qt %s)\n**\n",
-            APP_VERSION, QT_VERSION_STR);
-    fprintf(out, "** WARNING! All changes made in this file will be lost!\n"
-                 "*************************************************************************"
-                 "****/\n");
+        // Warning
+        fprintf(out,
+                "/****************************************************************************\n"
+                "** Action extension structure code from reading XML file '%s'\n**\n",
+                qPrintable(q.inputFileName));
+        fprintf(out, "** Created by: QActionKit Action Extension Compiler version %s (Qt %s)\n**\n",
+                APP_VERSION, QT_VERSION_STR);
+        fprintf(out, "** WARNING! All changes made in this file will be lost!\n"
+                     "*************************************************************************"
+                     "****/\n");
 
-    fprintf(out, R"(
+        // Headers
+        fprintf(out, R"(
+#include <QtCore/QString>
 #include <QtCore/QCoreApplication>
 
-#include <CoreApi/private/actionextension_p.h>
+#include <QAKCore/private/actionextension_p.h>
 
 )");
 
-    fprintf(out, "namespace ckStaticActionExtension_%s {\n", identifier.data());
+        fprintf(out, "namespace qakStaticActionExtension_%s {\n", qPrintable(q.identifier));
 
-    fprintf(out, R"(
-using namespace Core;
+        fprintf(out, R"(
+using namespace QAK;
 
-static ActionExtensionPrivate *get_data() {
-    static ActionExtensionPrivate data;
+static ActionExtensionData *get_data() {
+    static ActionExtensionData data;
 )");
 
-    fprintf(out, "    data.hash = QStringLiteral(\"%s\");\n", msg.hash.toLocal8Bit().data());
-    fprintf(out, "    data.version = QStringLiteral(\"%s\");\n",
-            escapeString(msg.version.toLocal8Bit()).data());
-    fprintf(out, "\n");
+        fprintf(out, STRING_4_SPACE "data.version = QStringLiteral(\"%s\");\n",
+                escPrintable(msg.version));
+        fprintf(out, STRING_4_SPACE "data.id = QStringLiteral(\"%s\");\n", escPrintable(msg.id));
+        fprintf(out, STRING_4_SPACE "data.hash = QStringLiteral(\"%s\");\n", qPrintable(msg.hash));
+        fprintf(out, "\n");
 
-    if (msg.objects.isEmpty()) {
-        fprintf(out, "    data.objectData = nullptr;\n");
-        fprintf(out, "    data.objectCount = 0;\n");
-    } else {
-        fprintf(out, "    static ActionObjectInfoData objectData[] = {\n");
-        generateObjects(out, msg.objects);
-        fprintf(out, "    };\n");
-        fprintf(out, "    data.objectData = objectData;\n");
-        fprintf(out, "    data.objectCount = sizeof(objectData) / sizeof(objectData[0]);\n");
-    }
-    fprintf(out, "\n");
+        if (msg.items.isEmpty()) {
+            fprintf(out, STRING_4_SPACE "data.items = nullptr;\n");
+            fprintf(out, STRING_4_SPACE "data.itemCount = 0;\n");
+        } else {
+            fprintf(out, STRING_4_SPACE "static ActionItemInfoData staticItems[] = {\n");
+            generateItems(out, msg.items);
+            fprintf(out, STRING_4_SPACE "};\n");
+            fprintf(out, STRING_4_SPACE "data.items = staticItems;\n");
+            fprintf(out, STRING_4_SPACE
+                    "data.itemCount = sizeof(staticItems) / sizeof(staticItems[0]);\n");
+        }
+        fprintf(out, "\n");
 
-    if (msg.layouts.isEmpty()) {
-        fprintf(out, "    data.layoutEntryData = nullptr;\n");
-        fprintf(out, "    data.layoutEntryCount = 0;\n");
-    } else {
-        fprintf(out, "    static ActionLayoutInfoEntry layoutEntryData[] = {\n");
-        generateLayouts(out, msg.layouts);
-        fprintf(out, "    };\n");
-        fprintf(out, "    data.layoutEntryData = layoutEntryData;\n");
-        fprintf(
-            out,
-            "    data.layoutEntryCount = sizeof(layoutEntryData) / sizeof(layoutEntryData[0]);\n");
-    }
-    fprintf(out, "\n");
+        if (msg.insertions.isEmpty()) {
+            fprintf(out, STRING_4_SPACE "data.insertions = nullptr;\n");
+            fprintf(out, STRING_4_SPACE "data.insertionCount = 0;\n");
+        } else {
+            fprintf(out, STRING_4_SPACE "static ActionInsertionData staticInsertions[] = {\n");
+            generateInsertions(out, msg.insertions);
+            fprintf(out, STRING_4_SPACE "};\n");
+            fprintf(out, STRING_4_SPACE "data.insertions = staticInsertions;\n");
+            fprintf(out, STRING_4_SPACE "data.insertionCount = sizeof(staticInsertions) / "
+                                        "sizeof(staticInsertions[0]);\n");
+        }
+        fprintf(out, "\n");
 
-    if (msg.layoutRootIndexes.isEmpty()) {
-        fprintf(out, "    data.layoutRootData = nullptr;\n");
-        fprintf(out, "    data.layoutRootCount = 0;\n");
-    } else {
-        fprintf(out, "    static int layoutRootData[] = {\n");
-        fprintf(out, "        %s\n",
-                joinNumbers(msg.layoutRootIndexes, QStringLiteral(", ")).toLocal8Bit().data());
-        fprintf(out, "    };\n");
-        fprintf(out, "    data.layoutRootData = layoutRootData;\n");
+        fprintf(out, R"(    return &data;
+}
+
+}
+
+)");
+
         fprintf(out,
-                "    data.layoutRootCount = sizeof(layoutRootData) / sizeof(layoutRootData[0]);\n");
-    }
-    fprintf(out, "\n");
+                "const QAK::ActionExtension "
+                "*QT_MANGLE_NAMESPACE(qakGetStaticActionExtension_%s)() {\n",
+                qPrintable(q.identifier));
+        fprintf(out, STRING_4_SPACE "static QAK::ActionExtension extension{\n");
+        fprintf(out, STRING_8_SPACE "{\n");
+        fprintf(out, STRING_12_SPACE "qakStaticActionExtension_%s::get_data(),\n",
+                qPrintable(q.identifier));
+        fprintf(out, STRING_8_SPACE "},\n");
+        fprintf(out, STRING_4_SPACE "};\n");
 
-    if (msg.buildRoutines.isEmpty()) {
-        fprintf(out, "    data.buildRoutineData = nullptr;\n");
-        fprintf(out, "    data.buildRoutineCount = 0;\n");
-    } else {
-        fprintf(out, "    static ActionBuildRoutineData buildRoutineData[] = {\n");
-        generateBuildRoutines(out, msg.buildRoutines);
-        fprintf(out, "    };\n");
-        fprintf(out, "    data.buildRoutineData = buildRoutineData;\n");
-        fprintf(out, "    data.buildRoutineCount = sizeof(buildRoutineData) / "
-                     "sizeof(buildRoutineData[0]);\n");
-    }
-    fprintf(out, "\n");
-
-    fprintf(out, R"(    return &data;
-}
-
-}
-
-)");
-
-    fprintf(out,
-            "const Core::ActionExtension *QT_MANGLE_NAMESPACE(ckGetStaticActionExtension_%s)() {\n",
-            identifier.data());
-    fprintf(out, "    static Core::ActionExtension extension{\n");
-    fprintf(out, "        {\n");
-    fprintf(out, "            ckStaticActionExtension_%s::get_data(),\n", identifier.data());
-    fprintf(out, "        },\n");
-    fprintf(out, "    };\n");
-
-    fprintf(out, R"(    return &extension;
+        fprintf(out, R"(    return &extension;
 }
 
 #if 0
 // This field is only used to generate translation files for the Qt linguist tool
 )");
 
-    fprintf(out, "static void ckDeclareStaticActionTranslations_%s() {\n", identifier.data());
-    generateTranslations(out, msg.objects);
-    fprintf(out, R"(}
+        fprintf(out, "static void qakStaticActionTranslations_%s() {\n", qPrintable(q.identifier));
+        generateTranslations(out, msg.items);
+        fprintf(out, R"(}
 #endif
 )");
-    fprintf(out, "\n");
+        fprintf(out, "\n");
 
-    // Extra information
-    generateExtraInformation(out, msg.objects);
+        // Extra information
+        generateExtraInformation(out, msg.items);
+    }
+};
+
+void Generator::generate() {
+    GeneratorPrivate d(*this);
+    d.generate();
 }

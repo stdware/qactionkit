@@ -59,11 +59,11 @@ namespace QAK {
         d->id = id;
     }
 
-    ActionLayoutInfo::Type ActionLayout::type() const {
+    ActionLayoutEntry::Type ActionLayout::type() const {
         return d->type;
     }
 
-    void ActionLayout::setType(ActionLayoutInfo::Type type) {
+    void ActionLayout::setType(ActionLayoutEntry::Type type) {
         d->type = type;
     }
 

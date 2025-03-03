@@ -314,11 +314,11 @@ namespace stdc {
                                               const V &val) {
             auto res = m_map.insert(std::make_pair(key, m_list.end()));
             auto &org_it = res.first->second;
-            if (!res.second) {
+            if (res.second) {
                 // key doesn't exist
                 auto new_it = m_list.emplace(it, key, val);
                 org_it = new_it;
-                return std::make_pair(iterator(new_it), true);
+                return std::make_pair(iterator(new_it), false);
             }
             return std::make_pair(iterator(org_it), true);
         }

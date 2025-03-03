@@ -16,3 +16,5 @@ if ("Quick" IN_LIST QActionKit_FIND_COMPONENTS)
 endif()
 
 include("${CMAKE_CURRENT_LIST_DIR}/QActionKitTargets.cmake")
+
+include("${CMAKE_CURRENT_LIST_DIR}/QActionKitMacros.cmake")

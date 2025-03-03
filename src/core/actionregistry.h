@@ -48,8 +48,8 @@ namespace QAK {
         QString id() const;
         void setId(const QString &id);
 
-        ActionLayoutInfo::Type type() const;
-        void setType(ActionLayoutInfo::Type type);
+        ActionLayoutEntry::Type type() const;
+        void setType(ActionLayoutEntry::Type type);
 
         QList<ActionLayout> children() const;
         void addChild(const ActionLayout &child);

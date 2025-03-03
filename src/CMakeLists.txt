@@ -173,10 +173,15 @@ endif()
 # Install
 # ----------------------------------
 if(QACTIONKIT_INSTALL)
+    set(_install_dir ${CMAKE_INSTALL_LIBDIR}/cmake/${QACTIONKIT_INSTALL_NAME})
+    install(FILES
+        "${CMAKE_CURRENT_SOURCE_DIR}/QActionKitMacros.cmake"
+        DESTINATION ${_install_dir}
+    )
     qm_basic_install(
         NAME ${QACTIONKIT_INSTALL_NAME}
         VERSION ${QACTIONKIT_VERSION}
-        INSTALL_DIR ${CMAKE_INSTALL_LIBDIR}/cmake/${QACTIONKIT_INSTALL_NAME}
+        INSTALL_DIR ${_install_dir}
         CONFIG_TEMPLATE "${QACTIONKIT_INSTALL_NAME}Config.cmake.in"
         NAMESPACE ${QACTIONKIT_INSTALL_NAME}::
         EXPORT ${QACTIONKIT_INSTALL_NAME}Targets

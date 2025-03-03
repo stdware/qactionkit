@@ -1,70 +1,73 @@
 #ifndef PARSER_H
 #define PARSER_H
 
-#include <QtCore/QFile>
 #include <QtCore/QHash>
+#include <QtCore/QMap>
 
-struct ActionObjectInfoMessage {
-    enum Type {
-        Action,
-        Group,
-        Menu,
-        ExpandedMenu,
-        Separator,
-        Stretch,
-    };
-    enum Mode {
-        Plain,
-        Unique,
-        Widget,
-        TopLevel,
-    };
-    QString id;
-    Type type;
-    Mode mode;
-    QString text;
-    QString commandClass;
-    QStringList shortcutTokens;
-    QStringList categories;
+#include <QAKCore/actionextension.h>
 
-    // Metadata
-    QString tag;
+#define PARSER_VERSION "1.0"
 
-    static QString typeToString(Type type);
-    static QString modeToString(Mode mode);
-};
+void error(const char *fmt, ...) QACTIONKIT_PRINTF_FORMAT(1, 2);
 
 struct ActionLayoutEntryMessage {
     QString id;
-    ActionObjectInfoMessage::Type type;
-    QVector<int> childIndexes;
+    QAK::ActionLayoutEntry::Type type;
 };
 
-struct ActionBuildRoutineMessage {
-    QString anchorToken;
-    QString parent;
+struct ActionItemInfoMessage {
+    QString id;
+    QAK::ActionItemInfo::Type type;
+
+    QString text;
+    QString actionClass;
+    QString description;
+    QString icon;
+    QStringList shortcutTokens;
+    QString catalog;
+
+    bool topLevel = false;
+
+    QMap<QString, QString> attributes;
+
+    QVector<ActionLayoutEntryMessage> children;
+
+    // Metadata
+    QString tag;
+};
+
+struct ActionInsertionMessage {
+    QAK::ActionInsertion::Anchor anchor;
+    QString target;
     QString relativeTo;
-    QVector<int> entryIndexes;
+    QVector<ActionLayoutEntryMessage> items;
 };
 
 struct ActionExtensionMessage {
-    QString hash;
     QString version;
 
-    QVector<ActionObjectInfoMessage> objects;
-    QVector<ActionLayoutEntryMessage> layouts;
-    QVector<int> layoutRootIndexes;
-    QVector<ActionBuildRoutineMessage> buildRoutines;
+    QString id;
+    QString hash;
+
+    QVector<ActionItemInfoMessage> items;
+    QVector<ActionInsertionMessage> insertions;
+};
+
+struct ParseResult {
+    QString textTranslationContext = QStringLiteral("textTr");
+    QString classTranslationContext = QStringLiteral("classTr");
+    QString descriptionTranslationContext = QStringLiteral("descriptionTr");
+
+    ActionExtensionMessage extension;
 };
 
 class Parser {
 public:
     Parser();
+    ParseResult parse(const QByteArray &data);
 
     QString fileName;
     QHash<QString, QString> variables;
-
-    ActionExtensionMessage parse(const QByteArray &data) const;
 };
 
 #endif // PARSER_H

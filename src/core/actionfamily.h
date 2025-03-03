@@ -12,24 +12,22 @@
 
 namespace QAK {
 
-    // clang-format off
     class ActionIcon {
     public:
         enum Type {
             ID,
             LocalFile,
         };
-        inline ActionIcon(Type type = ID, const QString &data = {}) : m_type(type), m_data(data){};
+        inline ActionIcon(Type type = ID, const QString &data = {}) : m_type(type), m_data(data) {}
         inline Type type() const { return m_type; }
         inline QString data() const { return m_data; }
         inline bool isLocalFile() const { return m_type == LocalFile; }
-        inline bool isNull() const { return !m_data.isEmpty(); }
+        inline bool isNull() const { return m_data.isEmpty(); }
 
     protected:
         Type m_type;
         QString m_data;
     };
-    // clang-format on
 
     class ActionFamilyPrivate;
 

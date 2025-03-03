@@ -20,4 +20,11 @@
 
 #define QAK_ACTION_EXTENSION_VERSION "1.0"
 
+#if defined(__GNUC__) || defined(__clang__)
+#  define QACTIONKIT_PRINTF_FORMAT(fmtpos, attrpos)                                                \
+      __attribute__((__format__(__printf__, fmtpos, attrpos)))
+#else
+#  define QACTIONKIT_PRINTF_FORMAT(fmtpos, attrpos)
+#endif
+
 #endif // QAKGLOBAL_H

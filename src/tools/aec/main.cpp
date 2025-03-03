@@ -7,11 +7,6 @@
 #include "parser.h"
 #include "generator.h"
 
-void error(const char *msg = "Invalid argument") {
-    if (msg)
-        fprintf(stderr, "%s: %s\n", qPrintable(qApp->applicationName()), msg);
-}
-
 int main(int argc, char *argv[]) {
     QCoreApplication a(argc, argv);
     QCoreApplication::setApplicationVersion(QString::fromLatin1(APP_VERSION));
@@ -19,7 +14,7 @@ int main(int argc, char *argv[]) {
     // Build command line parser
     QCommandLineParser parser;
     parser.setApplicationDescription(
-        QStringLiteral("ChorusKit Action Extension Compiler version %1 (Qt %2)")
+        QStringLiteral("QActionKit Action Extension Compiler version %1 (Qt %2)")
             .arg(QString::fromLatin1(APP_VERSION), QString::fromLatin1(QT_VERSION_STR)));
     parser.setSingleDashWordOptionMode(QCommandLineParser::ParseAsLongOptions);
 
@@ -37,13 +32,31 @@ int main(int argc, char *argv[]) {
 
     QCommandLineOption defineOption(QStringLiteral("D"));
     defineOption.setDescription(QStringLiteral("Define a variable."));
-    defineOption.setValueName(QStringLiteral("macro[=def]"));
+    defineOption.setValueName(QStringLiteral("key[=value]"));
     defineOption.setFlags(QCommandLineOption::ShortOptionStyle);
     parser.addOption(defineOption);
 
+    QCommandLineOption textTranslationContextOption(QStringLiteral("text-translation-context"));
+    textTranslationContextOption.setDescription(QStringLiteral("Action text translation context."));
+    textTranslationContextOption.setValueName(QStringLiteral("context"));
+    parser.addOption(textTranslationContextOption);
+
+    QCommandLineOption classTranslationContextOption(QStringLiteral("class-translation-context"));
+    classTranslationContextOption.setDescription(
+        QStringLiteral("Action class translation context."));
+    classTranslationContextOption.setValueName(QStringLiteral("context"));
+    parser.addOption(classTranslationContextOption);
+
+    QCommandLineOption descriptionTranslationContextOption(
+        QStringLiteral("description-translation-context"));
+    descriptionTranslationContextOption.setDescription(
+        QStringLiteral("Action description translation context."));
+    descriptionTranslationContextOption.setValueName(QStringLiteral("context"));
+    parser.addOption(descriptionTranslationContextOption);
+
     parser.addPositionalArgument(QStringLiteral("<file>"),
                                  QStringLiteral("Manifest file to read from."));
-                                 
+
     parser.addHelpOption();
     parser.addVersionOption();
 
@@ -76,7 +89,7 @@ int main(int argc, char *argv[]) {
             name = name.left(eq);
         }
         if (name.isEmpty()) {
-            error("Missing macro name");
+            error("Missing key name");
             parser.showHelp(1);
         }
         pp.variables.insert(QString::fromLatin1(name), QString::fromLatin1(value));
@@ -86,6 +99,11 @@ int main(int argc, char *argv[]) {
     if (identifier.isEmpty()) {
         identifier = QFileInfo(filename).baseName();
     }
+    for (auto &ch : identifier) {
+        if (!ch.isLetterOrNumber() && ch!= '_') {
+            ch = '_';
+        }
+    }
 
     QString output = parser.value(outputOption);
 
@@ -93,13 +111,21 @@ int main(int argc, char *argv[]) {
     QFile in;
     in.setFileName(filename);
     if (!in.open(QIODevice::ReadOnly)) {
-        fprintf(stderr, "%s: %s: No such file\n", qPrintable(qApp->applicationName()),
-                qPrintable(filename));
+        error("%s: No such file\n", qPrintable(filename));
         return 1;
     }
 
     // If there's error, the program will exit right away.
-    auto extensionMessage = pp.parse(in.readAll());
+    auto parseResult = pp.parse(in.readAll());
+    if (auto ctx = parser.value(textTranslationContextOption); !ctx.isEmpty()) {
+        parseResult.textTranslationContext = ctx;
+    }
+    if (auto ctx = parser.value(classTranslationContextOption); !ctx.isEmpty()) {
+        parseResult.classTranslationContext = ctx;
+    }
+    if (auto ctx = parser.value(descriptionTranslationContextOption); !ctx.isEmpty()) {
+        parseResult.descriptionTranslationContext = ctx;
+    }
 
     // Generate
     FILE *out;
@@ -111,17 +137,15 @@ int main(int argc, char *argv[]) {
         if (!out)
 #endif
         {
-            fprintf(stderr, "%s:Cannot create %s\n", qPrintable(qApp->applicationName()),
-                    QFile::encodeName(output).constData());
+            error("Cannot create %s\n", QFile::encodeName(output).constData());
             return 1;
         }
     } else {
         out = stdout;
     }
 
-    Generator generator(out, QFileInfo(filename).fileName().toLocal8Bit(), identifier.toLocal8Bit(),
-                        extensionMessage);
-    generator.generateCode();
+    Generator generator(out, QFileInfo(filename).fileName(), identifier, parseResult);
+    generator.generate();
 
     if (!output.isEmpty())
         fclose(out);

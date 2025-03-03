@@ -1,62 +1,28 @@
 #include "parser.h"
 
 #include <algorithm>
+#include <utility>
 
 #include <QtCore/QCoreApplication>
 #include <QtCore/QCryptographicHash>
 #include <QtCore/QRegularExpression>
 #include <QtCore/QStringView>
-#include <utility>
+#include <QtCore/QFile>
 
-#include <QMCore/qmchronomap.h>
+#include <qmxmladaptor/qmxmladaptor.h>
+#include <stdcorelib/linked_map.h>
+#include <util/util.h>
 
-#include <qmxmladaptor.h>
+void error(const char *fmt, ...) {
+    fprintf(stderr, "%s: ", qPrintable(qApp->applicationName()));
 
-QString ActionObjectInfoMessage::typeToString(Type type) {
-    QString res;
-    switch (type) {
-        case Action:
-            res = QStringLiteral("Action");
-            break;
-        case Group:
-            res = QStringLiteral("Group");
-            break;
-        case Menu:
-            res = QStringLiteral("Menu");
-            break;
-        case ExpandedMenu:
-            res = QStringLiteral("ExpandedMenu");
-            break;
-        case Separator:
-            res = QStringLiteral("Separator");
-            break;
-        case Stretch:
-            res = QStringLiteral("Stretch");
-            break;
-    }
-    return res;
+    va_list args;
+    va_start(args, fmt);
+    vfprintf(stderr, fmt, args);
+    va_end(args);
+
+    // fprintf(stderr, "\n");
 }
-
-QString ActionObjectInfoMessage::modeToString(Mode mode) {
-    QString res;
-    switch (mode) {
-        case Plain:
-            res = QStringLiteral("Plain");
-            break;
-        case Unique:
-            res = QStringLiteral("Unique");
-            break;
-        case TopLevel:
-            res = QStringLiteral("TopLevel");
-            break;
-        case Widget:
-            res = QStringLiteral("Widget");
-            break;
-    }
-    return res;
-}
-
-void error(const char *msg);
 
 static QString calculateContentSha256(const QByteArray &data) {
     QCryptographicHash hash(QCryptographicHash::Sha256);
@@ -64,50 +30,21 @@ static QString calculateContentSha256(const QByteArray &data) {
     return hash.result().toHex();
 }
 
-static QString parseExpression(QString s, const QHash<QString, QString> &vars) {
-    static QRegularExpression reg(QStringLiteral(R"((?<!\$)(?:\$\$)*\$\{(\w+)\})"));
-    bool hasMatch;
-    do {
-        hasMatch = false;
-
-        QString result;
-        QRegularExpressionMatch match;
-        int index = 0;
-        int lastIndex = 0;
-        while ((index = s.indexOf(reg, index, &match)) != -1) {
-            hasMatch = true;
-            result += QStringView(s).mid(lastIndex, index - lastIndex);
-
-            const auto &name = match.captured(1);
-            QString val;
-            auto it = vars.find(name);
-            if (it == vars.end()) {
-                val = name;
-            } else {
-                val = it.value();
-            }
-
-            result += val;
-            index += match.captured(0).size();
-            lastIndex = index;
-        }
-        result += QStringView(s).mid(lastIndex);
-        s = result;
-    } while (hasMatch);
-    s.replace(QStringLiteral("$$"), QStringLiteral("$"));
-    return s;
-}
-
-static QString objIdToText(const QString &id) {
+static QString itemIdToText(const QString &id) {
     QStringList parts;
     QString currentPart;
 
-    for (const auto &ch : id) {
+    QStringView idView(id);
+    auto dotIdx = id.lastIndexOf('.');
+    if (dotIdx >= 0 && dotIdx < id.size() - 1) {
+        idView = idView.mid(dotIdx + 1);
+    }
+    for (const auto &ch : std::as_const(idView)) {
         if (ch.isUpper() && !currentPart.isEmpty()) {
             parts.append(currentPart);
             currentPart.clear();
         }
-        currentPart += ch;
+        currentPart += currentPart.isEmpty() ? ch.toUpper() : ch;
     }
     if (!currentPart.isEmpty()) {
         parts.append(currentPart);
@@ -177,201 +114,33 @@ static inline bool isStringDigits(const QString &s) {
     return std::all_of(s.begin(), s.end(), [](const QChar &ch) { return ch.isDigit(); });
 }
 
-static void fixCategories(ActionObjectInfoMessage &info) {
-    QStringList res;
-    for (auto it = info.categories.begin(); it != info.categories.end() - 1; ++it) {
-        if (it->isEmpty())
-            continue;
-        res.append(*it);
-    }
-    if (info.categories.back().isEmpty()) {
-        res += simplifyActionText(info.text);
-    }
-    info.categories = res;
-}
-
 struct ParserPrivate {
-    struct ParserConfig {
-        QStringList defaultCategory;
-    };
+    Parser &q;
+    ParserPrivate(Parser &q) : q(q) {}
 
-    QString fileName;
-    QHash<QString, QString> variables;
+    // Configuration
+    QString defaultCatalog;
 
-    ParserConfig parserConfig;
-    QMChronoMap<QString, ActionObjectInfoMessage> objInfoMap;
-    QHash<QString, QMChronoMap<QString, int>> objSeqMap; // id -> [seq -> index]
-    ActionExtensionMessage result;
-
-    ParserPrivate(QString fileName, const QHash<QString, QString> &variables)
-        : fileName(std::move(fileName)), variables(variables) {
-    }
-
-    inline QString resolve(const QString &s) const {
-        return parseExpression(s, variables);
-    }
-
-    ActionObjectInfoMessage &findOrInsertObjectInfo(const QMXmlAdaptorElement *e,
-                                                    const QStringList &categories,
-                                                    const char *field) {
-        auto id = resolve(e->properties.value(QStringLiteral("id")));
-        if (id.isEmpty()) {
-            fprintf(stderr, "%s: %s: %s element \"%s\" doesn't have an \"id\" field\n",
-                    qPrintable(qApp->applicationName()), qPrintable(fileName), field,
-                    e->name.toLatin1().data());
-            std::exit(1);
-        }
-
-        QString maybeCategory = resolve(e->properties.value(QStringLiteral("_cat")));
-
-        ActionObjectInfoMessage *pInfo;
-        if (auto it = objInfoMap.find(id); it != objInfoMap.end()) {
-            // This layout object has been declared in the objects field
-            auto &info = it.value();
-
-            // Check if the tag matches
-            if (info.tag != e->name && info.tag != QStringLiteral("object")) {
-                fprintf(stderr,
-                        "%s: %s: %s element \"%s\" has inconsistent tag \"%s\" with the "
-                        "object element \"%s\"\n",
-                        qPrintable(qApp->applicationName()), qPrintable(fileName), field,
-                        id.toLatin1().data(), e->name.toLatin1().data(),
-                        info.tag.toLatin1().data());
-                std::exit(1);
-            }
-
-            if (info.categories.isEmpty()) {
-                // The object doesn't have a specified category, use the current one
-                info.categories =
-                    QStringList(categories)
-                    << (maybeCategory.isEmpty() ? simplifyActionText(info.text) : maybeCategory);
-            }
-            pInfo = &info;
-        } else {
-            // Create one
-            ActionObjectInfoMessage info;
-            info.id = id;
-            determineObjectType(*e, info, field);
-            info.text = objIdToText(id);
-            info.categories =
-                QStringList(categories)
-                << (maybeCategory.isEmpty() ? simplifyActionText(info.text) : maybeCategory);
-
-            auto insertResult = objInfoMap.append(id, info);
-            pInfo = &insertResult.first.value();
-        }
-        return *pInfo;
-    }
-
-    void parse(const QByteArray &data) {
-        QMXmlAdaptor xml;
-
-        // Read file
-        if (!xml.loadData(data)) {
-            fprintf(stderr, "%s: %s: invalid format\n", qPrintable(qApp->applicationName()),
-                    qPrintable(fileName));
-            std::exit(1);
-        }
-
-        // Check root name
-        const auto &root = xml.root;
-        if (const auto &rootName = root.name; rootName != QStringLiteral("actionExtension")) {
-            fprintf(stderr, "%s: %s: unknown root element tag \"%s\"\n",
-                    qPrintable(qApp->applicationName()), qPrintable(fileName),
-                    rootName.toLatin1().data());
-            std::exit(1);
-        }
-
-        QList<QMXmlAdaptorElement *> objElements;
-        QList<QMXmlAdaptorElement *> layoutElements;
-        QList<QMXmlAdaptorElement *> routineElements;
-
-        // Collect elements and attributes
-        QString version;
-        bool hasParserConfig = false;
-        for (const auto &item : std::as_const(root.children)) {
-            if (item->name == QStringLiteral("objects")) {
-                for (const auto &subItem : std::as_const(item->children)) {
-                    objElements.append(subItem.data());
-                }
-                continue;
-            }
-            if (item->name == QStringLiteral("layouts")) {
-                for (const auto &subItem : std::as_const(item->children)) {
-                    layoutElements.append(subItem.data());
-                }
-                continue;
-            }
-            if (item->name == QStringLiteral("buildRoutines")) {
-                for (const auto &subItem : std::as_const(item->children)) {
-                    routineElements.append(subItem.data());
-                }
-                continue;
-            }
-            if (item->name == QStringLiteral("version")) {
-                if (!version.isEmpty()) {
-                    fprintf(stderr,
-                            "%s: %s: duplicated version value \"%s\", the previous one is \"%s\"\n",
-                            qPrintable(qApp->applicationName()), qPrintable(fileName),
-                            item->value.toLatin1().data(), version.toLatin1().data());
-                    std::exit(1);
-                }
-                version = item->value;
-                continue;
-            }
-            if (item->name == QStringLiteral("parserConfig")) {
-                if (hasParserConfig) {
-                    fprintf(stderr, "%s: %s: duplicated parser config elements\n",
-                            qPrintable(qApp->applicationName()), qPrintable(fileName));
-                    std::exit(1);
-                }
-                parserConfig = parseParserConfig(*item);
-                hasParserConfig = true;
-                continue;
-            }
-        }
-
-        // Build result
-        result.version = version;
-        result.hash = calculateContentSha256(data);
-
-        // Parse objects
-        for (const auto &item : std::as_const(objElements)) {
-            auto entity = parseObject(*item);
-            if (objInfoMap.contains(entity.id)) {
-                fprintf(stderr, "%s: %s: duplicated object id %s\n",
-                        qPrintable(qApp->applicationName()), qPrintable(fileName),
-                        entity.id.toLatin1().data());
-                std::exit(1);
-            }
-            objInfoMap.append(entity.id, entity);
-        }
-
-        // Parse layouts
-        for (const auto &item : std::as_const(layoutElements)) {
-            QStringList categories = parserConfig.defaultCategory;
-            QStringList path;
-            result.layoutRootIndexes.append(parseLayoutRecursively(item, categories, path));
-        }
-
-        // Parse build routines
-        for (const auto &item : std::as_const(routineElements)) {
-            auto entity = parseRoutine(*item);
-            result.buildRoutines.append(entity);
-        }
-
-        // Collect objects
-        for (const auto &item : std::as_const(objInfoMap)) {
-            result.objects.append(item);
-        }
-    }
-
-    ParserConfig parseParserConfig(const QMXmlAdaptorElement &e) {
-        ParserConfig conf;
-
+    // Parse configuration, fix parser members
+    void parseConfiguration(const QMXmlAdaptorElement &e) {
         for (const auto &item : e.children) {
-            if (item->name == QStringLiteral("defaultCategory")) {
-                conf.defaultCategory = parseStringList(resolve(item->value));
+            if (item->name == QStringLiteral("defaultCatalog")) {
+                defaultCatalog = resolve(item->value);
+                continue;
+            }
+
+            if (item->name == QStringLiteral("translationContext")) {
+                auto &properties = item->properties;
+                if (auto it = properties.find(QStringLiteral("text")); it != properties.end()) {
+                    result.textTranslationContext = resolve(it.value());
+                }
+                if (auto it = properties.find(QStringLiteral("class")); it != properties.end()) {
+                    result.classTranslationContext = resolve(it.value());
+                }
+                if (auto it = properties.find(QStringLiteral("description"));
+                    it != properties.end()) {
+                    result.descriptionTranslationContext = resolve(it.value());
+                }
                 continue;
             }
 
@@ -380,81 +149,99 @@ struct ParserPrivate {
                     auto key = resolve(subItem->properties.value(QStringLiteral("key")));
                     auto value = resolve(subItem->properties.value(QStringLiteral("value")));
                     if (!key.isEmpty()) {
-                        variables.insert(key, value);
+                        q.variables.insert(key, value);
                     }
                 }
             }
         }
-        return conf;
     }
 
-    void determineObjectType(const QMXmlAdaptorElement &e, ActionObjectInfoMessage &info,
-                             const char *field) const {
+    // Intermediate data
+    stdc::linked_map<QString, ActionItemInfoMessage> itemInfoMap;
+
+    ParseResult result;
+
+    inline QString resolve(const QString &s) const { return Util::parseExpression(s, q.variables); }
+
+    // Infer item type when parsing item info
+    void parseItemAttrs(const QMXmlAdaptorElement &e, ActionItemInfoMessage &info,
+                        const char *field) const {
         const auto &name = e.name;
         if (name == QStringLiteral("action")) {
-            info.mode = ActionObjectInfoMessage::Plain;
-            info.type = ActionObjectInfoMessage::Action;
-            auto mode = resolve(e.properties.value(QStringLiteral("mode")));
-            if (mode == QStringLiteral("widget")) {
-                info.mode = ActionObjectInfoMessage::Widget;
-            }
-        } else if (name == QStringLiteral("widget")) {
-            info.type = ActionObjectInfoMessage::Action;
-            info.mode = ActionObjectInfoMessage::Widget;
+            info.type = QAK::ActionItemInfo::Action;
         } else if (name == QStringLiteral("group")) {
-            info.mode = ActionObjectInfoMessage::Unique;
-            info.type = ActionObjectInfoMessage::Group;
-            auto mode = resolve(e.properties.value(QStringLiteral("mode")));
-            if (mode == QStringLiteral("unique")) {
-                info.mode = ActionObjectInfoMessage::Unique;
+            info.type = QAK::ActionItemInfo::Group;
+        } else if (name == QStringLiteral("menu")) {
+            info.type = QAK::ActionItemInfo::Menu;
+            if (resolve(e.properties.value(QStringLiteral("topLevel"))) == QStringLiteral("true")) {
+                info.topLevel = true;
             }
         } else if (name == QStringLiteral("menuBar") || name == QStringLiteral("toolBar")) {
-            info.mode = ActionObjectInfoMessage::TopLevel;
-            info.type = ActionObjectInfoMessage::Menu;
-        } else if (name == QStringLiteral("menu")) {
-            info.mode = ActionObjectInfoMessage::Unique;
-            info.type = ActionObjectInfoMessage::Menu;
-
-            auto mode = resolve(e.properties.value(QStringLiteral("mode")));
-            if (mode == QStringLiteral("plain")) {
-                info.mode = ActionObjectInfoMessage::Plain;
-            } else if (mode == QStringLiteral("top")) {
-                info.mode = ActionObjectInfoMessage::TopLevel;
-            }
+            info.type = QAK::ActionItemInfo::Menu;
+            info.topLevel = true;
+        } else if (name == QStringLiteral("phony")) {
+            info.type = QAK::ActionItemInfo::Phony;
         } else {
-            fprintf(stderr, "%s: %s: unknown %s object tag \"%s\"\n",
-                    qPrintable(qApp->applicationName()), qPrintable(fileName), field,
-                    name.toLatin1().data());
+            error("%s: %s item \"%s\" has an unknown tag \"%s\"\n", qPrintable(q.fileName), field,
+                  qPrintable(info.id), qPrintable(e.name));
             std::exit(1);
         }
+
         info.tag = e.name;
+
+        for (auto it = e.properties.begin(); it != e.properties.end(); ++it) {
+            static const QSet<QString> reservedKeys = {
+                QStringLiteral("id"),       QStringLiteral("text"),
+                QStringLiteral("class"),    QStringLiteral("description"),
+                QStringLiteral("catalog"),  QStringLiteral("shortcuts"),
+                QStringLiteral("shortcut"), QStringLiteral("topLevel"),
+                QStringLiteral("icon"),
+            };
+            const auto &key = it.key();
+            if (reservedKeys.contains(key)) {
+                continue;
+            }
+            info.attributes.insert(key, resolve(it.value()));
+        }
     }
 
-    ActionObjectInfoMessage parseObject(const QMXmlAdaptorElement &e) {
-        ActionObjectInfoMessage info;
+    ActionItemInfoMessage parseItem(const QMXmlAdaptorElement &e) {
+        ActionItemInfoMessage info;
         auto id = resolve(e.properties.value(QStringLiteral("id")));
         if (id.isEmpty()) {
-            fprintf(stderr, "%s: %s: object element \"%s\" doesn't have an \"id\" field\n",
-                    qPrintable(qApp->applicationName()), qPrintable(fileName),
-                    e.name.toLatin1().data());
+            error("%s: item element \"%s\" doesn't have an \"id\" field\n", qPrintable(q.fileName),
+                  qPrintable(e.name));
             std::exit(1);
         }
         info.id = id;
 
         // type
-        determineObjectType(e, info, "object");
+        parseItemAttrs(e, info, "item");
 
         // text
         if (auto text = resolve(e.properties.value(QStringLiteral("text"))); !text.isEmpty()) {
             info.text = text;
         } else {
-            info.text = objIdToText(info.id);
+            info.text = itemIdToText(info.id);
         }
 
         // class
-        if (auto commandClass = resolve(e.properties.value(QStringLiteral("class")));
-            !commandClass.isEmpty()) {
-            info.commandClass = commandClass;
+        if (auto actionClass = resolve(e.properties.value(QStringLiteral("class")));
+            !actionClass.isEmpty()) {
+            info.actionClass = actionClass;
+        }
+
+        // class
+        if (auto description = resolve(e.properties.value(QStringLiteral("description")));
+            !description.isEmpty()) {
+            info.description = description;
+        }
+
+        // icon
+        if (auto icon = resolve(e.properties.value(QStringLiteral("icon"))); !icon.isEmpty()) {
+            info.icon = icon;
+        } else {
+            info.icon = info.id;
         }
 
         // shortcuts
@@ -466,264 +253,383 @@ struct ParserPrivate {
             info.shortcutTokens = parseStringList(shortcuts);
         }
 
-        // categories
-        if (auto categories = resolve(e.properties.value(QStringLiteral("categories")));
-            !categories.isEmpty()) {
-            info.categories = parseStringList(categories);
-            fixCategories(info);
-        } else if (categories = resolve(e.properties.value(QStringLiteral("category")));
-                   !categories.isEmpty()) {
-            info.categories = parseStringList(categories);
-            fixCategories(info);
+        // catalog
+        if (auto catalog = resolve(e.properties.value(QStringLiteral("catalog")));
+            !catalog.isEmpty()) {
+            info.catalog = resolve(catalog);
         }
 
         if (!e.children.isEmpty()) {
-            fprintf(stderr, "%s: %s: object declaration element \"%s\" shouldn't have children\n",
-                    qPrintable(qApp->applicationName()), qPrintable(fileName),
-                    e.name.toLatin1().data());
+            error("%s: item declaration element \"%s\" shouldn't have children\n",
+                  qPrintable(q.fileName), qPrintable(id));
             std::exit(1);
         }
-
         return info;
     }
 
-    int parseLayoutRecursively(const QMXmlAdaptorElement *e, QStringList &categories,
-                               QStringList &path) {
-        const auto &checkChildren = [this, e](const char *name) {
+    // Create new item when encountering a new ID in layouts or insertions
+    ActionItemInfoMessage &findOrInsertItemInfo(const QMXmlAdaptorElement *e,
+                                                const QString &parentId, const char *field) {
+        auto id = resolve(e->properties.value(QStringLiteral("id")));
+        if (id.isEmpty()) {
+            error("%s: %s element \"%s\" doesn't have an \"id\" field\n", qPrintable(q.fileName),
+                  field, qPrintable(e->name));
+            std::exit(1);
+        }
+
+        const auto &errorPhony = [this, id, field]() {
+            error("%s: %s element \"%s\" shouldn't have a phony type\n", qPrintable(q.fileName),
+                  field, qPrintable(id));
+            std::exit(1);
+        };
+
+        ActionItemInfoMessage *pInfo;
+        if (auto it = itemInfoMap.find(id.toLower()); it != itemInfoMap.end()) {
+            // This layout item has been declared in the items field
+            auto &info = it.value();
+
+            // Check if the tag matches
+            bool typeMismatch = false;
+            switch (info.type) {
+                case QAK::ActionItemInfo::Phony: {
+                    errorPhony();
+                    break;
+                }
+                case QAK::ActionItemInfo::Action: {
+                    if (e->name != QStringLiteral("action")) {
+                        typeMismatch = true;
+                    }
+                    break;
+                }
+                case QAK::ActionItemInfo::Group:
+                case QAK::ActionItemInfo::Menu: {
+                    static const QSet<QString> allowedTags = {
+                        QStringLiteral("group"),
+                        QStringLiteral("menu"),
+                        QStringLiteral("menuBar"),
+                        QStringLiteral("toolBar"),
+                    };
+                    if (!allowedTags.contains(e->name)) {
+                        typeMismatch = true;
+                    }
+                    break;
+                }
+                default:
+                    Q_UNREACHABLE();
+                    break;
+            }
+            if (typeMismatch) {
+                error("%s: %s element \"%s\" has inconsistent tag \"%s\" with the "
+                      "item element \"%s\"\n",
+                      qPrintable(q.fileName), field, qPrintable(id), qPrintable(e->name),
+                      qPrintable(info.tag));
+                std::exit(1);
+            }
+
+            if (info.catalog.isEmpty()) {
+                // The item doesn't have a specified category, use the current one
+                info.catalog = parentId;
+            }
+            pInfo = &info;
+        } else {
+            // Create one
+            ActionItemInfoMessage info;
+            info.id = id;
+            parseItemAttrs(*e, info, field);
+            if (info.type == QAK::ActionItemInfo::Phony) {
+                errorPhony();
+            }
+            info.text = itemIdToText(id);
+            info.catalog = parentId;
+
+            auto insertResult = itemInfoMap.append(id.toLower(), info);
+            pInfo = &insertResult.first.value();
+        }
+        return *pInfo;
+    }
+
+    ActionLayoutEntryMessage parseLayoutRecursively(const QMXmlAdaptorElement *e,
+                                                    const QString &parentId, QStringList &path) {
+        const auto &checkChildren = [this, e](const char *typeName) {
             if (!e->children.isEmpty()) {
-                fprintf(stderr, "%s: %s: layout element %s shouldn't have children\n",
-                        qPrintable(qApp->applicationName()), qPrintable(fileName), name);
+                error("%s: layout element of %s type shouldn't have children\n",
+                      qPrintable(q.fileName), typeName);
                 std::exit(1);
             }
         };
 
-        auto &entries = result.layouts;
         ActionLayoutEntryMessage entry;
-        int entryIndex = entries.size();
         if (e->name == QStringLiteral("separator")) {
             checkChildren("separator");
-            entry.type = ActionObjectInfoMessage::Separator;
-            entries.append(entry);
-            return entryIndex;
+            entry.type = QAK::ActionLayoutEntry::Separator;
+            return entry;
         } else if (e->name == QStringLiteral("stretch")) {
             checkChildren("stretch");
-            entry.type = ActionObjectInfoMessage::Stretch;
-            entries.append(entry);
-            return entryIndex;
+            entry.type = QAK::ActionLayoutEntry::Stretch;
+            return entry;
         }
 
-        auto &info = findOrInsertObjectInfo(e, categories, "layout");
+        auto &info = findOrInsertItemInfo(e, parentId, "layout");
         QString id = info.id;
 
-        // Check recursive
+        // Recursive path chain detected?
         if (path.contains(id)) {
-            fprintf(stderr, "%s: %s: recursive chain in layout: %s\n",
-                    qPrintable(qApp->applicationName()), qPrintable(fileName),
-                    (QStringList(path) << id).join(", ").toLatin1().data());
+            error("%s: recursive chain in layout: %s\n", qPrintable(q.fileName),
+                  qPrintable((QStringList(path) << id).join(", ")));
             std::exit(1);
         }
         entry.id = id;
-        entry.type = info.type;
 
-        if (info.type == ActionObjectInfoMessage::Action) {
-            entry.type = ActionObjectInfoMessage::Action;
-            checkChildren(QString(R"("%1")").arg(id).toLatin1());
-            entries.append(entry);
-            return entryIndex;
-        } else if (info.type == ActionObjectInfoMessage::Menu) {
-            if (resolve(e->properties.value(QStringLiteral("flat"))) == QStringLiteral("true")) {
-                entry.type = ActionObjectInfoMessage::ExpandedMenu;
-            } else {
-                entry.type = ActionObjectInfoMessage::Menu;
+        switch (info.type) {
+            case QAK::ActionItemInfo::Action: {
+                entry.type = QAK::ActionLayoutEntry::Action;
+                checkChildren(qPrintable(QString(R"("%1")").arg(id)));
+                return entry;
             }
-        } else {
-            entry.type = ActionObjectInfoMessage::Group;
-        }
-
-        QString seq;
-        auto &seqs = objSeqMap[id];
-
-        // Read or create the sequence id for each menu or group
-        {
-            auto it = e->properties.find(QStringLiteral("_seq"));
-            auto autoSeq = QString::number(seqs.size());
-            if (it == e->properties.end()) {
-                seq = (e->children.isEmpty() && !seqs.isEmpty()) ? seqs.begin().key() : autoSeq;
-            } else {
-                const auto &specifiedSeq = resolve(it.value());
-                seq = (!seqs.contains(specifiedSeq) && isStringDigits(specifiedSeq)) ? autoSeq
-                                                                                     : specifiedSeq;
-            }
-        }
-
-        if (seqs.isEmpty()) {
-            seqs.append(seq, entryIndex);
-            entries.append(entry); // Make a placeholder
-        } else if (auto it = seqs.find(seq); it == seqs.end()) {
-            // Cannot declare Non-plain menu's layout more than once
-            if (info.mode != ActionObjectInfoMessage::Plain) {
-                if (e->children.isEmpty()) {
-                    entries.append(entry);
-                    return entryIndex;
+            case QAK::ActionItemInfo::Menu:
+            case QAK::ActionItemInfo::Group: {
+                if (e->name == QStringLiteral("menu")) {
+                    entry.type = QAK::ActionLayoutEntry::Menu;
                 } else {
-                    fprintf(
-                        stderr,
-                        "%s: %s: layout element \"%s\" has multiple defined structures while it's "
-                        "not plain\n",
-                        qPrintable(qApp->applicationName()), qPrintable(fileName),
-                        id.toLatin1().data());
-                    std::exit(1);
+                    entry.type = QAK::ActionLayoutEntry::Group;
                 }
+                break;
             }
-            seqs.append(seq, entryIndex);
-            entries.append(entry); // Make a placeholder
-        } else {
-            auto type = entry.type;
-            entry = entries.at(it.value());
-            entry.type = type;
-            entries.append(entry);
-            return entryIndex;
+            default: {
+                Q_UNREACHABLE();
+                break;
+            }
         }
 
-        if (e->children.isEmpty()) {
-            return entryIndex;
+        if (!e->children.isEmpty()) {
+            if (!info.children.isEmpty()) {
+                error("%s: layout element \"%s\" has been declared more than once\n",
+                      qPrintable(q.fileName), qPrintable(id));
+                std::exit(1);
+            }
+
+            path << id;
+
+            QVector<ActionLayoutEntryMessage> children;
+            for (const auto &child : e->children) {
+                children.append(parseLayoutRecursively(child.data(), id, path));
+            }
+
+            path.removeLast();
+
+            info.children = std::move(children);
         }
-
-        auto oldCategory = categories;
-        categories = info.categories;
-        path << id;
-
-        QVector<int> childIndexes;
-        childIndexes.reserve(e->children.size());
-        for (const auto &child : e->children) {
-            childIndexes.append(parseLayoutRecursively(child.data(), categories, path));
-        }
-
-        categories = oldCategory;
-        path.removeLast();
-
-        entries[entryIndex].childIndexes = childIndexes;
-        return entryIndex;
+        return entry;
     }
 
-    ActionBuildRoutineMessage parseRoutine(const QMXmlAdaptorElement &root) {
-        auto &entries = result.layouts;
-
-        if (const auto &rootName = root.name; rootName != QStringLiteral("buildRoutine")) {
-            fprintf(stderr, "%s: %s: unknown build routine element tag \"%s\"\n",
-                    qPrintable(qApp->applicationName()), qPrintable(fileName),
-                    rootName.toLatin1().data());
+    ActionInsertionMessage parseInsertion(const QMXmlAdaptorElement &root) {
+        if (const auto &rootName = root.name; rootName != QStringLiteral("insertion")) {
+            error("%s: unknown insertion element tag \"%s\"\n", qPrintable(q.fileName),
+                  qPrintable(rootName));
             std::exit(1);
         }
 
-        auto parent = resolve(root.properties.value(QStringLiteral("parent")));
-        if (parent.isEmpty()) {
-            fprintf(stderr, "%s: %s: build routine doesn't have a parent\n",
-                    qPrintable(qApp->applicationName()), qPrintable(fileName));
+        auto target = resolve(root.properties.value(QStringLiteral("target")));
+        if (target.isEmpty()) {
+            error("%s: insertion doesn't have a target\n", qPrintable(q.fileName));
             std::exit(1);
         }
 
-        auto anchor = root.properties.value(QStringLiteral("anchor"));
-        QString anchorToken;
+        auto anchorToken = root.properties.value(QStringLiteral("anchor"));
+        QAK::ActionInsertion::Anchor anchor;
         bool needRelative = false;
-        if (anchor == QStringLiteral("last") || anchor == QStringLiteral("back")) {
-            anchorToken = QStringLiteral("Last");
-        } else if (anchor == QStringLiteral("first") || anchor == QStringLiteral("front")) {
-            anchorToken = QStringLiteral("First");
-        } else if (anchor == QStringLiteral("before")) {
-            anchorToken = QStringLiteral("Before");
+        if (anchorToken == QStringLiteral("last") || anchorToken == QStringLiteral("back")) {
+            anchor = QAK::ActionInsertion::Last;
+        } else if (anchorToken == QStringLiteral("first") ||
+                   anchorToken == QStringLiteral("front")) {
+            anchor = QAK::ActionInsertion::First;
+        } else if (anchorToken == QStringLiteral("before")) {
+            anchor = QAK::ActionInsertion::Before;
             needRelative = true;
-        } else if (anchor.isEmpty() || anchor == QStringLiteral("after")) {
-            anchorToken = QStringLiteral("After");
+        } else if (anchorToken.isEmpty() || anchorToken == QStringLiteral("after")) {
+            anchor = QAK::ActionInsertion::After;
             needRelative = true;
         } else {
-            fprintf(stderr, "%s: %s: unknown build routine anchor \"%s\"\n",
-                    qPrintable(qApp->applicationName()), qPrintable(fileName),
-                    anchor.toLatin1().data());
+            error("%s: unknown insertion anchor \"%s\"\n", qPrintable(q.fileName),
+                  qPrintable(anchorToken));
             std::exit(1);
         }
 
         auto relative = resolve(root.properties.value(QStringLiteral("relativeTo")));
         if (needRelative && relative.isEmpty()) {
-            fprintf(stderr,
-                    "%s: %s: build routine with anchor \"%s\" must have a relative sibling\n",
-                    qPrintable(qApp->applicationName()), qPrintable(fileName),
-                    anchor.toLatin1().data());
+            error("%s: insertion with anchor \"%s\" must have a relative sibling\n",
+                  qPrintable(q.fileName), qPrintable(anchorToken));
             std::exit(1);
         }
 
-        ActionBuildRoutineMessage routine;
-        routine.anchorToken = anchorToken;
-        routine.parent = parent;
-        routine.relativeTo = relative;
+        ActionInsertionMessage insertion;
+        insertion.anchor = anchor;
+        insertion.target = target;
+        insertion.relativeTo = relative;
 
         if (root.children.isEmpty()) {
-            fprintf(stderr, "%s: %s: empty routine\n", qPrintable(qApp->applicationName()),
-                    qPrintable(fileName));
+            error("%s: empty insertion\n", qPrintable(q.fileName));
             std::exit(1);
         }
 
         for (const auto &item : root.children) {
             auto &e = *item;
+
             ActionLayoutEntryMessage entry;
-            int entryIndex = entries.size();
             if (e.name == QStringLiteral("separator")) {
-                entry.type = ActionObjectInfoMessage::Separator;
+                entry.type = QAK::ActionLayoutEntry::Separator;
             } else if (e.name == QStringLiteral("stretch")) {
-                entry.type = ActionObjectInfoMessage::Stretch;
+                entry.type = QAK::ActionLayoutEntry::Stretch;
             } else {
-                auto &info = findOrInsertObjectInfo(&e, parserConfig.defaultCategory, "routine");
+                auto &info = findOrInsertItemInfo(&e, defaultCatalog, "insertion");
                 auto id = info.id;
                 if (!e.children.isEmpty()) {
-                    fprintf(stderr, "%s: %s: routine element \"%s\" shouldn't have children\n",
-                            qPrintable(qApp->applicationName()), qPrintable(fileName),
-                            e.name.toLatin1().data());
+                    error("%s: insertion element \"%s\" shouldn't have children\n",
+                          qPrintable(q.fileName), qPrintable(id));
                     std::exit(1);
                 }
                 entry.id = id;
-                entry.type = info.type;
 
-                if (info.type == ActionObjectInfoMessage::Action) {
-                    entry.type = ActionObjectInfoMessage::Action;
-                } else if (info.type == ActionObjectInfoMessage::Menu) {
-                    if (resolve(e.properties.value(QStringLiteral("flat"))) ==
-                        QStringLiteral("true")) {
-                        entry.type = ActionObjectInfoMessage::ExpandedMenu;
-                    } else {
-                        entry.type = ActionObjectInfoMessage::Menu;
+                switch (info.type) {
+                    case QAK::ActionItemInfo::Action: {
+                        entry.type = QAK::ActionLayoutEntry::Action;
+                        break;
                     }
-                } else {
-                    entry.type = ActionObjectInfoMessage::Group;
-                }
-
-                int idx = -1;
-                auto seqs = objSeqMap.value(id);
-                if (!seqs.isEmpty()) {
-                    auto it = e.properties.find(QStringLiteral("_seq"));
-                    if (it == e.properties.end()) {
-                        idx = seqs.begin().value();
-                    } else {
-                        idx = seqs.value(resolve(it.value()), -1);
+                    case QAK::ActionItemInfo::Menu:
+                    case QAK::ActionItemInfo::Group: {
+                        if (e.name == QStringLiteral("menu")) {
+                            entry.type = QAK::ActionLayoutEntry::Menu;
+                        } else {
+                            entry.type = QAK::ActionLayoutEntry::Group;
+                        }
+                        break;
                     }
-                }
-
-                if (idx >= 0) {
-                    auto type = entry.type;
-                    entry = entries.at(idx);
-                    entry.type = type;
+                    default:
+                        Q_UNREACHABLE();
+                        break;
                 }
             }
-            entries.append(entry);
-            routine.entryIndexes.append(entryIndex);
+            insertion.items.append(entry);
         }
-        return routine;
+        return insertion;
+    }
+
+    void parse(const QByteArray &data) {
+        QMXmlAdaptor xml;
+
+        // Read file
+        if (!xml.loadData(data)) {
+            error("%s: invalid format\n", qPrintable(q.fileName));
+            std::exit(1);
+        }
+
+        // Check root name
+        const auto &root = xml.root;
+        if (const auto &rootName = root.name; rootName != QStringLiteral("actionExtension")) {
+            error("%s: unknown root element tag \"%s\"\n", qPrintable(q.fileName),
+                  qPrintable(rootName));
+            std::exit(1);
+        }
+
+        QList<QMXmlAdaptorElement *> objElements;
+        QList<QMXmlAdaptorElement *> layoutElements;
+        QList<QMXmlAdaptorElement *> insertionElements;
+
+        // Collect elements and attributes
+        QString version;
+        QString id;
+        bool hasParserConfig = false;
+        for (const auto &item : std::as_const(root.children)) {
+            if (item->name == QStringLiteral("items")) {
+                for (const auto &subItem : std::as_const(item->children)) {
+                    objElements.append(subItem.data());
+                }
+                continue;
+            }
+            if (item->name == QStringLiteral("layouts")) {
+                for (const auto &subItem : std::as_const(item->children)) {
+                    layoutElements.append(subItem.data());
+                }
+                continue;
+            }
+            if (item->name == QStringLiteral("insertions")) {
+                for (const auto &subItem : std::as_const(item->children)) {
+                    insertionElements.append(subItem.data());
+                }
+                continue;
+            }
+            if (item->name == QStringLiteral("id")) {
+                id = item->value;
+                continue;
+            }
+            if (item->name == QStringLiteral("version")) {
+                version = item->value;
+                continue;
+            }
+            if (item->name == QStringLiteral("configuration")) {
+                if (hasParserConfig) {
+                    error("%s: duplicated configuration elements\n", qPrintable(q.fileName));
+                    std::exit(1);
+                }
+                parseConfiguration(*item);
+                hasParserConfig = true;
+                continue;
+            }
+        }
+
+        if (version.isEmpty()) {
+            version = QStringLiteral(PARSER_VERSION);
+        }
+
+        if (id.isEmpty()) {
+            error("%s: extension version is not specified\n", qPrintable(q.fileName));
+            std::exit(1);
+        }
+
+        // Build result
+        result.extension.version = version;
+        result.extension.id = id;
+        result.extension.hash = calculateContentSha256(data);
+
+        // Parse items
+        for (const auto &item : std::as_const(objElements)) {
+            auto entity = parseItem(*item);
+            if (itemInfoMap.contains(entity.id.toLower())) {
+                error("%s: duplicated item id %s\n", qPrintable(q.fileName), qPrintable(entity.id));
+                std::exit(1);
+            }
+            std::ignore = itemInfoMap.append(entity.id.toLower(), entity);
+        }
+
+        // Parse layouts
+        for (const auto &item : std::as_const(layoutElements)) {
+            QStringList path;
+            std::ignore = parseLayoutRecursively(item, defaultCatalog, path);
+        }
+
+        // Parse build routines
+        for (const auto &item : std::as_const(insertionElements)) {
+            result.extension.insertions.append(parseInsertion(*item));
+        }
+
+        // Collect objects
+        for (const auto &pair : std::as_const(itemInfoMap)) {
+            result.extension.items.append(pair.second);
+        }
     }
 };
 
 Parser::Parser() = default;
 
-ActionExtensionMessage Parser::parse(const QByteArray &data) const {
-    ParserPrivate parser(fileName, variables);
-    parser.parse(data);
-    return parser.result;
+ParseResult Parser::parse(const QByteArray &data) {
+    // stdc::linked_map<QString, QString> map;
+    // auto it = map.append("1", "1");
+    // it = map.append("2", "2");
+    // it = map.append("2", "1");
+    // qDebug() << map["1"];
+    // qDebug() << it.first.value() << it.second;
+
+    ParserPrivate d(*this);
+    d.parse(data);
+    return d.result;
 }

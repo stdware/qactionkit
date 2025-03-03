@@ -22,16 +22,6 @@ namespace QAK {
     void WidgetActionContext::addAction(const QString &id, QAction *action) {
     }
 
-    QAction *WidgetActionContext::createAction(const QString &id, QObject *parent) const {
-        Q_UNUSED(id);
-        return new QAction(parent);
-    }
-
-    QMenu *WidgetActionContext::createSubMenu(const QString &id, QWidget *parent) const {
-        Q_UNUSED(id);
-        return new QMenu(parent);
-    }
-
     void WidgetActionContext::removeAction(const QString &id) {
     }
 
@@ -70,6 +60,16 @@ namespace QAK {
     }
 
     void WidgetActionContext::updateIcons() {
+    }
+
+    QAction *WidgetActionContext::createAction(const QString &id, QObject *parent) const {
+        Q_UNUSED(id);
+        return new QAction(parent);
+    }
+
+    QMenu *WidgetActionContext::createSubMenu(const QString &id, QWidget *parent) const {
+        Q_UNUSED(id);
+        return new QMenu(parent);
     }
 
 }

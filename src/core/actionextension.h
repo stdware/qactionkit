@@ -2,6 +2,7 @@
 #define ACTIONEXTENSION_H
 
 #include <QtCore/QMap>
+#include <QtCore/QVector>
 #include <QtCore/QStringList>
 #include <QtGui/QKeySequence>
 
@@ -11,15 +12,30 @@ namespace QAK {
 
     class ActionRegistry;
 
-    class ActionItemInfo;
-
-    class ActionLayoutInfo;
-
-    class ActionInsertion;
+    class ActionExtensionData;
 
     class ActionExtension;
 
-    class ActionExtensionData;
+    class ActionLayoutEntry {
+    public:
+        enum Type {
+            Action,
+            Group,
+            Menu,
+            Separator,
+            Stretch,
+        };
+
+        inline ActionLayoutEntry(const QString &id = {}, Type type = Action)
+            : m_id(id), m_type(type) {}
+        inline QString id() const { return m_id; }
+        inline Type type() const { return m_type; }
+        inline bool isNull() const { return !m_id.isEmpty(); }
+
+    protected:
+        QString m_id;
+        Type m_type;
+    };
 
     class QAK_CORE_EXPORT ActionItemInfo {
     public:
@@ -27,10 +43,10 @@ namespace QAK {
         bool isNull() const;
 
         enum Type {
-            Phony,
             Action,
             Group,
             Menu,
+            Phony,
         };
 
         QString id() const;
@@ -42,43 +58,22 @@ namespace QAK {
         QString icon() const; // icon id
         QList<QKeySequence> shortcuts() const;
         QString catalog() const;
-
         bool topLevel() const;
 
+        /**
+         * Reserved keys:
+         * - textTr
+         * - classTr
+         * - descriptionTr
+         */
         QMap<QString, QString> attributes() const;
 
-    private:
-        const ActionExtensionData *e;
-        int i;
-
-        friend class ActionExtension;
-        friend class ActionRegistry;
-    };
-
-    class QAK_CORE_EXPORT ActionLayoutInfo {
-    public:
-        ActionLayoutInfo();
-        bool isNull() const;
-
-        enum Type {
-            Action,
-            Group,
-            Menu,
-            Separator,
-            Stretch,
-        };
-
-        QString id() const;
-        Type type() const;
-
-        int childCount() const;
-        ActionLayoutInfo child(int index) const;
+        QVector<ActionLayoutEntry> children() const;
 
     private:
         const ActionExtensionData *e;
         int i;
 
-        friend class ActionInsertion;
         friend class ActionExtension;
         friend class ActionRegistry;
     };
@@ -96,12 +91,10 @@ namespace QAK {
         };
 
         Anchor anchor() const;
-
         QString target() const;
         QString relativeTo() const;
 
-        int itemCount() const;
-        ActionLayoutInfo item(int index) const;
+        QVector<ActionLayoutEntry> items() const;
 
     private:
         const ActionExtensionData *e;
@@ -120,9 +113,6 @@ namespace QAK {
 
         int itemCount() const;
         ActionItemInfo item(int index) const;
-
-        int layoutCount() const;
-        ActionLayoutInfo layout(int index) const;
 
         int insertionCount() const;
         ActionInsertion insertion(int index) const;

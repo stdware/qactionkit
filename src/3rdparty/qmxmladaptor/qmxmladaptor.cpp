@@ -12,7 +12,7 @@ QJsonObject QMXmlAdaptorElement::toObject() const {
         obj.insert("value", value);
     } else {
         QJsonArray arr;
-        for (const auto &child : qAsConst(children)) {
+        for (const auto &child : children) {
             arr.append(child->toObject());
         }
         obj.insert("children", arr);
@@ -96,11 +96,9 @@ out:
     writer.writeEndElement();
 }
 
-QMXmlAdaptor::QMXmlAdaptor() {
-}
+QMXmlAdaptor::QMXmlAdaptor() {}
 
-QMXmlAdaptor::~QMXmlAdaptor() {
-}
+QMXmlAdaptor::~QMXmlAdaptor() {}
 
 bool QMXmlAdaptor::load(const QString &filename) {
     QFile file(filename);

@@ -15,31 +15,17 @@ namespace QAK {
         QString icon;
         QList<QKeySequence> shortcuts;
         QString catalog;
-
         bool topLevel;
-        
-        QString textTranslationContext;
-        QString actionClassTranslationContext;
-        QString descriptionTranslationContext;
-
         QMap<QString, QString> attributes;
-    };
 
-    struct ActionLayoutInfoEntry {
-        QString id;
-        ActionLayoutInfo::Type type;
-
-        // references
-        QVector<int> childIndexes;
+        QVector<ActionLayoutEntry> children;
     };
 
     struct ActionInsertionData {
         ActionInsertion::Anchor anchor;
         QString target;
         QString relativeTo;
-
-        // references
-        QVector<int> entryIndexes;
+        QVector<ActionLayoutEntry> items;
     };
 
     struct ActionExtensionData {
@@ -50,12 +36,6 @@ namespace QAK {
 
         int itemCount;
         ActionItemInfoData *items;
-
-        [[maybe_unused]] int layoutEntryCount; // Not used
-        ActionLayoutInfoEntry *layoutEntries;
-
-        int layoutCount;
-        int *layouts;
 
         int insertionCount;
         ActionInsertionData *insertions;
