@@ -1,12 +1,47 @@
 #include "actionregistry.h"
 #include "actionregistry_p.h"
 
+#include <utility>
+
+#include "qakglobal_p.h"
+
 namespace QAK {
 
     ActionRegistryPrivate::ActionRegistryPrivate() {
     }
 
     ActionRegistryPrivate::~ActionRegistryPrivate() {
+    }
+
+    void ActionRegistryPrivate::flushActionItems() const {
+        catalog.clear();
+        layouts.clear();
+        actionItems.clear();
+        for (const auto &pair : std::as_const(extensions)) {
+            auto &e = pair.second;
+            for (int i = 0; i < e->itemCount(); ++i) {
+                const auto &item = e->item(i);
+                if (actionItems.contains(item.id())) {
+                    continue;
+                }
+                actionItems.append(item.id(), item);
+            }
+        }
+        actionItemsDirty = false;
+
+        catalog = defaultCatalog();
+        layouts = defaultLayouts();
+    }
+
+
+    ActionRegistry::Catalog ActionRegistryPrivate::defaultCatalog() const {
+        // TODO: implement default catalog
+        return {};
+    }
+
+    ActionRegistry::Layouts ActionRegistryPrivate::defaultLayouts() const {
+        // TODO: implement default layouts
+        return {};
     }
 
     ActionRegistry::ActionRegistry(QObject *parent)
@@ -16,31 +51,70 @@ namespace QAK {
     ActionRegistry::~ActionRegistry() = default;
 
     void ActionRegistry::addExtension(const ActionExtension *extension) {
+        Q_D(ActionRegistry);
+
+        const auto &id = extension->id();
+        if (d->extensions.contains(id)) {
+            qCWarning(qActionKitLog) << "Action extension with id" << id << "already exists";
+            return;
+        }
+        d->extensions.append(id, extension);
+        d->actionItemsDirty = true;
     }
 
     void ActionRegistry::removeExtension(const ActionExtension *extension) {
+        Q_D(ActionRegistry);
+
+        auto it = d->extensions.find(extension->id());
+        if (it == d->extensions.end()) {
+            qCWarning(qActionKitLog)
+                << "Action extension with id" << extension->id() << "not found";
+            return;
+        }
+        d->extensions.erase(it);
+        d->actionItemsDirty = true;
     }
 
     QStringList ActionRegistry::actionIds() const {
-        return {};
+        Q_D(const ActionRegistry);
+        return d->actionItems.keys_qlist();
     }
 
     ActionItemInfo ActionRegistry::actionInfo(const QString &id) const {
-        return {};
+        Q_D(const ActionRegistry);
+        return d->actionItems.value(id);
     }
 
     ActionRegistry::Catalog ActionRegistry::catalog() const {
-        return {};
+        Q_D(const ActionRegistry);
+        if (d->actionItemsDirty) {
+            d->flushActionItems();
+        }
+        return d->catalog;
     }
 
     ActionRegistry::Layouts ActionRegistry::layouts() const {
-        return {};
+        Q_D(const ActionRegistry);
+        if (d->actionItemsDirty) {
+            d->flushActionItems();
+        }
+        return d->layouts;
     }
 
     void ActionRegistry::setLayouts(const Layouts &layouts) {
+        Q_D(ActionRegistry);
+
+        // TODO: check if layouts are valid
+
+        d->layouts = layouts;
     }
 
     void ActionRegistry::resetLayouts() {
+        Q_D(ActionRegistry);
+        if (d->actionItemsDirty) {
+            d->flushActionItems();
+        }
+        d->layouts = d->defaultLayouts();
     }
 
     QJsonObject ActionRegistry::layoutsToJson(const Layouts &shortcutsFamily) {
