@@ -319,7 +319,7 @@ struct ParserPrivate {
                     break;
                 }
                 case QAK::ActionItemInfo::Action: {
-                    if (e->name != QStringLiteral("action")) {
+                    if (e->name != QStringLiteral("action") && e->name != QStringLiteral("item")) {
                         typeMismatch = true;
                     }
                     break;
@@ -327,10 +327,9 @@ struct ParserPrivate {
                 case QAK::ActionItemInfo::Group:
                 case QAK::ActionItemInfo::Menu: {
                     static const QSet<QString> allowedTags = {
-                        QStringLiteral("group"),
-                        QStringLiteral("menu"),
-                        QStringLiteral("menuBar"),
-                        QStringLiteral("toolBar"),
+                        QStringLiteral("group"),   QStringLiteral("menu"),
+                        QStringLiteral("menuBar"), QStringLiteral("toolBar"),
+                        QStringLiteral("item"),
                     };
                     if (!allowedTags.contains(e->name)) {
                         typeMismatch = true;

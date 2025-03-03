@@ -1,7 +1,7 @@
 #ifndef ACTIONREGISTRY_H
 #define ACTIONREGISTRY_H
 
-#include <QtCore/QSharedData>
+#include <QtCore/QMap>
 
 #include <QAKCore/actionextension.h>
 #include <QAKCore/actionfamily.h>
@@ -9,57 +9,6 @@
 namespace QAK {
 
     class ActionContext;
-
-    class ActionCatalogData;
-
-    class QAK_CORE_EXPORT ActionCatalog {
-    public:
-        ActionCatalog();
-        ActionCatalog(const QString &id);
-        ActionCatalog(const ActionCatalog &other);
-        ActionCatalog &operator=(const ActionCatalog &other);
-        ~ActionCatalog();
-
-    public:
-        QString id() const;
-        void setId(const QString &id);
-
-        QList<ActionCatalog> children() const;
-        void addChild(const ActionCatalog &child);
-        void setChildren(const QList<ActionCatalog> &children);
-
-    protected:
-        QSharedDataPointer<ActionCatalogData> d;
-
-        friend class ActionDomain;
-    };
-
-    class ActionLayoutData;
-
-    class QAK_CORE_EXPORT ActionLayout {
-    public:
-        ActionLayout();
-        ActionLayout(const QString &id);
-        ActionLayout(const ActionLayout &other);
-        ActionLayout &operator=(const ActionLayout &other);
-        ~ActionLayout();
-
-    public:
-        QString id() const;
-        void setId(const QString &id);
-
-        ActionLayoutEntry::Type type() const;
-        void setType(ActionLayoutEntry::Type type);
-
-        QList<ActionLayout> children() const;
-        void addChild(const ActionLayout &child);
-        void setChildren(const QList<ActionLayout> &children);
-
-    protected:
-        QSharedDataPointer<ActionLayoutData> d;
-
-        friend class ActionDomain;
-    };
 
     class ActionRegistryPrivate;
 
@@ -70,25 +19,28 @@ namespace QAK {
         explicit ActionRegistry(QObject *parent = nullptr);
         ~ActionRegistry();
 
+        using Catalog = QMap<QString /* id */, QStringList /* child ids */>;
+        using Layouts = QMap<QString /* id */, QList<ActionLayoutEntry> /* children */>;
+
     public:
         void addExtension(const ActionExtension *extension);
         void removeExtension(const ActionExtension *extension);
 
         QStringList actionIds() const;
         ActionItemInfo actionInfo(const QString &id) const;
-        ActionCatalog catalog() const;
+        Catalog catalog() const;
 
     public:
-        QList<ActionLayout> layouts() const;
-        void setLayouts(const QList<ActionLayout> &layouts);
+        Layouts layouts() const;
+        void setLayouts(const Layouts &layouts);
         void resetLayouts();
 
         inline QList<QKeySequence> actionShortcuts(const QString &id) const;
         inline QIcon actionIcon(const QString &theme, const QString &id) const;
 
     public:
-        static QJsonObject layoutsToJson(const ShortcutsFamily &shortcutsFamily);
-        static ShortcutsFamily layoutsFromJson(const QJsonObject &obj);
+        static QJsonObject layoutsToJson(const Layouts &shortcutsFamily);
+        static Layouts layoutsFromJson(const QJsonObject &obj);
 
     public:
         void addContext(ActionContext *builder);

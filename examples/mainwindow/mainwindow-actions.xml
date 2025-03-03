@@ -10,17 +10,17 @@
     <!-- Configuration, optional -->
     <configuration>
         <!-- Default catalog ID, default to empty -->
-        <defaultCatalog>core.others</defaultCatalog>
+        <defaultCatalog>core.catalog.others</defaultCatalog>
 
         <!-- Qt translation contexts:
              - text (optional)
              - class (optional)
              - description (optional)
         -->
-        <translationContext 
-            text="MainWindow::ActionText" 
-            class="MainWindow::ActionClass" 
-            description="MainWindow::ActionDescription" 
+        <translationContext
+            text="MainWindow::ActionText"
+            class="MainWindow::ActionClass"
+            description="MainWindow::ActionDescription"
         />
 
         <!-- Pre-defined variables -->
@@ -57,14 +57,15 @@
 
         <!-- Example: core actions -->
         <action id="core.openFile" text="Open File" class="File" shortcut="Ctrl+N" />
-        <action id="core.saveFile" text="Save File" class="File" shortcut="Ctrl+S" catalog="core.file" />
+        <action id="core.saveFile" text="Save File" class="File" shortcut="Ctrl+S"
+            catalog="core.file" />
 
         <!-- Example: configurable top level item -->
         <menu id="core.mainMenu" topLevel="true" />
 
         <!-- Example: catalogs -->
-        <phony id="core.plugins" />
-        <phony id="core.other" />
+        <phony id="core.catalog.plugins" />
+        <phony id="core.catalog.other" />
     </items>
 
     <!-- Declaration: core layouts -->

@@ -9,7 +9,7 @@
 
     <!-- Configuration, optional -->
     <configuration>
-        <defaultCatalog>core.plugins</defaultCatalog>
+        <defaultCatalog>core.catalog.plugins</defaultCatalog>
 
         <translationContext
             text="Plugin::ActionText"
@@ -25,8 +25,7 @@
     <!-- Declaration: plugin items -->
     <items>
         <!-- Example: plugin actions -->
-        <action id="plugin.showHello" text="Show Hello" catalog="core.plugins"
-            description="Show Hello Text" />
+        <action id="plugin.showHello" text="Show Hello" description="Show hello text" />
     </items>
 
     <!-- Declaration: plugin insertions -->

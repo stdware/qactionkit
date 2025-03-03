@@ -6,19 +6,6 @@
 
 namespace QAK {
 
-    class ActionCatalogData : public QSharedData {
-    public:
-        QString id;
-        QList<ActionCatalog> children;
-    };
-
-    class ActionLayoutData : public QSharedData {
-    public:
-        QString id;
-        ActionLayoutEntry::Type type = ActionLayoutEntry::Action;
-        QList<ActionLayout> children;
-    };
-
     class QAK_CORE_EXPORT ActionRegistryPrivate : public ActionFamilyPrivate {
         Q_DECLARE_PUBLIC(ActionRegistry)
     public:

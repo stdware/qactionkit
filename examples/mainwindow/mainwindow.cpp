@@ -2,6 +2,7 @@
 
 #include <QAKCore/actionextension.h>
 
+// Get the action extensions, must from the global namespace
 static const QAK::ActionExtension *getPluginActionExtension() {
     return QAK_STATIC_ACTION_EXTENSION(plugin_actions);
 }
