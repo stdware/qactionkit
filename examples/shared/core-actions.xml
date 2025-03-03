@@ -5,7 +5,7 @@
     <version>1.0</version>
 
     <!-- Action extension ID, required -->
-    <id>com.example.mainWindow</id>
+    <id>com.example.application</id>
 
     <!-- Configuration, optional -->
     <configuration>
@@ -18,9 +18,9 @@
              - description (optional)
         -->
         <translationContext
-            text="MainWindow::ActionText"
-            class="MainWindow::ActionClass"
-            description="MainWindow::ActionDescription"
+            text="Application::ActionText"
+            class="Application::ActionClass"
+            description="Application::ActionDescription"
         />
 
         <!-- Pre-defined variables -->
@@ -29,7 +29,7 @@
                  - key (required)
                  - value (required)
             -->
-            <var key="APP_NAME" value="MainWindow" />
+            <var key="APP_NAME" value="Application" />
 
             <!-- reserved keys: 
                  - _ID_: id
