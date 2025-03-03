@@ -65,10 +65,6 @@ static QString insertionAnchorToString(QAK::ActionInsertion::Anchor anchor) {
     return {};
 }
 
-Generator::Generator(FILE *out, const QString &inputFileName, const QString &identifier,
-                     const ParseResult &parseResult)
-    : out(out), inputFileName(inputFileName), identifier(identifier), parseResult(parseResult) {}
-
 static QByteArray escapeString(const QByteArray &bytes) {
     QByteArray res;
     res.reserve(bytes.size());

@@ -145,7 +145,11 @@ int main(int argc, char *argv[]) {
         out = stdout;
     }
 
-    Generator generator(out, QFileInfo(filename).fileName(), identifier, parseResult);
+    Generator generator(out);
+    generator.inputFileName = QFileInfo(filename).fileName();
+    generator.identifier = identifier;
+    generator.parseResult = std::move(parseResult);
+
     generator.generate();
 
     if (!output.isEmpty())

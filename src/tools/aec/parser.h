@@ -63,7 +63,7 @@ struct ParseResult {
 
 class Parser {
 public:
-    Parser();
+    inline Parser() = default;
     ParseResult parse(const QByteArray &data);
 
     QString fileName;

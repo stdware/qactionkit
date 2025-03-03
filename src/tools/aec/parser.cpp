@@ -643,16 +643,7 @@ struct ParserPrivate {
     }
 };
 
-Parser::Parser() = default;
-
 ParseResult Parser::parse(const QByteArray &data) {
-    // stdc::linked_map<QString, QString> map;
-    // auto it = map.append("1", "1");
-    // it = map.append("2", "2");
-    // it = map.append("2", "1");
-    // qDebug() << map["1"];
-    // qDebug() << it.first.value() << it.second;
-
     ParserPrivate d(*this);
     d.parse(data);
     return d.result;

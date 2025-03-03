@@ -5,8 +5,7 @@
 
 class Generator {
 public:
-    Generator(FILE *out, const QString &inputFileName, const QString &identifier,
-              const ParseResult &parseResult);
+    inline Generator(FILE *out) : out(out) {}
     void generate();
 
     FILE *out;

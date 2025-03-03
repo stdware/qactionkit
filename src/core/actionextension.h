@@ -60,12 +60,6 @@ namespace QAK {
         QString catalog() const;
         bool topLevel() const;
 
-        /**
-         * Reserved keys:
-         * - textTr
-         * - classTr
-         * - descriptionTr
-         */
         QMap<QString, QString> attributes() const;
 
         QVector<ActionLayoutEntry> children() const;
