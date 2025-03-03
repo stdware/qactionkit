@@ -9,10 +9,16 @@
 #include <QtCore/QStringView>
 #include <QtCore/QFile>
 #include <QtCore/QFileInfo>
+#include <QtCore/QVersionNumber>
 
 #include <qmxmladaptor/qmxmladaptor.h>
 #include <stdcorelib/linked_map.h>
 #include <util/util.h>
+
+static const QVersionNumber &parserVersion() {
+    static const QVersionNumber version{1, 0};
+    return version;
+}
 
 void error(const char *fmt, ...) {
     fprintf(stderr, "%s: ", qPrintable(qApp->applicationName()));
@@ -175,13 +181,20 @@ struct ParserPrivate {
     // Infer item type when parsing item info
     void parseItemAttrs(const QMXmlAdaptorElement &e, ActionItemInfoMessage &info,
                         const char *field) const {
+        const auto &readTopLevel = [&]() {
+            if (resolve(e.properties.value(QStringLiteral("topLevel"))) == QStringLiteral("true")) {
+                info.topLevel = true;
+            }
+        };
         const auto &name = e.name;
         if (name == QStringLiteral("action")) {
             info.type = QAK::ActionItemInfo::Action;
         } else if (name == QStringLiteral("group")) {
             info.type = QAK::ActionItemInfo::Group;
+            readTopLevel();
         } else if (name == QStringLiteral("menu")) {
             info.type = QAK::ActionItemInfo::Menu;
+            readTopLevel();
         } else if (name == QStringLiteral("menuBar") || name == QStringLiteral("toolBar")) {
             info.type = QAK::ActionItemInfo::Menu;
             info.topLevel = true;
@@ -192,26 +205,8 @@ struct ParserPrivate {
                   qPrintable(info.id), qPrintable(e.name));
             std::exit(1);
         }
-        if (resolve(e.properties.value(QStringLiteral("topLevel"))) == QStringLiteral("true")) {
-            info.topLevel = true;
-        }
 
         info.tag = e.name;
-
-        for (auto it = e.properties.begin(); it != e.properties.end(); ++it) {
-            static const QSet<QString> reservedKeys = {
-                QStringLiteral("id"),       QStringLiteral("text"),
-                QStringLiteral("class"),    QStringLiteral("description"),
-                QStringLiteral("catalog"),  QStringLiteral("shortcuts"),
-                QStringLiteral("shortcut"), QStringLiteral("topLevel"),
-                QStringLiteral("icon"),
-            };
-            const auto &key = it.key();
-            if (reservedKeys.contains(key)) {
-                continue;
-            }
-            info.attributes.insert(key, resolve(it.value()));
-        }
 
         // text
         if (auto text = resolve(e.properties.value(QStringLiteral("text"))); !text.isEmpty()) {
@@ -221,9 +216,11 @@ struct ParserPrivate {
         }
 
         // class
-        if (auto actionClass = resolve(e.properties.value(QStringLiteral("class")));
-            !actionClass.isEmpty()) {
-            info.actionClass = actionClass;
+        if (info.type == QAK::ActionItemInfo::Action) {
+            if (auto actionClass = resolve(e.properties.value(QStringLiteral("class")));
+                !actionClass.isEmpty()) {
+                info.actionClass = actionClass;
+            }
         }
 
         // description
@@ -240,18 +237,36 @@ struct ParserPrivate {
         }
 
         // shortcuts
-        if (auto shortcuts = resolve(e.properties.value(QStringLiteral("shortcuts")));
-            !shortcuts.isEmpty()) {
-            info.shortcutTokens = parseStringList(shortcuts);
-        } else if (shortcuts = resolve(e.properties.value(QStringLiteral("shortcut")));
-                   !shortcuts.isEmpty()) {
-            info.shortcutTokens = parseStringList(shortcuts);
+        if (info.type == QAK::ActionItemInfo::Action) {
+            if (auto shortcuts = resolve(e.properties.value(QStringLiteral("shortcuts")));
+                !shortcuts.isEmpty()) {
+                info.shortcutTokens = parseStringList(shortcuts);
+            } else if (shortcuts = resolve(e.properties.value(QStringLiteral("shortcut")));
+                       !shortcuts.isEmpty()) {
+                info.shortcutTokens = parseStringList(shortcuts);
+            }
         }
 
         // catalog
         if (auto catalog = resolve(e.properties.value(QStringLiteral("catalog")));
             !catalog.isEmpty()) {
             info.catalog = resolve(catalog);
+        }
+
+        // attributes
+        for (auto it = e.properties.begin(); it != e.properties.end(); ++it) {
+            static const QSet<QString> reservedKeys = {
+                QStringLiteral("id"),       QStringLiteral("text"),
+                QStringLiteral("class"),    QStringLiteral("description"),
+                QStringLiteral("catalog"),  QStringLiteral("shortcuts"),
+                QStringLiteral("shortcut"), QStringLiteral("topLevel"),
+                QStringLiteral("icon"),
+            };
+            const auto &key = it.key();
+            if (reservedKeys.contains(key)) {
+                continue;
+            }
+            info.attributes.insert(key, resolve(it.value()));
         }
     }
 
@@ -587,11 +602,17 @@ struct ParserPrivate {
         }
 
         if (version.isEmpty()) {
-            version = QStringLiteral(PARSER_VERSION);
+            error("%s: extension version is not specified\n", qPrintable(q.fileName));
+            std::exit(1);
+        }
+        if (parserVersion() < QVersionNumber::fromString(version)) {
+            error("%s: extension version \"%s\" is not supported\n", qPrintable(q.fileName),
+                  qPrintable(version));
+            std::exit(1);
         }
 
         if (id.isEmpty()) {
-            error("%s: extension version is not specified\n", qPrintable(q.fileName));
+            error("%s: extension id is not specified\n", qPrintable(q.fileName));
             std::exit(1);
         }
 
@@ -632,10 +653,20 @@ struct ParserPrivate {
             result.extension.insertions.append(parseInsertion(*item));
         }
 
+        // Add default catalog as a phony item if not specified
+        if (!defaultCatalog.isEmpty() && !itemInfoMap.contains(defaultCatalog.toLower())) {
+            ActionItemInfoMessage info;
+            info.type = QAK::ActionItemInfo::Phony;
+            info.id = defaultCatalog;
+            info.text = itemIdToText(info.id);
+            itemInfoMap.prepend(info.id.toLower(), info);
+        }
+
         // Collect items
         for (auto &pair : itemInfoMap) {
             auto &info = pair.second;
-            if (!info.topLevel && info.catalog.isEmpty()) {
+            if (info.type != QAK::ActionItemInfo::Phony && !info.topLevel &&
+                info.catalog.isEmpty()) {
                 info.catalog = defaultCatalog; // fallback to default catalog
             }
             result.extension.items.append(info);

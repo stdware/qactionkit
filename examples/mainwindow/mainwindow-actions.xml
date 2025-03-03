@@ -10,7 +10,7 @@
     <!-- Configuration, optional -->
     <configuration>
         <!-- Default catalog ID, default to empty -->
-        <defaultCatalog>Others</defaultCatalog>
+        <defaultCatalog>core.others</defaultCatalog>
 
         <!-- Qt translation contexts:
              - text (optional)
@@ -18,9 +18,9 @@
              - description (optional)
         -->
         <translationContext 
-        text="MainWindow::ActionText" 
-        class="MainWindow::ActionClass" 
-        description="MainWindow::ActionDescription" 
+            text="MainWindow::ActionText" 
+            class="MainWindow::ActionClass" 
+            description="MainWindow::ActionDescription" 
         />
 
         <!-- Pre-defined variables -->
@@ -51,6 +51,7 @@
              - class (optional): action category
              - shortcut/shortcuts (optional)
              - textTr (optional): text translation context
+             - classTr (optional): action category translation text
              - descriptionTr (optional): description translation context
         -->
 
@@ -60,6 +61,10 @@
 
         <!-- Example: configurable top level item -->
         <menu id="core.mainMenu" topLevel="true" />
+
+        <!-- Example: catalogs -->
+        <phony id="core.plugins" />
+        <phony id="core.other" />
     </items>
 
     <!-- Declaration: core layouts -->

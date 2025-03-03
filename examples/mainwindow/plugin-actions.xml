@@ -9,7 +9,7 @@
 
     <!-- Configuration, optional -->
     <configuration>
-        <defaultCatalog>Plugins</defaultCatalog>
+        <defaultCatalog>core.plugins</defaultCatalog>
 
         <translationContext
             text="Plugin::ActionText"

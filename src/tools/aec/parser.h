@@ -6,8 +6,6 @@
 
 #include <QAKCore/actionextension.h>
 
-#define PARSER_VERSION "1.0"
-
 void error(const char *fmt, ...) QACTIONKIT_PRINTF_FORMAT(1, 2);
 
 struct ActionLayoutEntryMessage {
