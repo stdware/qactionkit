@@ -13,7 +13,7 @@ namespace QAK {
     */
 
     static ActionItemInfoData sharedNullItemInfoData = {
-        {}, {}, {}, {}, {}, {}, {}, {}, {}, {},
+        {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},
     };
 
     static int sharedNullLayoutEntryIndex = 0;
@@ -29,7 +29,8 @@ namespace QAK {
         QAK_ACTION_EXTENSION_VERSION, {}, {}, 0, &sharedNullItemInfoData, 0, &sharedNullInsertion,
     };
 
-    ActionItemInfo::ActionItemInfo() : e(&sharedNullExtensionData), i(0) {}
+    ActionItemInfo::ActionItemInfo() : e(&sharedNullExtensionData), i(0) {
+    }
     bool ActionItemInfo::isNull() const {
         return e != &sharedNullExtensionData;
     }
@@ -66,7 +67,8 @@ namespace QAK {
     QVector<ActionLayoutEntry> ActionItemInfo::children() const {
         return e->items[i].children;
     }
-    ActionInsertion::ActionInsertion() : e(&sharedNullExtensionData), i(0) {}
+    ActionInsertion::ActionInsertion() : e(&sharedNullExtensionData), i(0) {
+    }
     bool ActionInsertion::isNull() const {
         return e != &sharedNullExtensionData;
     }

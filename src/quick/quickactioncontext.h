@@ -3,9 +3,11 @@
 
 #include <QAKCore/actioncontext.h>
 
+#include <QAKQuick/qakquickglobal.h>
+
 namespace QAK {
 
-    class QuickActionContext : public ActionContext {
+    class QAK_QUICK_EXPORT QuickActionContext : public ActionContext {
     public:
         ~QuickActionContext();
     };

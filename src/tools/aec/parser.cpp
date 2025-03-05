@@ -307,7 +307,7 @@ struct ParserPrivate {
         };
 
         ActionItemInfoMessage *pInfo;
-        if (auto it = itemInfoMap.find(id.toLower()); it != itemInfoMap.end()) {
+        if (auto it = itemInfoMap.find(id); it != itemInfoMap.end()) {
             // This layout item has been declared in the items field
             auto &info = it.value();
 
@@ -365,7 +365,7 @@ struct ParserPrivate {
                 info.catalog = upperCatalog;
             }
 
-            auto insertResult = itemInfoMap.append(id.toLower(), info);
+            auto insertResult = itemInfoMap.append(id, info);
             pInfo = &insertResult.first.value();
         }
         return *pInfo;
@@ -636,11 +636,11 @@ struct ParserPrivate {
         // Parse items
         for (const auto &item : std::as_const(objElements)) {
             auto entity = parseItem(*item);
-            if (itemInfoMap.contains(entity.id.toLower())) {
+            if (itemInfoMap.contains(entity.id)) {
                 error("%s: duplicated item id %s\n", qPrintable(q.fileName), qPrintable(entity.id));
                 std::exit(1);
             }
-            std::ignore = itemInfoMap.append(entity.id.toLower(), entity);
+            std::ignore = itemInfoMap.append(entity.id, entity);
         }
 
         // Parse layouts
@@ -655,12 +655,12 @@ struct ParserPrivate {
         }
 
         // Add default catalog as a phony item if not specified
-        if (!defaultCatalog.isEmpty() && !itemInfoMap.contains(defaultCatalog.toLower())) {
+        if (!defaultCatalog.isEmpty() && !itemInfoMap.contains(defaultCatalog)) {
             ActionItemInfoMessage info;
             info.type = QAK::ActionItemInfo::Phony;
             info.id = defaultCatalog;
             info.text = itemIdToText(info.id);
-            itemInfoMap.prepend(info.id.toLower(), info);
+            itemInfoMap.prepend(info.id, info);
         }
 
         // Collect items

@@ -19,20 +19,36 @@ namespace QAK {
         explicit WidgetActionContext(QObject *parent = nullptr);
         ~WidgetActionContext();
 
+        enum Attribute {
+            AttributeDisabled = 0x0,
+            UpdateToolTipWithDescription = 0x1,
+        };
+        Q_DECLARE_FLAGS(Attributes, Attribute)
+
+        Attributes attributes() const;
+        void setAttribute(Attribute attr, bool on = true);
+        void setAttributes(Attributes attrs);
+
+    public:
+        QAction *action(const QString &id) const;
         void addAction(const QString &id, QAction *action);
         void removeAction(const QString &id);
 
+        QList<QWidget *> widgets(const QString &id) const;
         void addWidgetFactory(const QString &id, const std::function<QWidget *()> &fac);
         void removeWidgetFactory(const QString &id);
 
+        QList<QMenu *> menus(const QString &id) const;
         void addMenu(const QString &id, QMenu *menu);
         void removeMenu(QMenu *menu);
 
+        QList<QMenuBar *> menuBars(const QString &id) const;
         void addMenuBar(const QString &id, QMenuBar *menuBar);
         void removeMenuBar(QMenuBar *menuBar);
 
+        QList<QToolBar *> toolBars(const QString &id) const;
         void addToolBar(const QString &id, QToolBar *toolBar);
-        void removeToolBar(QMenuBar *toolBar);
+        void removeToolBar(QToolBar *toolBar);
 
     Q_SIGNALS:
         void actionTriggered(const QString &id);

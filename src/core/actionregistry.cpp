@@ -32,10 +32,10 @@ namespace QAK {
                 actionItems.append(id, item);
             }
         }
-        actionItemsDirty = false;
-
         catalog = defaultCatalog();
         layouts = defaultLayouts();
+
+        actionItemsDirty = false;
     }
 
 
