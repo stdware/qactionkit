@@ -8,7 +8,7 @@ file(GLOB_RECURSE _src *.h *.cpp)
 qak_add_library(${PROJECT_NAME} AUTOGEN
     SOURCES ${_src}
     FEATURES cxx_std_17
-    QT_LINKS Core Gui Quick
+    QT_LINKS Core Gui Qml Quick
     LINKS QAKCore
     INCLUDE_PRIVATE *
     PREFIX QAK_QUICK
