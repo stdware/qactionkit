@@ -22,6 +22,7 @@ namespace QAK {
         ~QuickActionContext() override;
 
         Q_INVOKABLE void addAction(const QString &id, QQmlComponent *component);
+        Q_INVOKABLE QQmlComponent *action(const QString &id) const;
 
         QQmlComponent *menuComponent() const;
         void setMenuComponent(QQmlComponent *component);

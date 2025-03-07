@@ -3,6 +3,8 @@
 
 #include <QKeySequence>
 
+#include <QAKQuick/private/quickactioninstantiator_p.h>
+
 namespace QAK {
     QuickActionInstantiatorAttachedType::QuickActionInstantiatorAttachedType(QObject *parent) : QObject(parent), d_ptr(new QuickActionInstantiatorAttachedTypePrivate) {
     }
@@ -59,13 +61,21 @@ namespace QAK {
             emit shortcutsChanged();
         }
     }
-    QVariantMap QuickActionInstantiatorAttachedType::attributes() const {
+    QMap<QString, QString> QuickActionInstantiatorAttachedType::attributes() const {
         Q_D(const QuickActionInstantiatorAttachedType);
         return d->attributes;
     }
-    void QuickActionInstantiatorAttachedType::setAttributes(const QVariantMap &attributes) {
+    void QuickActionInstantiatorAttachedType::setAttributes(const QMap<QString, QString> &attributes) {
         Q_D(QuickActionInstantiatorAttachedType);
         d->attributes = attributes;
+    }
+    QuickActionInstantiator *QuickActionInstantiatorAttachedType::instantiator() const {
+        Q_D(const QuickActionInstantiatorAttachedType);
+        return d->instantiator;
+    }
+    void QuickActionInstantiatorAttachedType::setInstantiator(QuickActionInstantiator *instantiator) {
+        Q_D(QuickActionInstantiatorAttachedType);
+        d->instantiator = instantiator;
     }
 }
 

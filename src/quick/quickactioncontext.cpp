@@ -18,6 +18,10 @@ namespace QAK {
             emit actionChanged(id);
         }
     }
+    QQmlComponent *QuickActionContext::action(const QString &id) const {
+        Q_D(const QuickActionContext);
+        return d->actions.value(id);
+    }
     QQmlComponent *QuickActionContext::menuComponent() const {
         Q_D(const QuickActionContext);
         return d->menuComponent;

@@ -18,6 +18,7 @@ namespace QAK {
         Q_DECLARE_PRIVATE(QuickActionInstantiator)
         QML_NAMED_ELEMENT(ActionInstantiator)
         QML_ATTACHED(QuickActionInstantiatorAttachedType)
+        Q_PROPERTY(QString id READ id WRITE setId NOTIFY idChanged)
         Q_PROPERTY(QuickActionContext *context READ context WRITE setContext NOTIFY contextChanged)
         Q_PROPERTY(int count READ count NOTIFY countChanged)
         Q_PROPERTY(QQmlComponent *overrideMenuComponent READ overrideMenuComponent WRITE setOverrideMenuComponent NOTIFY overrideMenuComponentChanged)
@@ -28,6 +29,9 @@ namespace QAK {
         ~QuickActionInstantiator() override;
 
         static QuickActionInstantiatorAttachedType *qmlAttachedProperties(QObject *object);
+
+        QString id() const;
+        void setId(const QString &id);
 
         QuickActionContext *context() const;
         void setContext(QuickActionContext *context);
@@ -46,8 +50,9 @@ namespace QAK {
         void setOverrideStretchComponent(QQmlComponent *component);
 
     signals:
+        void idChanged();
         void objectAdded(int index, QObject *object);
-        void objectRemoved(int index, QObject *object);
+        void objectAboutToRemove(int index, QObject *object);
         void contextChanged();
         void countChanged();
         void overrideMenuComponentChanged();
