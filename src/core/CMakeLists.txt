@@ -9,6 +9,7 @@ qak_add_library(${PROJECT_NAME} AUTOGEN
     SOURCES ${_src}
     FEATURES cxx_std_17
     QT_LINKS Core Gui
+    QT_INCLUDE_PRIVATE Core
     LINKS_PRIVATE $<BUILD_INTERFACE:stdcorelib> $<BUILD_INTERFACE:util>
     INCLUDE_PRIVATE *
     PREFIX QAK_CORE

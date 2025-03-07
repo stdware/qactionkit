@@ -15,8 +15,15 @@
 
 #include <QAKCore/qakglobal.h>
 
-QAK_CORE_EXPORT Q_DECLARE_LOGGING_CATEGORY(qActionKitLog)
+QAK_CORE_EXPORT Q_DECLARE_LOGGING_CATEGORY(qActionKitLog);
 
-QT_SPECIALIZE_STD_HASH_TO_CALL_QHASH_BY_CREF(QStringList)
+QT_SPECIALIZE_STD_HASH_TO_CALL_QHASH_BY_CREF(QStringList);
+
+namespace QAK {
+
+    QAK_CORE_EXPORT QString tryTranslate(const char *context, const char *sourceText,
+                                         const char *disambiguation, int n, bool *ok);
+
+}
 
 #endif // QAKGLOBAL_P_H

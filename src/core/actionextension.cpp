@@ -3,6 +3,8 @@
 
 #include <QtCore/QLoggingCategory>
 
+#include "qakglobal_p.h"
+
 Q_LOGGING_CATEGORY(qActionKitLog, "qactionkit")
 
 namespace QAK {
@@ -29,6 +31,17 @@ namespace QAK {
         QAK_ACTION_EXTENSION_VERSION, {}, {}, 0, &sharedNullItemInfoData, 0, &sharedNullInsertion,
     };
 
+    static QString translateString(const QString &s, const QMap<QString, QString> &attrs,
+                                   const QString &key, const QString &defaultCtx) {
+        bool ok;
+        QString res = tryTranslate(attrs.value(key, defaultCtx).toUtf8().constData(),
+                                   s.toUtf8().constData(), nullptr, -1, &ok);
+        if (!ok) {
+            return {};
+        }
+        return res;
+    }
+
     ActionItemInfo::ActionItemInfo() : e(&sharedNullExtensionData), i(0) {
     }
     bool ActionItemInfo::isNull() const {
@@ -40,14 +53,26 @@ namespace QAK {
     ActionItemInfo::Type ActionItemInfo::type() const {
         return e->items[i].type;
     }
-    QString ActionItemInfo::text() const {
-        return e->items[i].text;
+    QString ActionItemInfo::text(bool translated) const {
+        auto &d = e->items[i];
+        if (!translated)
+            return d.text;
+        return translateString(d.text, d.attributes, QStringLiteral("textTr"),
+                               QStringLiteral("QActionKit::ActionText"));
     }
-    QString ActionItemInfo::actionClass() const {
-        return e->items[i].actionClass;
+    QString ActionItemInfo::actionClass(bool translated) const {
+        auto &d = e->items[i];
+        if (!translated)
+            return d.actionClass;
+        return translateString(d.actionClass, d.attributes, QStringLiteral("classTr"),
+                               QStringLiteral("QActionKit::ActionClass"));
     }
-    QString ActionItemInfo::description() const {
-        return e->items[i].description;
+    QString ActionItemInfo::description(bool translated) const {
+        auto &d = e->items[i];
+        if (!translated)
+            return d.description;
+        return translateString(d.description, d.attributes, QStringLiteral("descriptionTr"),
+                               QStringLiteral("QActionKit::ActionDescription"));
     }
     QString ActionItemInfo::icon() const {
         return e->items[i].icon;

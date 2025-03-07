@@ -52,9 +52,9 @@ namespace QAK {
         QString id() const;
         Type type() const;
 
-        QString text() const;
-        QString actionClass() const;
-        QString description() const;
+        QString text(bool translated = false) const;
+        QString actionClass(bool translated = false) const;
+        QString description(bool translated = false) const;
         QString icon() const; // icon id
         QList<QKeySequence> shortcuts() const;
         QString catalog() const;
