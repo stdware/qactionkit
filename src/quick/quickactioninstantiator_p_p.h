@@ -18,9 +18,9 @@ namespace QAK {
         QPointer<QuickActionContext> context = nullptr;
         QObjectList objects;
 
-        QQmlComponent *overrideMenuComponent = nullptr;
-        QQmlComponent *overrideSeparatorComponent = nullptr;
-        QQmlComponent *overrideStretchComponent = nullptr;
+        QPointer<QQmlComponent> overrideMenuComponent;
+        QPointer<QQmlComponent> overrideSeparatorComponent;
+        QPointer<QQmlComponent> overrideStretchComponent;
 
         QQmlComponent *menuComponent() const;
         QQmlComponent *separatorComponent() const;
@@ -31,13 +31,22 @@ namespace QAK {
         void modifyObject(int index, QObject *object);
 
         QObjectList createObject(const ActionLayoutEntry &entry) const;
-        QObject *createAction(const ActionLayoutEntry &entry, QQmlComponent *component) const;
-        QObject *createMenu(const ActionLayoutEntry &entry) const;
+        QObject *createAction(const QString &actionId, QQmlComponent *component) const;
+        QObject *createMenu(const QString &menuId) const;
         QObject *createSeparator() const;
         QObject *createStretch() const;
 
         void updateContext();
         void updateLayouts();
+
+        enum ActionProperty { Text = 1, Icon = 2, Keymap = 4, All = Text | Icon | Keymap };
+        void updateActionProperty(ActionProperty property);
+        QuickActionInstantiatorAttachedType *attachInfoObjectTo(const QString &id, QObject *object, ActionProperty property) const;
+
+        enum Element { Menu = 0x1000, Separator, Stretch };
+        static Element getElement(QObject *object);
+        static void setElement(QObject *object, Element element);
+        void updateElement(Element element);
     };
 }
 

@@ -45,7 +45,7 @@ namespace QAK {
     ActionItemInfo::ActionItemInfo() : e(&sharedNullExtensionData), i(0) {
     }
     bool ActionItemInfo::isNull() const {
-        return e != &sharedNullExtensionData;
+        return e == &sharedNullExtensionData;
     }
     QString ActionItemInfo::id() const {
         return e->items[i].id;

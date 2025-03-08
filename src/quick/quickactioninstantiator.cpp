@@ -3,21 +3,25 @@
 
 #include <QQmlComponent>
 #include <QQmlEngine>
+#include <QQmlInfo>
 #include <QtQuickTemplates2/private/qquickaction_p.h>
+#include <QtQuickTemplates2/private/qquickmenu_p.h>
 
 #include <QAKQuick/quickactioncontext.h>
 #include <QAKQuick/private/quickactioninstantiatorattachedtype_p.h>
 
 namespace QAK {
 
+    static const char *ELEMENT_PROPERTY = "_qak_element";
+
     QQmlComponent *QuickActionInstantiatorPrivate::menuComponent() const {
-        return overrideMenuComponent ? overrideMenuComponent : context ? context->menuComponent() : nullptr;
+        return overrideMenuComponent ? overrideMenuComponent.get() : context ? context->menuComponent() : nullptr;
     }
     QQmlComponent *QuickActionInstantiatorPrivate::separatorComponent() const {
-        return overrideSeparatorComponent ? overrideSeparatorComponent : context ? context->separatorComponent() : nullptr;
+        return overrideSeparatorComponent ? overrideSeparatorComponent.get() : context ? context->separatorComponent() : nullptr;
     }
     QQmlComponent *QuickActionInstantiatorPrivate::stretchComponent() const {
-        return overrideStretchComponent ? overrideStretchComponent : context ? context->stretchComponent() : nullptr;
+        return overrideStretchComponent ? overrideStretchComponent.get() : context ? context->stretchComponent() : nullptr;
     }
     void QuickActionInstantiatorPrivate::addObject(int index, QObject *object) {
         Q_Q(QuickActionInstantiator);
@@ -57,17 +61,17 @@ namespace QAK {
                 component = context->action(entry.id());
                 if (!component)
                     break;
-                return {createAction(entry, component)};
+                return {createAction(entry.id(), component)};
             case ActionLayoutEntry::Menu:
                 if (menuComponent())
-                    return {createMenu(entry)};
+                    return {createMenu(entry.id())};
                 break;
             case ActionLayoutEntry::Group:
                 QObjectList list;
                 o = createSeparator();
                 if (o)
                     list.append(o);
-                for (const auto &child : context->registry()->actionInfo(id).children()) {
+                for (const auto &child : context->registry()->actionInfo(entry.id()).children()) {
                     list += createObject(child);
                 }
                 o = createSeparator();
@@ -77,47 +81,135 @@ namespace QAK {
         }
         return {};
     }
-    QObject *QuickActionInstantiatorPrivate::createAction(const ActionLayoutEntry &entry, QQmlComponent *component) const {
+    QObject *QuickActionInstantiatorPrivate::createAction(const QString &actionId, QQmlComponent *component) const {
         auto object = component->create(component->creationContext());
-        auto info = context->registry()->actionInfo(entry.id());
-        auto attachedInfoObject = qobject_cast<QuickActionInstantiatorAttachedType *>(qmlAttachedPropertiesObject<QuickActionInstantiator>(object));
-        attachedInfoObject->setId(info.id());
-        attachedInfoObject->setText(info.text(true));
-        attachedInfoObject->setDescription(info.description(true));
-        // TODO icon
-        attachedInfoObject->setShortcuts(info.shortcuts());
-        attachedInfoObject->setAttributes(info.attributes());
+        auto attachedInfoObject = attachInfoObjectTo(actionId, object, All);
         if (auto action = qobject_cast<QQuickAction *>(object)) {
             action->setText(attachedInfoObject->text());
-            // TODO icon
+            auto icon = action->icon();
+            icon.setSource(attachedInfoObject->iconSource());
+            action->setIcon(icon);
             if (!attachedInfoObject->shortcuts().isEmpty()) {
                 action->setShortcut(attachedInfoObject->shortcuts().first());
             }
         }
-
         return object;
     }
-    QObject *QuickActionInstantiatorPrivate::createMenu(const ActionLayoutEntry &entry) const {
+    QObject *QuickActionInstantiatorPrivate::createMenu(const QString &menuId) const {
+        Q_Q(const QuickActionInstantiator);
         auto menu = context->menuComponent()->create(context->menuComponent()->creationContext());
+        auto attachedInfoObject = attachInfoObjectTo(menuId, menu, All);
+        if (auto menuMenu = qobject_cast<QQuickMenu *>(menu)) {
+            menuMenu->setTitle(attachedInfoObject->text());
+            auto icon = menuMenu->icon();
+            icon.setSource(attachedInfoObject->iconSource());
+            menuMenu->setIcon(icon);
+        }
         auto instantiator = new QuickActionInstantiator(menu);
-        instantiator->setId(entry.id());
-
+        attachedInfoObject->setInstantiator(instantiator);
+        instantiator->setId(menuId);
+        instantiator->setContext(context);
+        instantiator->setOverrideMenuComponent(overrideMenuComponent);
+        QObject::connect(q, &QuickActionInstantiator::overrideMenuComponentChanged, instantiator, &QuickActionInstantiator::setOverrideMenuComponent);
+        instantiator->setOverrideSeparatorComponent(overrideSeparatorComponent);
+        QObject::connect(q, &QuickActionInstantiator::overrideSeparatorComponentChanged, instantiator, &QuickActionInstantiator::setOverrideSeparatorComponent);
+        instantiator->setOverrideStretchComponent(overrideStretchComponent);
+        QObject::connect(q, &QuickActionInstantiator::overrideStretchComponentChanged, instantiator, &QuickActionInstantiator::setOverrideStretchComponent);
+        QObject::connect(instantiator, &QuickActionInstantiator::objectAdded, menu, [=](int index, QObject *object) {
+            if (auto action = qobject_cast<QQuickAction *>(object)) {
+                QMetaObject::invokeMethod(menu, "insertAction", index, action);
+            } else if (auto submenu = qobject_cast<QQuickMenu *>(object)) {
+                QMetaObject::invokeMethod(menu, "insertMenu", index, submenu);
+            } else if (auto item = qobject_cast<QQuickItem *>(object)) {
+                QMetaObject::invokeMethod(menu, "insertItem", index, item);
+            } else {
+                qmlWarning(q) << "QAK::QuickActionInstantiator: Unknown object type" << object->metaObject()->className();
+            }
+        });
+        QObject::connect(instantiator, &QuickActionInstantiator::objectAboutToRemove, menu, [=](int index, QObject *object) {
+            if (auto action = qobject_cast<QQuickAction *>(object)) {
+                QMetaObject::invokeMethod(menu, "removeAction", action);
+            } else if (auto submenu = qobject_cast<QQuickMenu *>(object)) {
+                QMetaObject::invokeMethod(menu, "removeMenu", submenu);
+            } else if (auto item = qobject_cast<QQuickItem *>(object)) {
+                QMetaObject::invokeMethod(menu, "removeItem", item);
+            } else {
+                qmlWarning(q) << "QAK::QuickActionInstantiator: Unknown object type" << object->metaObject()->className();
+            }
+        });
+        instantiator->d_func()->updateLayouts();
+        setElement(menu, Menu);
         return menu;
     }
     QObject *QuickActionInstantiatorPrivate::createSeparator() const {
-        if (separatorComponent())
-            return separatorComponent()->create(separatorComponent()->creationContext());
+        if (separatorComponent()) {
+            auto separator = separatorComponent()->create(separatorComponent()->creationContext());
+            setElement(separator, Separator);
+            return separator;
+        }
         return nullptr;
     }
     QObject *QuickActionInstantiatorPrivate::createStretch() const {
-        if (stretchComponent())
-            return stretchComponent()->create(stretchComponent()->creationContext());
+        if (stretchComponent()) {
+            auto stretch = stretchComponent()->create(stretchComponent()->creationContext());
+            setElement(stretch, Stretch);
+            return stretch;
+        }
         return nullptr;
+    }
+    QuickActionInstantiatorAttachedType *QuickActionInstantiatorPrivate::attachInfoObjectTo(const QString &id, QObject *object, ActionProperty property) const {
+        auto info = context->registry()->actionInfo(id);
+        auto attachedInfoObject = qobject_cast<QuickActionInstantiatorAttachedType *>(qmlAttachedPropertiesObject<QuickActionInstantiator>(object));
+        attachedInfoObject->setId(info.id());
+        if (property & Text) {
+            auto text = info.text(true);
+            if (text.isEmpty()) {
+                text = info.text();
+            }
+            if (text.isEmpty()) {
+                text = info.id();
+            }
+            attachedInfoObject->setText(text);
+            auto description = info.description(true);
+            if (description.isEmpty()) {
+                description = info.description();
+            }
+            attachedInfoObject->setDescription(description);
+        }
+        if (property & Icon) {
+            // TODO icon
+        }
+        if (property & Keymap) {
+            attachedInfoObject->setShortcuts(context->registry()->actionShortcuts(info.id()));
+        }
+        attachedInfoObject->setAttributes(info.attributes());
+        return attachedInfoObject;
     }
     void QuickActionInstantiatorPrivate::updateContext() {
         Q_Q(QuickActionInstantiator);
         QObject::connect(context, &QuickActionContext::layoutsAboutToUpdate, q, [=] {
             updateLayouts();
+        });
+        QObject::connect(context, &QuickActionContext::textsAboutToUpdate, q, [=] {
+            updateActionProperty(Text);
+        });
+        QObject::connect(context, &QuickActionContext::iconsAboutToUpdate, q, [=] {
+            updateActionProperty(Icon);
+        });
+        QObject::connect(context, &QuickActionContext::keymapAboutToUpdate, q, [=] {
+            updateActionProperty(Keymap);
+        });
+        QObject::connect(context, &QuickActionContext::menuComponentChanged, q, [=] {
+            if (!overrideMenuComponent)
+                updateElement(Menu);
+        });
+        QObject::connect(context, &QuickActionContext::separatorComponentChanged, q, [=] {
+            if (!overrideSeparatorComponent)
+                updateElement(Separator);
+        });
+        QObject::connect(context, &QuickActionContext::stretchComponentChanged, q, [=] {
+            if (!overrideStretchComponent)
+                updateElement(Stretch);
         });
     }
     void QuickActionInstantiatorPrivate::updateLayouts() {
@@ -131,9 +223,59 @@ namespace QAK {
         if (info.isNull())
             return;
         for (const auto &child : info.children()) {
-            for (auto object : createObject(child)) {
+            auto list = createObject(child);
+            QObjectList filteredList;
+            filteredList.reserve(list.size());
+            for (int i = 0; i < list.size(); i++) {
+                auto object = list[i];
+                if (getElement(object) == Separator && (i == 0 || i == list.size() - 1 || !list[i - 1] || getElement(list[i - 1]) == Separator)) {
+                    object->deleteLater();
+                    list[i] = nullptr;
+                    continue;
+                }
+                filteredList.append(object);
+
+            }
+            for (auto object : filteredList) {
                 object->setParent(q);
                 addObject(objects.size(), object);
+            }
+        }
+    }
+    void QuickActionInstantiatorPrivate::updateActionProperty(ActionProperty property) {
+        for (auto object : objects) {
+            auto action = qobject_cast<QQuickAction *>(object);
+            if (!action)
+                continue;
+            auto attachedInfoObject = qobject_cast<QuickActionInstantiatorAttachedType *>(
+                qmlAttachedPropertiesObject<QuickActionInstantiator>(object));
+            attachInfoObjectTo(attachedInfoObject->id(), object, property);
+        }
+    }
+    QuickActionInstantiatorPrivate::Element
+        QuickActionInstantiatorPrivate::getElement(QObject *object) {
+        return static_cast<Element>(object->property(ELEMENT_PROPERTY).toInt());
+    }
+    void QuickActionInstantiatorPrivate::setElement(QObject *object, Element element) {
+        object->setProperty(ELEMENT_PROPERTY, element);
+    }
+    void QuickActionInstantiatorPrivate::updateElement(Element element) {
+        QList<QPair<int, QObject *>> objectsToUpdate;
+        for (int i = 0; i < objects.size(); i++) {
+            auto object = objects[i];
+            auto elementType = getElement(object);
+            if (elementType != element)
+                continue;
+            objectsToUpdate.emplace_back(i, object);
+        }
+        for (const auto &[i, object] : objectsToUpdate) {
+            if (element == Menu) {
+                auto attachedInfoObject = qobject_cast<QuickActionInstantiatorAttachedType *>(qmlAttachedPropertiesObject<QuickActionInstantiator>(object));
+                modifyObject(i, createMenu(attachedInfoObject->id()));
+            } else if (element == Separator) {
+                modifyObject(i, createSeparator());
+            } else if (element == Stretch) {
+                modifyObject(i, createStretch());
             }
         }
     }
@@ -166,6 +308,8 @@ namespace QAK {
         Q_D(QuickActionInstantiator);
         if (d->context == context)
             return;
+        if (d->context)
+            disconnect(d->context, nullptr, this, nullptr);
         d->context = context;
         d->updateContext();
         emit contextChanged();
@@ -188,7 +332,8 @@ namespace QAK {
         Q_D(QuickActionInstantiator);
         if (d->overrideMenuComponent != component) {
             d->overrideMenuComponent = component;
-            emit overrideMenuComponentChanged();
+            d->updateElement(QuickActionInstantiatorPrivate::Menu);
+            emit overrideMenuComponentChanged(component);
         }
     }
     QQmlComponent *QuickActionInstantiator::overrideSeparatorComponent() const {
@@ -199,7 +344,8 @@ namespace QAK {
         Q_D(QuickActionInstantiator);
         if (d->overrideSeparatorComponent != component) {
             d->overrideSeparatorComponent = component;
-            emit overrideSeparatorComponentChanged();
+            d->updateElement(QuickActionInstantiatorPrivate::Separator);
+            emit overrideSeparatorComponentChanged(component);
         }
     }
     QQmlComponent *QuickActionInstantiator::overrideStretchComponent() const {
@@ -210,7 +356,8 @@ namespace QAK {
         Q_D(QuickActionInstantiator);
         if (d->overrideStretchComponent != component) {
             d->overrideStretchComponent = component;
-            emit overrideStretchComponentChanged();
+            d->updateElement(QuickActionInstantiatorPrivate::Stretch);
+            emit overrideStretchComponentChanged(component);
         }
     }
 }

@@ -11,3 +11,4 @@ macro(qak_add_example _target)
 endmacro()
 
 add_subdirectory(mainwindow)
+add_subdirectory(quick)

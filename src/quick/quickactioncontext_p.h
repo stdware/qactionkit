@@ -3,6 +3,8 @@
 
 #include <QAKQuick/quickactioncontext.h>
 
+#include <QPointer>
+
 namespace QAK {
 
     class QuickActionContextPrivate {
@@ -11,9 +13,9 @@ namespace QAK {
         QuickActionContext *q_ptr;
 
         QHash<QString, QQmlComponent *> actions;
-        QQmlComponent *menuComponent = nullptr;
-        QQmlComponent *separatorComponent = nullptr;
-        QQmlComponent *stretchComponent = nullptr;
+        QPointer<QQmlComponent> menuComponent;
+        QPointer<QQmlComponent> separatorComponent;
+        QPointer<QQmlComponent> stretchComponent;
 
     };
 }
