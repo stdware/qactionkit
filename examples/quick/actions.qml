@@ -21,7 +21,7 @@ Item {
     }
     readonly property Component menu: Menu {}
     readonly property Component separator: MenuSeparator {}
-    readonly property Component stretch: Item {}
+    readonly property Component stretch: MenuSeparator {}
 
     Component.onCompleted: () => {
         context.addAction("core.openFile", openFileAction)

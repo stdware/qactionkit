@@ -21,9 +21,9 @@ namespace QAK {
         Q_PROPERTY(QString actionId READ id WRITE setId NOTIFY idChanged)
         Q_PROPERTY(QuickActionContext *context READ context WRITE setContext NOTIFY contextChanged)
         Q_PROPERTY(int count READ count NOTIFY countChanged)
-        Q_PROPERTY(QQmlComponent *overrideMenuComponent READ overrideMenuComponent WRITE setOverrideMenuComponent NOTIFY overrideMenuComponentChanged)
-        Q_PROPERTY(QQmlComponent *overrideSeparatorComponent READ overrideSeparatorComponent WRITE setOverrideSeparatorComponent NOTIFY overrideSeparatorComponentChanged)
-        Q_PROPERTY(QQmlComponent *overrideStretchComponent READ overrideStretchComponent WRITE setOverrideStretchComponent NOTIFY overrideStretchComponentChanged)
+        Q_PROPERTY(QQmlComponent *menuComponent READ menuComponent WRITE setMenuComponent RESET resetMenuComponent NOTIFY menuComponentChanged)
+        Q_PROPERTY(QQmlComponent *separatorComponent READ separatorComponent WRITE setSeparatorComponent RESET resetSeparatorComponent NOTIFY separatorComponentChanged)
+        Q_PROPERTY(QQmlComponent *stretchComponent READ stretchComponent WRITE setStretchComponent RESET resetStretchComponent NOTIFY stretchComponentChanged)
     public:
         explicit QuickActionInstantiator(QObject *parent = nullptr);
         ~QuickActionInstantiator() override;
@@ -40,24 +40,27 @@ namespace QAK {
 
         Q_INVOKABLE QObject *objectAt(int index) const;
 
-        QQmlComponent *overrideMenuComponent() const;
-        void setOverrideMenuComponent(QQmlComponent *component);
+        QQmlComponent *menuComponent() const;
+        void setMenuComponent(QQmlComponent *component);
+        void resetMenuComponent();
 
-        QQmlComponent *overrideSeparatorComponent() const;
-        void setOverrideSeparatorComponent(QQmlComponent *component);
+        QQmlComponent *separatorComponent() const;
+        void setSeparatorComponent(QQmlComponent *component);
+        void resetSeparatorComponent();
 
-        QQmlComponent *overrideStretchComponent() const;
-        void setOverrideStretchComponent(QQmlComponent *component);
+        QQmlComponent *stretchComponent() const;
+        void setStretchComponent(QQmlComponent *component);
+        void resetStretchComponent();
 
     signals:
         void idChanged();
         void objectAdded(int index, QObject *object);
-        void objectAboutToRemove(int index, QObject *object);
+        void objectRemoved(int index, QObject *object);
         void contextChanged();
         void countChanged();
-        void overrideMenuComponentChanged(QQmlComponent *);
-        void overrideSeparatorComponentChanged(QQmlComponent *);
-        void overrideStretchComponentChanged(QQmlComponent *);
+        void menuComponentChanged();
+        void separatorComponentChanged();
+        void stretchComponentChanged();
 
     private:
         QScopedPointer<QuickActionInstantiatorPrivate> d_ptr;
