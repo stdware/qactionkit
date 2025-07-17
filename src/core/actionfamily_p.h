@@ -34,7 +34,7 @@ namespace QAK {
             struct Single {
                 QString theme;
                 QString id;
-                QString fileName;
+                ActionIcon icon;
                 bool remove;
             };
             struct Config {
@@ -47,11 +47,11 @@ namespace QAK {
             stdc::linked_map<QStringList, std::variant<Single, Config, All>> items;
         };
         struct IconStorage {
-            QHash<QString, QHash<QString, QString>> singles; // theme -> [id -> file]
-            QHash<QString, QHash<QString, QHash<QString, QString>>>
-                configFiles; // configFile -> [theme -> [id -> file]]
+            QHash<QString, QHash<QString, ActionIcon>> singles; // theme -> [id -> icon]
+            QHash<QString, QHash<QString, QHash<QString, ActionIcon>>>
+                configFiles; // configFile -> [theme -> [id -> icon]]
             stdc::linked_map<QStringList, int /* NOT USED */> indexes;
-            QHash<QString, QHash<QString, QString>> storage;
+            QHash<QString, QHash<QString, ActionIcon>> storage; // theme -> [id -> icon]
         };
         mutable IconChange iconChange;
         mutable IconStorage iconStorage;

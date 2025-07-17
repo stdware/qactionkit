@@ -11,6 +11,7 @@
 //
 
 #include <QtCore/QPointer>
+#include <QtCore/QVarLengthArray>
 
 #include <stdcorelib/linked_map.h>
 
@@ -20,26 +21,26 @@
 
 namespace QAK {
 
-    class QAK_CORE_EXPORT ActionRegistryPrivate : public ActionFamilyPrivate {
+    class ActionRegistryPrivate : public ActionFamilyPrivate {
         Q_DECLARE_PUBLIC(ActionRegistry)
     public:
-        ActionRegistryPrivate();
-        ~ActionRegistryPrivate();
+        ActionRegistryPrivate() = default;
+        ~ActionRegistryPrivate() = default;
 
         stdc::linked_map<QString, const ActionExtension *> extensions;
+        stdc::linked_map<QString, ActionItemInfo> actionItems; // id(lowercase) -> info
 
-        mutable stdc::linked_map<QString, ActionItemInfo> actionItems; // id(lowercase) -> info
-        mutable bool actionItemsDirty;
-
-        mutable ActionRegistry::Catalog catalog;
-        mutable ActionRegistry::Layouts layouts;
+        ActionCatalog catalog;
+        ActionLayouts layouts;
 
         QVector<QPointer<ActionContext>> contexts;
 
-        void flushActionItems() const;
+        void flushActionItems();
 
-        ActionRegistry::Catalog defaultCatalog() const;
-        ActionRegistry::Layouts defaultLayouts() const;
+        ActionCatalog defaultCatalog() const;
+        ActionLayouts defaultLayouts() const;
+
+        ActionLayouts correctLayouts(const ActionLayouts &layouts) const;
     };
 
 }

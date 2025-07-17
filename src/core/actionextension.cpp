@@ -31,8 +31,8 @@ namespace QAK {
         QAK_ACTION_EXTENSION_VERSION, {}, {}, 0, &sharedNullItemInfoData, 0, &sharedNullInsertion,
     };
 
-    static QString translateString(const QString &s, const QMap<QString, QString> &attrs,
-                                   const QString &key, const QString &defaultCtx) {
+    static inline QString translateString(const QString &s, const QMap<QString, QString> &attrs,
+                                          const QString &key, const QString &defaultCtx) {
         bool ok;
         QString res = tryTranslate(attrs.value(key, defaultCtx).toUtf8().constData(),
                                    s.toUtf8().constData(), nullptr, -1, &ok);
@@ -95,7 +95,7 @@ namespace QAK {
     ActionInsertion::ActionInsertion() : e(&sharedNullExtensionData), i(0) {
     }
     bool ActionInsertion::isNull() const {
-        return e != &sharedNullExtensionData;
+        return e == &sharedNullExtensionData;
     }
     ActionInsertion::Anchor ActionInsertion::anchor() const {
         return e->insertions[i].anchor;

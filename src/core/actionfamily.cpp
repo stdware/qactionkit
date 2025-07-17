@@ -16,8 +16,7 @@ namespace QAK {
 
     class IconConfigParser {
     public:
-        IconConfigParser(QString fileName) : fileName(std::move(fileName)) {
-        }
+        IconConfigParser(QString fileName) : fileName(std::move(fileName)) {}
 
         inline QString resolve(const QString &s) const {
             return Util::parseExpression(s, variables);
@@ -189,9 +188,9 @@ namespace QAK {
                                 indexes.remove({itemToBeChanged.theme, itemToBeChanged.id});
                             }
                         }
-                    } else if (auto info = QFileInfo(itemToBeChanged.fileName); info.isFile()) {
+                    } else if (!itemToBeChanged.icon.isNull()) {
                         QStringList keys = {itemToBeChanged.theme, itemToBeChanged.id};
-                        map[itemToBeChanged.theme][itemToBeChanged.id] = info.canonicalFilePath();
+                        map[itemToBeChanged.theme][itemToBeChanged.id] = itemToBeChanged.icon;
                         indexes.remove(keys);
                         indexes.append(keys, {});
                     }
@@ -245,16 +244,12 @@ namespace QAK {
         }
     }
 
-    void ActionFamily::addIcon(const QString &theme, const QString &id, const QString &fileName) {
+    void ActionFamily::addIcon(const QString &theme, const QString &id, const ActionIcon &icon) {
         Q_D(ActionFamily);
-        if (!QFileInfo(fileName).isFile()) {
-            return;
-        }
-
         ActionFamilyPrivate::IconChange::Single itemToBeAdded{
             theme,
             id,
-            fileName,
+            icon,
             false,
         };
         auto &items = d->iconChange.items;
@@ -326,13 +321,13 @@ namespace QAK {
         return d->iconStorage.storage.value(theme).keys();
     }
 
-    QIcon ActionFamily::icon(const QString &theme, const QString &iconId) const {
+    ActionIcon ActionFamily::icon(const QString &theme, const QString &iconId) const {
         Q_D(const ActionFamily);
         d->flushIcons();
-        auto icon = QIcon(d->iconStorage.storage.value(theme).value(iconId));
+        auto icon = d->iconStorage.storage.value(theme).value(iconId);
         if (!icon.isNull())
             return {};
-        return QIcon(d->iconStorage.storage.value({}).value(iconId)); // fallback
+        return d->iconStorage.storage.value({}).value(iconId); // fallback
     }
 
     ActionFamily::ShortcutsFamily ActionFamily::shortcutsFamily() const {
@@ -377,11 +372,6 @@ namespace QAK {
 
     void ActionFamily::setIcon(const QString &id, const IconOverride &icon) {
         Q_D(ActionFamily);
-        if (icon && icon->isLocalFile()) {
-            QFileInfo info(icon->data());
-            if (!info.isFile())
-                return;
-        }
         d->overriddenIcons.insert(id, icon);
     }
 
@@ -396,11 +386,11 @@ namespace QAK {
             const auto &id = it.key();
             QJsonValue value = QJsonValue::Null;
             if (const auto &val = it.value()) {
-                QJsonArray arr;
+                QJsonArray keysArr;
                 for (const auto &subItem : val.value()) {
-                    arr.push_back(subItem.toString());
+                    keysArr.push_back(subItem.toString());
                 }
-                value = arr;
+                value = keysArr;
             }
             arr.append(QJsonObject({
                 {QStringLiteral("id"),   id   },
@@ -424,16 +414,17 @@ namespace QAK {
             const auto &shortcutsValue = obj.value(QStringLiteral("keys"));
             if (shortcutsValue.isNull()) {
                 result.insert(id, {});
-            } else if (!shortcutsValue.isArray()) {
+                continue;
+            }
+            if (!shortcutsValue.isArray()) {
                 continue;
             }
             const auto &shortcutsArr = shortcutsValue.toArray();
             QList<QKeySequence> shortcuts;
             shortcuts.reserve(shortcutsArr.size());
-            for (const auto &item : std::as_const(shortcutsArr)) {
-                QKeySequence ks = QKeySequence::fromString(item.toString());
-                if (!ks.isEmpty()) {
-                    shortcuts.append(ks);
+            for (const auto &subItem : std::as_const(shortcutsArr)) {
+                if (QKeySequence key = QKeySequence::fromString(subItem.toString()); !key.isEmpty()) {
+                    shortcuts.append(key);
                 }
             }
             result.insert(id, shortcuts);
@@ -447,9 +438,7 @@ namespace QAK {
             const auto &id = it.key();
             QJsonValue value = QJsonValue::Null;
             if (const auto &val = it.value()) {
-                value = val->isLocalFile()
-                            ? QStringLiteral("file")
-                            : QStringLiteral("id") + QStringLiteral(":") + val->data();
+                value = val->toJson();
             }
             arr.append(QJsonObject({
                 {QStringLiteral("id"),   id   },
@@ -473,14 +462,13 @@ namespace QAK {
             const auto &iconValue = obj.value(QStringLiteral("icon"));
             if (iconValue.isNull()) {
                 result.insert(id, {});
-            } else if (!iconValue.isString()) {
                 continue;
             }
-            auto iconStr = iconValue.toString();
-            if (iconStr.startsWith(QStringLiteral("file:"))) {
-                result.insert(id, ActionIcon(ActionIcon::LocalFile, iconStr.mid(5)));
-            } else if (iconStr.startsWith(QStringLiteral("id:"))) {
-                result.insert(id, ActionIcon(ActionIcon::ID, iconStr.mid(3)));
+            if (!iconValue.isString()) {
+                continue;
+            }
+            if (auto icon = ActionIcon::fromJson(iconValue); !icon.isNull()) {
+                result.insert(id, icon);
             }
         }
         return result;

@@ -2,6 +2,7 @@
 #define ACTIONREGISTRY_H
 
 #include <QtCore/QMap>
+#include <QtCore/QSharedData>
 
 #include <QAKCore/actionextension.h>
 #include <QAKCore/actionfamily.h>
@@ -12,6 +13,46 @@ namespace QAK {
 
     class ActionRegistryPrivate;
 
+    class ActionCatalogData;
+
+    class ActionCatalog {
+    public:
+        inline ActionCatalog() = default;
+        inline explicit ActionCatalog(const QVector<QPair<QString, QString>> &input) {
+            setNodeParentLinks(input);
+        }
+        inline explicit ActionCatalog(const QMap<QString, QStringList> &input) {
+            setAdjacencyTable(input);
+        }
+
+    public:
+        inline QMap<QString, QStringList> adjacencyTable() const {
+            return m_adjacencyMap;
+        }
+
+        inline QString parent(const QString &id) const {
+            return m_parentMap.value(id);
+        }
+
+        inline QStringList children(const QString &id) const {
+            return m_adjacencyMap.value(id);
+        }
+
+        inline void clear() {
+            m_adjacencyMap.clear();
+            m_parentMap.clear();
+        }
+
+        QAK_CORE_EXPORT void setAdjacencyTable(const QMap<QString, QStringList> &input);
+        QAK_CORE_EXPORT void setNodeParentLinks(const QVector<QPair<QString, QString>> &input);
+
+    protected:
+        QMap<QString, QStringList> m_adjacencyMap;
+        QMap<QString, QString> m_parentMap;
+    };
+
+    using ActionLayouts = QMap<QString, QVector<ActionLayoutEntry>>;
+
     class QAK_CORE_EXPORT ActionRegistry : public ActionFamily {
         Q_OBJECT
         Q_DECLARE_PRIVATE(ActionRegistry)
@@ -19,28 +60,24 @@ namespace QAK {
         explicit ActionRegistry(QObject *parent = nullptr);
         ~ActionRegistry();
 
-        using Catalog = QMap<QString /* id */, QStringList /* child ids */>;
-        using Layouts = QMap<QString /* id */, QList<ActionLayoutEntry> /* children */>;
-
     public:
-        void addExtension(const ActionExtension *extension);
-        void removeExtension(const ActionExtension *extension);
-
+        QList<const ActionExtension *> extensions() const;
+        void setExtensions(const QList<const ActionExtension *> &extensions);
+        
         QStringList actionIds() const;
         ActionItemInfo actionInfo(const QString &id) const;
-        Catalog catalog() const;
+        ActionCatalog catalog() const;
 
     public:
-        Layouts layouts() const;
-        void setLayouts(const Layouts &layouts);
+        ActionLayouts layouts() const;
+        void setLayouts(const ActionLayouts &layouts);
         void resetLayouts();
 
         inline QList<QKeySequence> actionShortcuts(const QString &id) const;
-        inline QIcon actionIcon(const QString &theme, const QString &id) const;
 
     public:
-        static QJsonObject layoutsToJson(const Layouts &shortcutsFamily);
-        static Layouts layoutsFromJson(const QJsonObject &obj);
+        static QJsonObject layoutsToJson(const ActionLayouts &layouts);
+        static ActionLayouts layoutsFromJson(const QJsonObject &obj);
 
     public:
         void addContext(ActionContext *ctx);
@@ -60,13 +97,6 @@ namespace QAK {
             return o.value();
         }
         return actionInfo(id).shortcuts();
-    }
-
-    inline QIcon ActionRegistry::actionIcon(const QString &theme, const QString &id) const {
-        if (const auto o = icon(id); o) {
-            return o->isLocalFile() ? QIcon(o->data()) : icon(theme, o->data());
-        }
-        return icon(theme, id);
     }
 
 }

@@ -23,8 +23,7 @@ int main(int argc, char *argv[]) {
     ActionRegistry registry;
     auto coreActionExtension = getCoreActionExtension();
     auto pluginActionExtension = getPluginActionExtension();
-    registry.addExtension(coreActionExtension);
-    registry.addExtension(pluginActionExtension);
+    registry.setExtensions({coreActionExtension, pluginActionExtension});
 
     QuickActionContext context;
     registry.addContext(&context);

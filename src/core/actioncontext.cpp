@@ -3,8 +3,7 @@
 
 namespace QAK {
 
-    ActionContextPrivate::ActionContextPrivate() {
-    }
+    ActionContextPrivate::ActionContextPrivate() = default;
 
     ActionContextPrivate::~ActionContextPrivate() = default;
 

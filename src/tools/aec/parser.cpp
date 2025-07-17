@@ -371,9 +371,9 @@ struct ParserPrivate {
         return *pInfo;
     }
 
-    ActionLayoutEntryMessage parseLayoutRecursively(const QMXmlAdaptorElement *e,
-                                                    const QString &upperCatalog,
-                                                    QStringList &path) {
+    ActionLayoutEntryMessage
+        parseLayoutRecursively(const QMXmlAdaptorElement *e, const QString &upperCatalog,
+                               stdc::linked_map<QString, int /*NOT USED*/> &path) {
         const auto &checkChildren = [this, e](const char *typeName) {
             if (!e->children.isEmpty()) {
                 error("%s: layout element of %s type shouldn't have children\n",
@@ -399,7 +399,7 @@ struct ParserPrivate {
         // Recursive path chain detected?
         if (path.contains(id)) {
             error("%s: recursive chain in layout: %s\n", qPrintable(q.fileName),
-                  qPrintable((QStringList(path) << id).join(", ")));
+                  qPrintable((QStringList(path.keys_qlist()) << id).join(", ")));
             std::exit(1);
         }
         entry.id = id;
@@ -432,14 +432,13 @@ struct ParserPrivate {
                 std::exit(1);
             }
 
-            path << id;
+            path.append(id, {});
 
             QVector<ActionLayoutEntryMessage> children;
             for (const auto &child : e->children) {
                 children.append(parseLayoutRecursively(child.data(), id, path));
             }
-
-            path.removeLast();
+            path.erase(std::prev(path.end()));
 
             info.children = std::move(children);
         }
@@ -645,7 +644,7 @@ struct ParserPrivate {
 
         // Parse layouts
         for (const auto &item : std::as_const(layoutElements)) {
-            QStringList path;
+            stdc::linked_map<QString, int /*NOT USED*/> path;
             std::ignore = parseLayoutRecursively(item, {}, path);
         }
 

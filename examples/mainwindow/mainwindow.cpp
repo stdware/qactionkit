@@ -65,8 +65,7 @@ void MainWindow::initActions() {
            qPrintable(pluginActionExtension->hash()));
 
     // Register extensions
-    m_actionRegistry->addExtension(coreActionExtension);
-    m_actionRegistry->addExtension(pluginActionExtension);
+    m_actionRegistry->setExtensions({coreActionExtension, pluginActionExtension});
 
     // Create action context (Window scope)
     m_actionContext = new QAK::WidgetActionContext(this);
