@@ -9,11 +9,6 @@ Q_LOGGING_CATEGORY(qActionKitLog, "qactionkit")
 
 namespace QAK {
 
-    /*!
-        \namespace QAK
-        \brief QActionKit namespace
-    */
-
     static ActionItemInfoData sharedNullItemInfoData = {
         {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},
     };

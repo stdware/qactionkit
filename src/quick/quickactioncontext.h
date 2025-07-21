@@ -13,9 +13,12 @@ namespace QAK {
     class QAK_QUICK_EXPORT QuickActionContext : public ActionContext {
         Q_OBJECT
         Q_DECLARE_PRIVATE(QuickActionContext)
-        Q_PROPERTY(QQmlComponent *menuComponent READ menuComponent WRITE setMenuComponent NOTIFY menuComponentChanged)
-        Q_PROPERTY(QQmlComponent *separatorComponent READ separatorComponent WRITE setSeparatorComponent NOTIFY separatorComponentChanged)
-        Q_PROPERTY(QQmlComponent *stretchComponent READ stretchComponent WRITE setStretchComponent NOTIFY stretchComponentChanged)
+        Q_PROPERTY(QQmlComponent *menuComponent READ menuComponent WRITE setMenuComponent NOTIFY
+                       menuComponentChanged)
+        Q_PROPERTY(QQmlComponent *separatorComponent READ separatorComponent WRITE
+                       setSeparatorComponent NOTIFY separatorComponentChanged)
+        Q_PROPERTY(QQmlComponent *stretchComponent READ stretchComponent WRITE setStretchComponent
+                       NOTIFY stretchComponentChanged)
 
     public:
         explicit QuickActionContext(QObject *parent = nullptr);
@@ -44,10 +47,7 @@ namespace QAK {
         void keymapAboutToUpdate();
 
     protected:
-        void updateLayouts() override;
-        void updateTexts() override;
-        void updateIcons() override;
-        void updateKeymap() override;
+        void updateElement(ActionElement element) override;
 
     private:
         QScopedPointer<QuickActionContextPrivate> d_ptr;

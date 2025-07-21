@@ -21,10 +21,7 @@ namespace QAK {
         ActionRegistry *registry() const;
 
     protected:
-        virtual void updateLayouts() = 0;
-        virtual void updateTexts() = 0;
-        virtual void updateKeymap() = 0;
-        virtual void updateIcons() = 0;
+        virtual void updateElement(ActionElement element) = 0;
 
     protected:
         ActionContext(ActionContextPrivate &d, QObject *parent = nullptr);

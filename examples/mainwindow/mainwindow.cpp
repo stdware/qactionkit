@@ -78,8 +78,8 @@ void MainWindow::initActions() {
     m_actionContext->addToolBar(QStringLiteral("core.mainToolBar"), m_toolBar);
 
     // Build actions
-    m_actionRegistry->updateContextLayouts();
-    m_actionRegistry->updateContextTexts();
-    m_actionRegistry->updateContextKeymap();
-    m_actionRegistry->updateContextIcons();
+    m_actionRegistry->updateContext(QAK::AE_Layouts);
+    m_actionRegistry->updateContext(QAK::AE_Texts);
+    m_actionRegistry->updateContext(QAK::AE_Keymap);
+    m_actionRegistry->updateContext(QAK::AE_Icons);
 }

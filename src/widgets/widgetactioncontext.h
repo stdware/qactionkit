@@ -56,10 +56,7 @@ namespace QAK {
         void actionToggled(const QString &id, bool checked);
 
     protected:
-        void updateLayouts() override;
-        void updateTexts() override;
-        void updateKeymap() override;
-        void updateIcons() override;
+        void updateElement(ActionElement element) override;
 
     protected:
         virtual QAction *createAction(const QString &id, QObject *parent) const;

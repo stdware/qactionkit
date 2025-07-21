@@ -32,9 +32,6 @@ namespace QAK {
         }
     }
 
-    /*!
-        Returns the translation text for \a sourceText, along with the success flag.
-    */
     QString tryTranslate(const char *context, const char *sourceText, const char *disambiguation,
                          int n, bool *ok) {
         if (ok)

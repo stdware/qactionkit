@@ -1,7 +1,5 @@
 #include "widgetactioncontext.h"
 
-#include <variant>
-
 #include <QAKCore/private/actioncontext_p.h>
 
 namespace QAK {
@@ -91,19 +89,7 @@ namespace QAK {
     void WidgetActionContext::removeToolBar(QToolBar *toolBar) {
     }
 
-    void WidgetActionContext::updateLayouts() {
-        Q_D(WidgetActionContext);
-
-        Q_ASSERT(d->registry);
-    }
-
-    void WidgetActionContext::updateTexts() {
-    }
-
-    void WidgetActionContext::updateKeymap() {
-    }
-
-    void WidgetActionContext::updateIcons() {
+    void WidgetActionContext::updateElement(ActionElement element) {
     }
 
     QAction *WidgetActionContext::createAction(const QString &id, QObject *parent) const {

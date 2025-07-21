@@ -36,7 +36,7 @@ int main(int argc, char *argv[]) {
 
     engine.load(":/qt/qml/QActionKit/Examples/Quick/main.qml");
 
-    registry.updateContextLayouts();
+    registry.updateContext(QAK::AE_Layouts);
 
     return a.exec();
 

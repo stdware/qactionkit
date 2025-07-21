@@ -16,6 +16,9 @@ namespace QAK {
 
     class ActionExtension;
 
+    /// \class ActionLayoutEntry
+    /// \brief An entry in an \c ActionLayout, representing an action, a group, a menu, a separator,
+    /// or a stretch.
     class ActionLayoutEntry {
     public:
         enum Type {
@@ -27,16 +30,25 @@ namespace QAK {
         };
 
         inline ActionLayoutEntry(const QString &id = {}, Type type = Action)
-            : m_id(id), m_type(type) {}
-        inline QString id() const { return m_id; }
-        inline Type type() const { return m_type; }
-        inline bool isNull() const { return !m_id.isEmpty(); }
+            : m_id(id), m_type(type) {
+        }
+        inline QString id() const {
+            return m_id;
+        }
+        inline Type type() const {
+            return m_type;
+        }
+        inline bool isNull() const {
+            return !m_id.isEmpty();
+        }
 
     protected:
         QString m_id;
         Type m_type;
     };
 
+    /// \class ActionItemInfo
+    /// \brief Provides metadata about an action item.
     class QAK_CORE_EXPORT ActionItemInfo {
     public:
         ActionItemInfo();
@@ -55,13 +67,29 @@ namespace QAK {
         QString text(bool translated = false) const;
         QString actionClass(bool translated = false) const;
         QString description(bool translated = false) const;
-        QString icon() const; // icon id
+
+        /// \brief Returns the icon id of.
+        QString icon() const;
+
+        /// \brief Returns the shortcuts, only valid for action type.
         QList<QKeySequence> shortcuts() const;
+
+        /// \brief Returns the catalog parent id of the action item.
         QString catalog() const;
+
+        /// \brief Returns whether the action item is a top-level menu-like item such as a pop-up
+        /// menu, menubar or toolbar.
         bool topLevel() const;
 
+        /// \brief Returns the attributes of the action item.
+        /// Reserved attributes:
+        ///   - textTr: the translation context of \c text()
+        ///   - classTr: the translation context of \c actionClass()
+        ///   - descriptionTr: the translation context of \c description()
         QMap<QString, QString> attributes() const;
 
+        /// \brief Returns the children of the action item, each child is an \c ActionLayoutEntry
+        /// reference to another \c ActionItemInfo in the same extension.
         QVector<ActionLayoutEntry> children() const;
 
     private:
@@ -72,6 +100,9 @@ namespace QAK {
         friend class ActionRegistry;
     };
 
+    /// \class ActionInsertion
+    /// \brief Provides metadata about an insertion routine  which should be applied when building
+    /// the action layouts.
     class QAK_CORE_EXPORT ActionInsertion {
     public:
         ActionInsertion();
@@ -85,9 +116,16 @@ namespace QAK {
         };
 
         Anchor anchor() const;
+
+        /// \brief Returns the target item id.
         QString target() const;
+
+        /// \brief Returns the relative item id in \c target(), only valid for \c After and
+        /// \c Before anchors.
         QString relativeTo() const;
 
+        /// \brief Returns the items to be inserted, each item is an \c ActionLayoutEntry reference
+        /// to another \c ActionItemInfo in the same extension.
         QVector<ActionLayoutEntry> items() const;
 
     private:

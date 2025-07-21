@@ -5,7 +5,8 @@
 
 namespace QAK {
 
-    QuickActionContext::QuickActionContext(QObject *parent) : ActionContext(parent), d_ptr(new QuickActionContextPrivate) {
+    QuickActionContext::QuickActionContext(QObject *parent)
+        : ActionContext(parent), d_ptr(new QuickActionContextPrivate) {
         Q_D(QuickActionContext);
         d->q_ptr = this;
     }
@@ -55,17 +56,22 @@ namespace QAK {
             emit stretchComponentChanged();
         }
     }
-    void QuickActionContext::updateLayouts() {
-        emit layoutsAboutToUpdate();
-    }
-    void QuickActionContext::updateTexts() {
-        emit textsAboutToUpdate();
-    }
-    void QuickActionContext::updateIcons() {
-        emit iconsAboutToUpdate();
-    }
-    void QuickActionContext::updateKeymap() {
-        emit keymapAboutToUpdate();
+
+    void QuickActionContext::updateElement(ActionElement element) {
+        switch (element) {
+            case AE_Layouts:
+                emit layoutsAboutToUpdate();
+                break;
+            case AE_Texts:
+                emit textsAboutToUpdate();
+                break;
+            case AE_Keymap:
+                emit keymapAboutToUpdate();
+                break;
+            case AE_Icons:
+                emit iconsAboutToUpdate();
+                break;
+        }
     }
 
 }

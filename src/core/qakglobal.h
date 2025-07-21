@@ -27,4 +27,15 @@
 #  define QACTIONKIT_PRINTF_FORMAT(fmtpos, attrpos)
 #endif
 
+namespace QAK {
+
+    enum ActionElement {
+        AE_Layouts,
+        AE_Texts,
+        AE_Keymap,
+        AE_Icons,
+    };
+
+}
+
 #endif // QAKGLOBAL_H

@@ -14,6 +14,7 @@ option(QACTIONKIT_BUILD_STATIC "Build static libraries" OFF)
 option(QACTIONKIT_BUILD_WIDGETS "Build widgets module" ON)
 option(QACTIONKIT_BUILD_QUICK "Build quick module" ON)
 option(QACTIONKIT_BUILD_EXAMPLES "Build examples" OFF)
+option(QACTIONKIT_BUILD_TESTS "Build tests" OFF)
 option(QACTIONKIT_BUILD_DOCUMENTATIONS "Build documentations" OFF)
 option(QACTIONKIT_INSTALL "Install library" ON)
 
@@ -94,4 +95,8 @@ add_subdirectory(src)
 
 if(QACTIONKIT_BUILD_EXAMPLES)
     add_subdirectory(examples)
+endif()
+
+if (QACTIONKIT_BUILD_TESTS)
+    add_subdirectory(tests)
 endif()

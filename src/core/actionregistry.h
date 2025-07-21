@@ -13,8 +13,6 @@ namespace QAK {
 
     class ActionRegistryPrivate;
 
-    class ActionCatalogData;
-
     class ActionCatalog {
     public:
         inline ActionCatalog() = default;
@@ -51,7 +49,30 @@ namespace QAK {
         QMap<QString, QString> m_parentMap;
     };
 
-    using ActionLayouts = QMap<QString, QVector<ActionLayoutEntry>>;
+    class ActionLayouts {
+    public:
+        inline ActionLayouts() = default;
+        inline explicit ActionLayouts(const QMap<QString, QVector<ActionLayoutEntry>> &input,
+                                      const QStringList &hashList)
+            : m_adjacencyMap(input), m_hashList(hashList) {
+        }
+
+    public:
+        inline QMap<QString, QVector<ActionLayoutEntry>> adjacencyMap() const {
+            return m_adjacencyMap;
+        }
+
+        inline QStringList hashList() const {
+            return m_hashList;
+        }
+
+        QAK_CORE_EXPORT QJsonObject toJsonObject() const;
+        QAK_CORE_EXPORT static ActionLayouts fromJsonObject(const QJsonObject &obj);
+
+    protected:
+        QMap<QString, QVector<ActionLayoutEntry>> m_adjacencyMap;
+        QStringList m_hashList; // hash of extensions
+    };
 
     class QAK_CORE_EXPORT ActionRegistry : public ActionFamily {
         Q_OBJECT
@@ -63,7 +84,7 @@ namespace QAK {
     public:
         QList<const ActionExtension *> extensions() const;
         void setExtensions(const QList<const ActionExtension *> &extensions);
-        
+
         QStringList actionIds() const;
         ActionItemInfo actionInfo(const QString &id) const;
         ActionCatalog catalog() const;
@@ -76,17 +97,10 @@ namespace QAK {
         inline QList<QKeySequence> actionShortcuts(const QString &id) const;
 
     public:
-        static QJsonObject layoutsToJson(const ActionLayouts &layouts);
-        static ActionLayouts layoutsFromJson(const QJsonObject &obj);
-
-    public:
         void addContext(ActionContext *ctx);
         void removeContext(ActionContext *ctx);
 
-        void updateContextLayouts();
-        void updateContextTexts();
-        void updateContextKeymap();
-        void updateContextIcons();
+        void updateContext(ActionElement element);
 
     protected:
         ActionRegistry(ActionRegistryPrivate &d, QObject *parent = nullptr);

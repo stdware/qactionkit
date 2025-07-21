@@ -123,7 +123,8 @@ static inline bool isStringDigits(const QString &s) {
 
 struct ParserPrivate {
     Parser &q;
-    ParserPrivate(Parser &q) : q(q) {}
+    ParserPrivate(Parser &q) : q(q) {
+    }
 
     // Configuration
     QString defaultCatalog;
@@ -176,7 +177,9 @@ struct ParserPrivate {
 
     ParseResult result;
 
-    inline QString resolve(const QString &s) const { return Util::parseExpression(s, q.variables); }
+    inline QString resolve(const QString &s) const {
+        return Util::parseExpression(s, q.variables);
+    }
 
     // Infer item type when parsing item info
     void parseItemAttrs(const QMXmlAdaptorElement &e, ActionItemInfoMessage &info,
