@@ -13,20 +13,9 @@ ApplicationWindow {
     required property QtObject context
 
     menuBar: MenuBar {
-        id: menuBar
-        ActionInstantiator {
+        MenuBarActionInstantiator {
             actionId: "core.mainMenu"
             context: main.context
-            onObjectAdded: (index, menu) => {
-                if (!(menu instanceof Menu))
-                    return
-                menuBar.insertMenu(index, menu)
-            }
-            onObjectAboutToRemove: (index, menu) => {
-                if (!(menu instanceof Menu))
-                    return
-                menuBar.removeMenu(menu)
-            }
         }
     }
 

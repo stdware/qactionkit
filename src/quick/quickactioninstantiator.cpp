@@ -9,19 +9,20 @@
 
 #include <QAKQuick/quickactioncontext.h>
 #include <QAKQuick/private/quickactioninstantiatorattachedtype_p.h>
+#include <QAKQuick/private/quickmenuactioninstantiator_p.h>
 
 namespace QAK {
 
     static const char *ELEMENT_PROPERTY = "_qak_element";
 
     QQmlComponent *QuickActionInstantiatorPrivate::menuComponent() const {
-        return overrideMenuComponent ? overrideMenuComponent.get() : context ? context->menuComponent() : nullptr;
+        return isMenuComponentExplicitlySet ? menuComponent_override.get() : context ? context->menuComponent() : nullptr;
     }
     QQmlComponent *QuickActionInstantiatorPrivate::separatorComponent() const {
-        return overrideSeparatorComponent ? overrideSeparatorComponent.get() : context ? context->separatorComponent() : nullptr;
+        return isSeparatorComponentExplicitlySet ? separatorComponent_override.get() : context ? context->separatorComponent() : nullptr;
     }
     QQmlComponent *QuickActionInstantiatorPrivate::stretchComponent() const {
-        return overrideStretchComponent ? overrideStretchComponent.get() : context ? context->stretchComponent() : nullptr;
+        return isStretchComponentExplicitlySet ? stretchComponent_override.get() : context ? context->stretchComponent() : nullptr;
     }
     void QuickActionInstantiatorPrivate::addObject(int index, QObject *object) {
         Q_Q(QuickActionInstantiator);
@@ -31,22 +32,22 @@ namespace QAK {
     }
     void QuickActionInstantiatorPrivate::removeObject(int index) {
         Q_Q(QuickActionInstantiator);
-        emit q->objectAboutToRemove(index, objects.at(index));
+        emit q->objectRemoved(index, objects.at(index));
         objects.at(index)->deleteLater();
         objects.remove(index);
         emit q->countChanged();
     }
     void QuickActionInstantiatorPrivate::modifyObject(int index, QObject *object) {
         Q_Q(QuickActionInstantiator);
-        emit q->objectAboutToRemove(index, objects.at(index));
+        emit q->objectRemoved(index, objects.at(index));
         objects.at(index)->deleteLater();
         objects[index] = object;
         emit q->objectAdded(index, object);
     }
     QObjectList QuickActionInstantiatorPrivate::createObject(const ActionLayoutEntry &entry) const {
+        QObject *o;
+        QQmlComponent *component;
         switch (entry.type()) {
-            QObject *o;
-            QQmlComponent *component;
             case ActionLayoutEntry::Separator:
                 o = createSeparator();
                 if (o)
@@ -97,7 +98,7 @@ namespace QAK {
     }
     QObject *QuickActionInstantiatorPrivate::createMenu(const QString &menuId) const {
         Q_Q(const QuickActionInstantiator);
-        auto menu = context->menuComponent()->create(context->menuComponent()->creationContext());
+        auto menu = menuComponent()->create(context->menuComponent()->creationContext());
         auto attachedInfoObject = attachInfoObjectTo(menuId, menu, All);
         if (auto menuMenu = qobject_cast<QQuickMenu *>(menu)) {
             menuMenu->setTitle(attachedInfoObject->text());
@@ -105,39 +106,52 @@ namespace QAK {
             icon.setSource(attachedInfoObject->iconSource());
             menuMenu->setIcon(icon);
         }
-        auto instantiator = new QuickActionInstantiator(menu);
+        auto instantiator = new QuickMenuActionInstantiator(menu);
         attachedInfoObject->setInstantiator(instantiator);
         instantiator->setId(menuId);
+        // No need to connect contextChanged, because all menus will be reloaded when context is changed
         instantiator->setContext(context);
-        instantiator->setOverrideMenuComponent(overrideMenuComponent);
-        QObject::connect(q, &QuickActionInstantiator::overrideMenuComponentChanged, instantiator, &QuickActionInstantiator::setOverrideMenuComponent);
-        instantiator->setOverrideSeparatorComponent(overrideSeparatorComponent);
-        QObject::connect(q, &QuickActionInstantiator::overrideSeparatorComponentChanged, instantiator, &QuickActionInstantiator::setOverrideSeparatorComponent);
-        instantiator->setOverrideStretchComponent(overrideStretchComponent);
-        QObject::connect(q, &QuickActionInstantiator::overrideStretchComponentChanged, instantiator, &QuickActionInstantiator::setOverrideStretchComponent);
-        QObject::connect(instantiator, &QuickActionInstantiator::objectAdded, menu, [=](int index, QObject *object) {
-            if (auto action = qobject_cast<QQuickAction *>(object)) {
-                QMetaObject::invokeMethod(menu, "insertAction", index, action);
-            } else if (auto submenu = qobject_cast<QQuickMenu *>(object)) {
-                QMetaObject::invokeMethod(menu, "insertMenu", index, submenu);
-            } else if (auto item = qobject_cast<QQuickItem *>(object)) {
-                QMetaObject::invokeMethod(menu, "insertItem", index, item);
+
+        if (isMenuComponentExplicitlySet) {
+            instantiator->setMenuComponent(menuComponent_override);
+        } else {
+            instantiator->resetMenuComponent();
+        }
+        QObject::connect(q, &QuickActionInstantiator::menuComponentChanged, instantiator, [=] {
+            if (isMenuComponentExplicitlySet) {
+                instantiator->setMenuComponent(menuComponent_override);
             } else {
-                qmlWarning(q) << "QAK::QuickActionInstantiator: Unknown object type" << object->metaObject()->className();
+                instantiator->resetMenuComponent();
             }
         });
-        QObject::connect(instantiator, &QuickActionInstantiator::objectAboutToRemove, menu, [=](int index, QObject *object) {
-            if (auto action = qobject_cast<QQuickAction *>(object)) {
-                QMetaObject::invokeMethod(menu, "removeAction", action);
-            } else if (auto submenu = qobject_cast<QQuickMenu *>(object)) {
-                QMetaObject::invokeMethod(menu, "removeMenu", submenu);
-            } else if (auto item = qobject_cast<QQuickItem *>(object)) {
-                QMetaObject::invokeMethod(menu, "removeItem", item);
+
+        if (isSeparatorComponentExplicitlySet) {
+            instantiator->setSeparatorComponent(separatorComponent_override);
+        } else {
+            instantiator->resetSeparatorComponent();
+        }
+        QObject::connect(q, &QuickActionInstantiator::separatorComponentChanged, instantiator, [=] {
+            if (isSeparatorComponentExplicitlySet) {
+                instantiator->setSeparatorComponent(separatorComponent_override);
             } else {
-                qmlWarning(q) << "QAK::QuickActionInstantiator: Unknown object type" << object->metaObject()->className();
+                instantiator->resetSeparatorComponent();
             }
         });
-        instantiator->d_func()->updateLayouts();
+
+        if (isStretchComponentExplicitlySet) {
+            instantiator->setStretchComponent(stretchComponent_override);
+        } else {
+            instantiator->resetStretchComponent();
+        }
+        QObject::connect(q, &QuickActionInstantiator::stretchComponentChanged, instantiator, [=] {
+            if (isStretchComponentExplicitlySet) {
+                instantiator->setStretchComponent(stretchComponent_override);
+            } else {
+                instantiator->resetStretchComponent();
+            }
+        });
+        
+        instantiator->QuickActionInstantiator::d_func()->updateLayouts();
         setElement(menu, Menu);
         return menu;
     }
@@ -200,16 +214,23 @@ namespace QAK {
             updateActionProperty(Keymap);
         });
         QObject::connect(context, &QuickActionContext::menuComponentChanged, q, [=] {
-            if (!overrideMenuComponent)
+            if (!isMenuComponentExplicitlySet) {
                 updateElement(Menu);
+                emit q->menuComponentChanged();
+            }
+
         });
         QObject::connect(context, &QuickActionContext::separatorComponentChanged, q, [=] {
-            if (!overrideSeparatorComponent)
+            if (!isSeparatorComponentExplicitlySet) {
                 updateElement(Separator);
+                emit q->separatorComponentChanged();
+            }
         });
         QObject::connect(context, &QuickActionContext::stretchComponentChanged, q, [=] {
-            if (!overrideStretchComponent)
+            if (!isStretchComponentExplicitlySet) {
                 updateElement(Stretch);
+                emit q->stretchComponentChanged();
+            }
         });
     }
     void QuickActionInstantiatorPrivate::updateLayouts() {
@@ -324,41 +345,71 @@ namespace QAK {
             return nullptr;
         return d->objects.at(index);
     }
-    QQmlComponent *QuickActionInstantiator::overrideMenuComponent() const {
+    QQmlComponent *QuickActionInstantiator::menuComponent() const {
         Q_D(const QuickActionInstantiator);
-        return d->overrideMenuComponent;
+        return d->menuComponent();
     }
-    void QuickActionInstantiator::setOverrideMenuComponent(QQmlComponent *component) {
+    void QuickActionInstantiator::setMenuComponent(QQmlComponent *component) {
         Q_D(QuickActionInstantiator);
-        if (d->overrideMenuComponent != component) {
-            d->overrideMenuComponent = component;
-            d->updateElement(QuickActionInstantiatorPrivate::Menu);
-            emit overrideMenuComponentChanged(component);
-        }
+        if (d->isMenuComponentExplicitlySet && d->menuComponent_override == component)
+            return;
+        d->menuComponent_override = component;
+        d->isMenuComponentExplicitlySet = true;
+        d->updateElement(QuickActionInstantiatorPrivate::Menu);
+        emit menuComponentChanged();
     }
-    QQmlComponent *QuickActionInstantiator::overrideSeparatorComponent() const {
+    void QuickActionInstantiator::resetMenuComponent() {
+        Q_D(QuickActionInstantiator);
+        if (!d->isMenuComponentExplicitlySet)
+            return;
+        d->menuComponent_override = nullptr;
+        d->isMenuComponentExplicitlySet = false;
+        d->updateElement(QuickActionInstantiatorPrivate::Menu);
+        emit menuComponentChanged();
+    }
+    QQmlComponent *QuickActionInstantiator::separatorComponent() const {
         Q_D(const QuickActionInstantiator);
-        return d->overrideSeparatorComponent;
+        return d->separatorComponent();
     }
-    void QuickActionInstantiator::setOverrideSeparatorComponent(QQmlComponent *component) {
+    void QuickActionInstantiator::setSeparatorComponent(QQmlComponent *component) {
         Q_D(QuickActionInstantiator);
-        if (d->overrideSeparatorComponent != component) {
-            d->overrideSeparatorComponent = component;
-            d->updateElement(QuickActionInstantiatorPrivate::Separator);
-            emit overrideSeparatorComponentChanged(component);
-        }
+        if (d->isSeparatorComponentExplicitlySet && d->separatorComponent_override == component)
+            return;
+        d->separatorComponent_override = component;
+        d->isSeparatorComponentExplicitlySet = true;
+        d->updateElement(QuickActionInstantiatorPrivate::Separator);
+        emit separatorComponentChanged();
     }
-    QQmlComponent *QuickActionInstantiator::overrideStretchComponent() const {
+    void QuickActionInstantiator::resetSeparatorComponent() {
+        Q_D(QuickActionInstantiator);
+        if (!d->isSeparatorComponentExplicitlySet)
+            return;
+        d->separatorComponent_override = nullptr;
+        d->isSeparatorComponentExplicitlySet = false;
+        d->updateElement(QuickActionInstantiatorPrivate::Separator);
+        emit separatorComponentChanged();
+    }
+    QQmlComponent *QuickActionInstantiator::stretchComponent() const {
         Q_D(const QuickActionInstantiator);
-        return d->overrideStretchComponent;
+        return d->stretchComponent();
     }
-    void QuickActionInstantiator::setOverrideStretchComponent(QQmlComponent *component) {
+    void QuickActionInstantiator::setStretchComponent(QQmlComponent *component) {
         Q_D(QuickActionInstantiator);
-        if (d->overrideStretchComponent != component) {
-            d->overrideStretchComponent = component;
-            d->updateElement(QuickActionInstantiatorPrivate::Stretch);
-            emit overrideStretchComponentChanged(component);
-        }
+        if (d->isStretchComponentExplicitlySet && d->stretchComponent_override == component)
+            return;
+        d->stretchComponent_override = component;
+        d->isStretchComponentExplicitlySet = true;
+        d->updateElement(QuickActionInstantiatorPrivate::Stretch);
+        emit stretchComponentChanged();
+    }
+    void QuickActionInstantiator::resetStretchComponent() {
+        Q_D(QuickActionInstantiator);
+        if (!d->isStretchComponentExplicitlySet)
+            return;
+        d->stretchComponent_override = nullptr;
+        d->isStretchComponentExplicitlySet = false;
+        d->updateElement(QuickActionInstantiatorPrivate::Stretch);
+        emit stretchComponentChanged();
     }
 }
 

@@ -18,9 +18,12 @@ namespace QAK {
         QPointer<QuickActionContext> context = nullptr;
         QObjectList objects;
 
-        QPointer<QQmlComponent> overrideMenuComponent;
-        QPointer<QQmlComponent> overrideSeparatorComponent;
-        QPointer<QQmlComponent> overrideStretchComponent;
+        QPointer<QQmlComponent> menuComponent_override;
+        bool isMenuComponentExplicitlySet{};
+        QPointer<QQmlComponent> separatorComponent_override;
+        bool isSeparatorComponentExplicitlySet{};
+        QPointer<QQmlComponent> stretchComponent_override;
+        bool isStretchComponentExplicitlySet{};
 
         QQmlComponent *menuComponent() const;
         QQmlComponent *separatorComponent() const;
