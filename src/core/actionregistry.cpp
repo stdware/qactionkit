@@ -100,7 +100,7 @@ namespace QAK {
         m_parentMap = std::move(parentMap);
     }
 
-    void ActionCatalog::setNodeParentLinks(const QVector<QPair<QString, QString>> &input) {
+    void ActionCatalog::setParentMap(const QVector<QPair<QString, QString>> &input) {
         QMap<QString, QStringList> inputAdjacencyMap;
         for (const auto &pair : input) {
             const QString &childId = pair.first;

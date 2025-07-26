@@ -155,21 +155,23 @@ struct ParserPrivate {
             }
 
             if (item->name == QStringLiteral("vars")) {
+                QSet<QString> commandLineKeys;
+                for (auto it = q.variables.begin(); it != q.variables.end(); ++it) {
+                    commandLineKeys.insert(it.key());
+                }
+
                 for (const auto &subItem : item->children) {
-                    auto key = resolve(subItem->properties.value(QStringLiteral("key")));
+                    const auto &key = subItem->properties.value(QStringLiteral("key"));
+                    if (commandLineKeys.contains(key))
+                        continue;
+
                     auto value = resolve(subItem->properties.value(QStringLiteral("value")));
                     if (!key.isEmpty() && !reservedVars.contains(key)) {
-                        vars.insert(key, value);
+                        q.variables.insert(key, value);
                     }
                 }
             }
         }
-
-        // Override configuration with command line options
-        for (auto it = q.variables.begin(); it != q.variables.end(); ++it) {
-            vars.insert(it.key(), it.value());
-        }
-        q.variables = std::move(vars);
     }
 
     // Intermediate data

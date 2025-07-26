@@ -108,13 +108,18 @@ namespace QAK {
         ActionInsertion();
         bool isNull() const;
 
+        /// \enum Anchor
+        /// \brief The position where the insertion should be applied.
         enum Anchor {
+            /// \brief Insert the items at the beginning.
             Last,
+            /// \brief Insert the items at the end.
             First,
+            /// \brief Insert the items after the item \c relativeTo.
             After,
+            /// \brief Insert the items before the item \c relativeTo.
             Before,
         };
-
         Anchor anchor() const;
 
         /// \brief Returns the target item id.
@@ -136,6 +141,10 @@ namespace QAK {
         friend class ActionRegistry;
     };
 
+    /// \class ActionExtension
+    /// \brief Contains the action item metadata to build the action layouts.
+    /// \note An \c ActionExtension is created by the Action Extension Compiler in a generated C++
+    /// source file, and is referenced by using \c QAK_STATIC_ACTION_EXTENSION macro.
     class QAK_CORE_EXPORT ActionExtension {
     public:
         QString version() const;
@@ -157,7 +166,18 @@ namespace QAK {
 
 }
 
-// WARNING: this macro cannot be used in a namespace.
+/// \macro QAK_STATIC_ACTION_EXTENSION
+/// \brief Returns a reference to the static action extension with the given name.
+/// \warning This macro cannot be used in a namespace.
+///
+/// \example
+///     A function that returns a reference to a given action extension with identifier
+///     "core_actions"
+/// \code
+///     static auto getActionExtension() {
+///         return QAK_STATIC_ACTION_EXTENSION(core_actions);
+///     }
+/// \endcode
 #define QAK_STATIC_ACTION_EXTENSION(name)                                                          \
     []() {                                                                                         \
         extern const QAK::ActionExtension *QT_MANGLE_NAMESPACE(                                    \

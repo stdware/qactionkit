@@ -5,6 +5,7 @@ namespace QAK {
     class ActionIconPrivate : public QSharedData {
     public:
         QIcon icon;
+        QString currentColor;
 
         struct AddFileInfo {
             QString filePath;
@@ -39,6 +40,14 @@ namespace QAK {
 
     bool ActionIcon::isNull() const {
         return d_ptr->icon.isNull();
+    }
+
+    QString ActionIcon::currentColor() const {
+        return d_ptr->currentColor;
+    }
+
+    void ActionIcon::setCurrentColor(const QString &color) {
+        d_ptr->currentColor = color;
     }
 
     QJsonValue ActionIcon::toJson() const {

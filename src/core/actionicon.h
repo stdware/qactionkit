@@ -29,6 +29,9 @@ namespace QAK {
         QIcon icon() const;
         bool isNull() const;
 
+        QString currentColor() const;
+        void setCurrentColor(const QString &color);
+
         QJsonValue toJson() const;
         static ActionIcon fromJson(const QJsonValue &json);
 

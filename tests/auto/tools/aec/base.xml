@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<actionExtension>
+
+    <version>1.0</version>
+    <id>com.test.property</id>
+
+    <configuration>
+        <!-- Set default catalog -->
+        <defaultCatalog>defaultCatalog</defaultCatalog>
+
+        <!-- Set variables -->
+        <vars>
+            <var key="VALUE_FOO" value="foo" />
+            <var key="VALUE_FOO_REF" value="${VALUE_FOO}" />
+            <var key="VALUE_BAR" value="bar" />
+        </vars>
+
+        <!-- Set global translation contexts -->
+        <translationContext
+            text="Application::ActionText"
+            class="Application::ActionClass"
+            description="Application::ActionDescription"
+        />
+    </configuration>
+
+    <items>
+        <!-- Test variables -->
+        <action id="foo" text="${VALUE_FOO}" />
+        <action id="foo_ref" text="${VALUE_FOO_REF}" />
+        <action id="bar" text="${VALUE_BAR}" />
+
+        <!-- Test builtin variables -->
+        <action id="id" text="${_ID_}" />
+        <action id="version" text="${_VERSION_}" />
+        <action id="identifier" text="${_IDENTIFIER_}" />
+        <action id="fileName" text="${_FILENAME_}" />
+        <action id="fileBaseName" text="${_FILEBASENAME_}" />
+
+        <!-- Test properties -->
+        <action id="TestAction" text="text" description="description" icon="icon" class="class"
+            shortcut="Ctrl+T" />
+
+        <!-- Test translation contexts -->
+        <action id="TestActionTr" textTr="x" classTr="y" descriptionTr="z" />
+
+        <!-- Test top level items -->
+        <menu id="TestMenu" topLevel="true" />
+        <menuBar id="TestMenuBar" />
+        <toolBar id="TestToolBar" />
+
+        <!-- Test catalog -->
+        <item id="TestCatalogItem" catalog="TestCatalog" />
+        <phony id="TestCatalog" />
+    </items>
+
+</actionExtension>

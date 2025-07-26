@@ -43,13 +43,15 @@
 
     <!-- Declaration: core items -->
     <items>
-        <!-- Action item: action/menu/group/phony
+        <!-- Action item: action/menu,menuBar,toolBar/group/phony
              - id (required)
-             = text (optional): action text, default: last part of id with space separated (big-camel style)
+             - text (optional): action text, default: last part of id with space separated (big-camel style)
              - description (optional)
              - icon (optional): icon id, default: id
              - class (optional): action category
-             - shortcut/shortcuts (optional)
+             - shortcut/shortcuts: action only (optional)
+             - catalog: catalog parent id (optional)
+             - topLevel: top level item tag, menu only
              - textTr (optional): text translation context
              - classTr (optional): action category translation text
              - descriptionTr (optional): description translation context

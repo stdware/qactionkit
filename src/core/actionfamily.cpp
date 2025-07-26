@@ -16,7 +16,8 @@ namespace QAK {
 
     class IconConfigParser {
     public:
-        IconConfigParser(QString fileName) : fileName(std::move(fileName)) {}
+        IconConfigParser(QString fileName) : fileName(std::move(fileName)) {
+        }
 
         inline QString resolve(const QString &s) const {
             return Util::parseExpression(s, variables);
@@ -260,18 +261,19 @@ namespace QAK {
 
     void ActionFamily::addIconManifest(const QString &fileName) {
         Q_D(ActionFamily);
-        if (!QFileInfo(fileName).isFile()) {
+        QFileInfo info(fileName);
+        if (!info.isFile()) {
             return;
         }
-
+        QString canonicalFileName = info.canonicalFilePath();
         ActionFamilyPrivate::IconChange::Config itemToBeAdded{
-            fileName,
+            canonicalFileName,
             false,
         };
         auto &items = d->iconChange.items;
-        QStringList keys = {fileName};
+        QStringList keys = {canonicalFileName};
         items.remove(keys);
-        items.append({fileName}, {itemToBeAdded});
+        items.append({canonicalFileName}, {itemToBeAdded});
     }
 
     void ActionFamily::removeIcon(const QString &theme, const QString &id) {
@@ -290,12 +292,17 @@ namespace QAK {
 
     void ActionFamily::removeIconManifest(const QString &fileName) {
         Q_D(ActionFamily);
+        QFileInfo info(fileName);
+        if (!info.isFile()) {
+            return;
+        }
+        QString canonicalFileName = info.canonicalFilePath();
         auto &items = d->iconChange.items;
         ActionFamilyPrivate::IconChange::Config itemToBeRemoved{
-            fileName,
+            canonicalFileName,
             true,
         };
-        QStringList keys = {fileName};
+        QStringList keys = {canonicalFileName};
         items.remove(keys);
         items.append(keys, itemToBeRemoved);
     }
@@ -340,14 +347,9 @@ namespace QAK {
         d->overriddenShortcuts = shortcutsFamily;
     }
 
-    ActionFamily::IconFamily ActionFamily::iconFamily() const {
-        Q_D(const ActionFamily);
-        return d->overriddenIcons;
-    }
-
-    void ActionFamily::setIconFamily(const IconFamily &iconFamily) {
+    void ActionFamily::resetShortcuts() {
         Q_D(ActionFamily);
-        d->overriddenIcons = iconFamily;
+        d->overriddenShortcuts.clear();
     }
 
     ActionFamily::ShortcutsOverride ActionFamily::shortcuts(const QString &id) const {
@@ -360,9 +362,14 @@ namespace QAK {
         d->overriddenShortcuts.insert(id, shortcuts);
     }
 
-    void ActionFamily::resetShortcuts() {
+    ActionFamily::IconFamily ActionFamily::iconFamily() const {
+        Q_D(const ActionFamily);
+        return d->overriddenIcons;
+    }
+
+    void ActionFamily::setIconFamily(const IconFamily &iconFamily) {
         Q_D(ActionFamily);
-        d->overriddenShortcuts.clear();
+        d->overriddenIcons = iconFamily;
     }
 
     ActionFamily::IconOverride ActionFamily::icon(const QString &id) const {
@@ -423,7 +430,8 @@ namespace QAK {
             QList<QKeySequence> shortcuts;
             shortcuts.reserve(shortcutsArr.size());
             for (const auto &subItem : std::as_const(shortcutsArr)) {
-                if (QKeySequence key = QKeySequence::fromString(subItem.toString()); !key.isEmpty()) {
+                if (QKeySequence key = QKeySequence::fromString(subItem.toString());
+                    !key.isEmpty()) {
                     shortcuts.append(key);
                 }
             }
