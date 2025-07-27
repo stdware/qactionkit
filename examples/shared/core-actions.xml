@@ -58,7 +58,7 @@
         -->
 
         <!-- Example: core actions -->
-        <action id="core.openFile" text="Open File" class="File" shortcut="Ctrl+N" />
+        <action id="core.openFile" text="Open File" class="File" shortcut="Ctrl+O" />
         <action id="core.saveFile" text="Save File" class="File" shortcut="Ctrl+S" />
 
         <!-- Example: configurable top level item -->
