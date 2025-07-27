@@ -36,6 +36,8 @@ namespace QAK {
         QQmlComponent *stretchComponent() const;
         void setStretchComponent(QQmlComponent *component);
 
+        void updateElement(ActionElement element) override;
+
     signals:
         void actionChanged(const QString &id);
         void menuComponentChanged();
@@ -45,9 +47,6 @@ namespace QAK {
         void textsAboutToUpdate();
         void iconsAboutToUpdate();
         void keymapAboutToUpdate();
-
-    protected:
-        void updateElement(ActionElement element) override;
 
     private:
         QScopedPointer<QuickActionContextPrivate> d_ptr;

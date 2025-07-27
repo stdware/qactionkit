@@ -20,7 +20,6 @@ namespace QAK {
 
         ActionRegistry *registry() const;
 
-    protected:
         virtual void updateElement(ActionElement element) = 0;
 
     protected:
