@@ -28,14 +28,16 @@ namespace QAK {
         ~ActionRegistryPrivate() = default;
 
         stdc::linked_map<QString, const ActionExtension *> extensions;
-        stdc::linked_map<QString, ActionItemInfo> actionItems; // id(lowercase) -> info
 
-        ActionCatalog catalog;
-        ActionLayouts layouts;
+        mutable stdc::linked_map<QString, ActionItemInfo> actionItems; // id(lowercase) -> info
+        mutable bool extensionsDirty = false;
+
+        mutable ActionCatalog catalog;
+        mutable ActionLayouts layouts;
 
         QVector<QPointer<ActionContext>> contexts;
 
-        void flushActionItems();
+        void flushActionItems() const;
 
         ActionCatalog defaultCatalog() const;
         ActionLayouts defaultLayouts() const;

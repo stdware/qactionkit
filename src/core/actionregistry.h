@@ -95,6 +95,7 @@ namespace QAK {
     public:
         QList<const ActionExtension *> extensions() const;
         void setExtensions(const QList<const ActionExtension *> &extensions);
+        void addExtension(const ActionExtension *extension);
 
         QStringList actionIds() const;
         ActionItemInfo actionInfo(const QString &id) const;

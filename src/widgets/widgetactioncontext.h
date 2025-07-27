@@ -32,23 +32,20 @@ namespace QAK {
     public:
         QAction *action(const QString &id) const;
         void addAction(const QString &id, QAction *action);
-        void removeAction(const QString &id);
 
         QList<QWidget *> widgets(const QString &id) const;
-        void addWidgetFactory(const QString &id, const std::function<QWidget *()> &fac);
-        void removeWidgetFactory(const QString &id);
+        void addWidgetFactory(const QString &id, std::function<QWidget *(QWidget *)> fac);
 
-        QList<QMenu *> menus(const QString &id) const;
+        QMenu *menu(const QString &id) const;
         void addMenu(const QString &id, QMenu *menu);
-        void removeMenu(QMenu *menu);
 
-        QList<QMenuBar *> menuBars(const QString &id) const;
+        QMenuBar *menuBar(const QString &id) const;
         void addMenuBar(const QString &id, QMenuBar *menuBar);
-        void removeMenuBar(QMenuBar *menuBar);
 
-        QList<QToolBar *> toolBars(const QString &id) const;
+        QToolBar *toolBar(const QString &id) const;
         void addToolBar(const QString &id, QToolBar *toolBar);
-        void removeToolBar(QToolBar *toolBar);
+
+        void remove(const QString &id);
 
     Q_SIGNALS:
         void actionTriggered(const QString &id);

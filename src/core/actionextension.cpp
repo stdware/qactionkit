@@ -23,7 +23,7 @@ namespace QAK {
     };
 
     static ActionExtensionData sharedNullExtensionData = {
-        QAK_ACTION_EXTENSION_VERSION, {}, {}, 0, &sharedNullItemInfoData, 0, &sharedNullInsertion,
+        ACTION_EXTENSION_VERSION, {}, {}, 0, &sharedNullItemInfoData, 0, &sharedNullInsertion,
     };
 
     static inline QString translateString(const QString &s, const QMap<QString, QString> &attrs,

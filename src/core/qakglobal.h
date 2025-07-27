@@ -5,6 +5,7 @@
 #define QAKGLOBAL_H
 
 #include <QtCore/QtGlobal>
+#include <QtCore/QString>
 
 #ifndef QAK_CORE_EXPORT
 #  ifdef QAK_CORE_STATIC
@@ -17,8 +18,6 @@
 #    endif
 #  endif
 #endif
-
-#define QAK_ACTION_EXTENSION_VERSION "1.0"
 
 #if defined(__GNUC__) || defined(__clang__)
 #  define QACTIONKIT_PRINTF_FORMAT(fmtpos, attrpos)                                                \
@@ -35,6 +34,8 @@ namespace QAK {
         AE_Keymap,
         AE_Icons,
     };
+
+    static const QString ACTION_EXTENSION_VERSION = QStringLiteral("1.0");
 
 }
 

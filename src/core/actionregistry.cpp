@@ -123,7 +123,11 @@ namespace QAK {
         return {};
     }
 
-    void ActionRegistryPrivate::flushActionItems() {
+    void ActionRegistryPrivate::flushActionItems() const {
+        if (!extensionsDirty)
+            return;
+        extensionsDirty = false;
+
         actionItems.clear();
         for (const auto &pair : std::as_const(extensions)) {
             auto &e = pair.second;
@@ -273,7 +277,6 @@ namespace QAK {
 
     void ActionRegistry::setExtensions(const QList<const ActionExtension *> &extensions) {
         Q_D(ActionRegistry);
-
         d->extensions.clear();
         for (const auto &ext : extensions) {
             if (d->extensions.contains(ext->id())) {
@@ -283,36 +286,53 @@ namespace QAK {
             }
             d->extensions.append(ext->id(), ext);
         }
-        d->flushActionItems();
+        d->extensionsDirty = true;
+    }
+
+    void ActionRegistry::addExtension(const ActionExtension *extension) {
+        Q_D(ActionRegistry);
+        if (d->extensions.contains(extension->id())) {
+            qCWarning(qActionKitLog).noquote().nospace()
+                << "Action extension with id \"" << extension->id() << "\" already exists";
+            return;
+        }
+        d->extensions.append(extension->id(), extension);
+        d->extensionsDirty = true;
     }
 
     QStringList ActionRegistry::actionIds() const {
         Q_D(const ActionRegistry);
+        d->flushActionItems();
         return d->actionItems.keys_qlist();
     }
 
     ActionItemInfo ActionRegistry::actionInfo(const QString &id) const {
         Q_D(const ActionRegistry);
+        d->flushActionItems();
         return d->actionItems.value(id);
     }
 
     ActionCatalog ActionRegistry::catalog() const {
         Q_D(const ActionRegistry);
+        d->flushActionItems();
         return d->catalog;
     }
 
     ActionLayouts ActionRegistry::layouts() const {
         Q_D(const ActionRegistry);
+        d->flushActionItems();
         return d->layouts;
     }
 
     void ActionRegistry::setLayouts(const ActionLayouts &layouts) {
         Q_D(ActionRegistry);
+        d->flushActionItems();
         d->layouts = d->correctLayouts(layouts);
     }
 
     void ActionRegistry::resetLayouts() {
         Q_D(ActionRegistry);
+        d->flushActionItems();
         d->layouts = d->defaultLayouts();
     }
 
