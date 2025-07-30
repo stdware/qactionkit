@@ -243,16 +243,24 @@ namespace QAK {
         auto info = context->registry()->actionInfo(id);
         if (info.isNull())
             return;
-        for (const auto &child : info.children()) {
+        auto children = info.children();
+        for (int childIndex = 0; childIndex < children.size(); childIndex++) {
+            const auto &child = children[childIndex];
             auto list = createObject(child);
             QObjectList filteredList;
             filteredList.reserve(list.size());
             for (int i = 0; i < list.size(); i++) {
                 auto object = list[i];
-                if (getElement(object) == Separator && (i == 0 || i == list.size() - 1 || !list[i - 1] || getElement(list[i - 1]) == Separator)) {
-                    object->deleteLater();
-                    list[i] = nullptr;
-                    continue;
+                if (getElement(object) == Separator) {
+                    bool shouldDeleteSeparator =
+                        !filteredList.isEmpty() && getElement(filteredList.last()) == Separator ||
+                        filteredList.isEmpty() && (objects.isEmpty() || getElement(objects.last()) == Separator) ||
+                        i == list.size() - 1 && childIndex == children.size() - 1;
+                    if (shouldDeleteSeparator) {
+                        object->deleteLater();
+                        list[i] = nullptr;
+                        continue;
+                    }
                 }
                 filteredList.append(object);
 
