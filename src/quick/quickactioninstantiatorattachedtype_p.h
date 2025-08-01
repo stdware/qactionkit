@@ -6,6 +6,10 @@
 
 namespace QAK {
 
+    class ActionItemInfo;
+
+    class QuickActionContext;
+
     class QuickActionInstantiator;
 
     class QuickActionInstantiatorAttachedTypePrivate;
@@ -18,7 +22,7 @@ namespace QAK {
         Q_PROPERTY(QString id READ id CONSTANT)
         Q_PROPERTY(QString text READ text NOTIFY textChanged)
         Q_PROPERTY(QString description READ description NOTIFY descriptionChanged)
-        Q_PROPERTY(QString iconSource READ iconSource NOTIFY iconSourceChanged)
+        Q_PROPERTY(QUrl iconSource READ iconSource NOTIFY iconSourceChanged)
         Q_PROPERTY(QList<QKeySequence> shortcuts READ shortcuts NOTIFY shortcutsChanged)
         Q_PROPERTY(QMap<QString, QString> attributes READ attributes CONSTANT)
         Q_PROPERTY(QuickActionInstantiator *instantiator READ instantiator CONSTANT)
@@ -26,6 +30,8 @@ namespace QAK {
     public:
         explicit QuickActionInstantiatorAttachedType(QObject *parent = nullptr);
         ~QuickActionInstantiatorAttachedType() override;
+
+        void init(const ActionItemInfo &info, QuickActionContext *context, int);
 
         QString id() const;
         void setId(const QString &id);
@@ -36,8 +42,8 @@ namespace QAK {
         QString description() const;
         void setDescription(const QString &description);
 
-        QString iconSource() const;
-        void setIconSource(const QString &iconSource);
+        QUrl iconSource() const;
+        void setIconSource(const QUrl &iconSource);
 
         QList<QKeySequence> shortcuts() const;
         void setShortcuts(const QList<QKeySequence> &shortcuts);

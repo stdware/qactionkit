@@ -4,11 +4,42 @@
 #include <QKeySequence>
 
 #include <QAKQuick/private/quickactioninstantiator_p.h>
+#include <QAKQuick/private/quickactioninstantiator_p_p.h>
+#include <QAKQuick/quickactioncontext.h>
+#include <QAKCore/actionextension.h>
 
 namespace QAK {
     QuickActionInstantiatorAttachedType::QuickActionInstantiatorAttachedType(QObject *parent) : QObject(parent), d_ptr(new QuickActionInstantiatorAttachedTypePrivate) {
     }
     QuickActionInstantiatorAttachedType::~QuickActionInstantiatorAttachedType() = default;
+
+    void QuickActionInstantiatorAttachedType::init(const ActionItemInfo &info, QuickActionContext *context, int property) {
+        setId(info.id());
+        if (property & QuickActionInstantiatorPrivate::Text) {
+            auto text = info.text(true);
+            if (text.isEmpty()) {
+                text = info.text();
+            }
+            if (text.isEmpty()) {
+                text = info.id();
+            }
+            setText(text);
+            auto description = info.description(true);
+            if (description.isEmpty()) {
+                description = info.description();
+            }
+            setDescription(description);
+        }
+        if (property & QuickActionInstantiatorPrivate::Icon) {
+            // TODO: theme
+            setIconSource(QUrl::fromLocalFile(context->registry()->actionIcon("", info.id()).filePath(QIcon::Normal, QIcon::Off)));
+        }
+        if (property & QuickActionInstantiatorPrivate::Keymap) {
+            setShortcuts(context->registry()->actionShortcuts(info.id()));
+        }
+        setAttributes(info.attributes());
+    }
+
     QString QuickActionInstantiatorAttachedType::id() const {
         Q_D(const QuickActionInstantiatorAttachedType);
         return d->id;
@@ -39,11 +70,11 @@ namespace QAK {
             emit descriptionChanged();
         }
     }
-    QString QuickActionInstantiatorAttachedType::iconSource() const {
+    QUrl QuickActionInstantiatorAttachedType::iconSource() const {
         Q_D(const QuickActionInstantiatorAttachedType);
         return d->iconSource;
     }
-    void QuickActionInstantiatorAttachedType::setIconSource(const QString &iconSource) {
+    void QuickActionInstantiatorAttachedType::setIconSource(const QUrl &iconSource) {
         Q_D(QuickActionInstantiatorAttachedType);
         if (d->iconSource != iconSource) {
             d->iconSource = iconSource;

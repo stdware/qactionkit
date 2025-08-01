@@ -3,6 +3,12 @@
 
 #include <QQmlComponent>
 
+#include <QtQuickTemplates2/private/qquickaction_p.h>
+
+#include <QAKCore/actionregistry.h>
+#include <QAKQuick/private/quickactioninstantiatorattachedtype_p_p.h>
+#include <QAKQuick/private/quickactioninstantiator_p_p.h>
+
 namespace QAK {
 
     QuickActionContext::QuickActionContext(QObject *parent)
@@ -22,6 +28,20 @@ namespace QAK {
     QQmlComponent *QuickActionContext::action(const QString &id) const {
         Q_D(const QuickActionContext);
         return d->actions.value(id);
+    }
+    void QuickActionContext::attachActionInfo(const QString &id, QObject *object) {
+        auto attachedInfoObject = qobject_cast<QuickActionInstantiatorAttachedType *>(qmlAttachedPropertiesObject<QuickActionInstantiator>(object));
+        Q_ASSERT(attachedInfoObject);
+        attachedInfoObject->init(registry()->actionInfo(id), this, QuickActionInstantiatorPrivate::All);
+        if (auto action = qobject_cast<QQuickAction *>(object)) {
+            action->setText(attachedInfoObject->text());
+            auto icon = action->icon();
+            icon.setSource(attachedInfoObject->iconSource());
+            action->setIcon(icon);
+            if (!attachedInfoObject->shortcuts().isEmpty()) {
+                action->setShortcut(attachedInfoObject->shortcuts().first());
+            }
+        }
     }
     QQmlComponent *QuickActionContext::menuComponent() const {
         Q_D(const QuickActionContext);

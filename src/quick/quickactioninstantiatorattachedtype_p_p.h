@@ -4,6 +4,7 @@
 #include <QAKQuick/private/quickactioninstantiatorattachedtype_p.h>
 
 #include <QVariant>
+#include <QUrl>
 
 namespace QAK {
     class QuickActionInstantiatorAttachedTypePrivate {
@@ -11,7 +12,7 @@ namespace QAK {
         QString id;
         QString text;
         QString description;
-        QString iconSource;
+        QUrl iconSource;
         QList<QKeySequence> shortcuts;
         QMap<QString, QString> attributes;
         QuickActionInstantiator *instantiator;

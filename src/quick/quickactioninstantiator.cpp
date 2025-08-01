@@ -172,31 +172,11 @@ namespace QAK {
         return nullptr;
     }
     QuickActionInstantiatorAttachedType *QuickActionInstantiatorPrivate::attachInfoObjectTo(const QString &id, QObject *object, ActionProperty property) const {
+        Q_Q(const QuickActionInstantiator);
         auto info = context->registry()->actionInfo(id);
         auto attachedInfoObject = qobject_cast<QuickActionInstantiatorAttachedType *>(qmlAttachedPropertiesObject<QuickActionInstantiator>(object));
-        attachedInfoObject->setId(info.id());
-        if (property & Text) {
-            auto text = info.text(true);
-            if (text.isEmpty()) {
-                text = info.text();
-            }
-            if (text.isEmpty()) {
-                text = info.id();
-            }
-            attachedInfoObject->setText(text);
-            auto description = info.description(true);
-            if (description.isEmpty()) {
-                description = info.description();
-            }
-            attachedInfoObject->setDescription(description);
-        }
-        if (property & Icon) {
-            // TODO icon
-        }
-        if (property & Keymap) {
-            attachedInfoObject->setShortcuts(context->registry()->actionShortcuts(info.id()));
-        }
-        attachedInfoObject->setAttributes(info.attributes());
+        attachedInfoObject->init(info, context, property);
+        attachedInfoObject->setInstantiator(const_cast<QuickActionInstantiator *>(q));
         return attachedInfoObject;
     }
     void QuickActionInstantiatorPrivate::updateContext() {

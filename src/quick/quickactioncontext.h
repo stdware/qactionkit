@@ -26,6 +26,7 @@ namespace QAK {
 
         Q_INVOKABLE void addAction(const QString &id, QQmlComponent *component);
         Q_INVOKABLE QQmlComponent *action(const QString &id) const;
+        Q_INVOKABLE void attachActionInfo(const QString &id, QObject *object);
 
         QQmlComponent *menuComponent() const;
         void setMenuComponent(QQmlComponent *component);
