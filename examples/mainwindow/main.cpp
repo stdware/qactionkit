@@ -20,16 +20,8 @@ public:
 int main(int argc, char *argv[]) {
     QApplication a(argc, argv);
 
-    // MainWindow w;
-    // w.show();
-
-    MessageBox msgBox1;
-    msgBox1.setIcon(QMessageBox::Warning);
-    msgBox1.setText("This is a warning message");
-    msgBox1.setInformativeText("This is additional information");
-    msgBox1.setWindowTitle("Warning");
-    msgBox1.setStandardButtons(QMessageBox::Ok | QMessageBox::Cancel);
-    msgBox1.exec();
+    MainWindow w;
+    w.show();
 
     return a.exec();
 }

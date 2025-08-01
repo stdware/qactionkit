@@ -109,7 +109,6 @@ namespace QAK {
 
                     icons.insert(iconId, path);
                 }
-
                 result.insert(themeId, icons);
             }
             return result;
@@ -189,7 +188,7 @@ namespace QAK {
                                 indexes.remove({itemToBeChanged.theme, itemToBeChanged.id});
                             }
                         }
-                    } else if (!itemToBeChanged.icon.isNull()) {
+                    } else {
                         QStringList keys = {itemToBeChanged.theme, itemToBeChanged.id};
                         map[itemToBeChanged.theme][itemToBeChanged.id] = itemToBeChanged.icon;
                         indexes.remove(keys);
@@ -209,7 +208,7 @@ namespace QAK {
                                    IconConfigParser(itemToBeChanged.fileName).parse();
                                !iconsFromFile.isEmpty()) {
                         QStringList keys = {itemToBeChanged.fileName};
-                        map[itemToBeChanged.fileName] = {};
+                        map[itemToBeChanged.fileName] = {}; // TODO
                         indexes.remove(keys);
                         indexes.append(keys, {});
                     }
@@ -331,10 +330,7 @@ namespace QAK {
     ActionIcon ActionFamily::icon(const QString &theme, const QString &iconId) const {
         Q_D(const ActionFamily);
         d->flushIcons();
-        auto icon = d->iconStorage.storage.value(theme).value(iconId);
-        if (!icon.isNull())
-            return {};
-        return d->iconStorage.storage.value({}).value(iconId); // fallback
+        return d->iconStorage.storage.value(theme).value(iconId);
     }
 
     ActionFamily::ShortcutsFamily ActionFamily::shortcutsFamily() const {
