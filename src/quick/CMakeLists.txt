@@ -9,7 +9,7 @@ qak_add_library(${PROJECT_NAME} AUTOGEN
     SOURCES ${_src}
     FEATURES cxx_std_17
     QT_LINKS Core Gui Qml Quick QuickTemplates2
-    QT_INCLUDE_PRIVATE QuickTemplates2
+    QT_INCLUDE_PRIVATE Quick QuickTemplates2
     LINKS QAKCore
     INCLUDE_PRIVATE *
     PREFIX QAK_QUICK
