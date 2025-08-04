@@ -237,7 +237,7 @@ namespace QAK {
                         filteredList.isEmpty() && (objects.isEmpty() || getElement(objects.last()) == Separator) ||
                         i == list.size() - 1 && childIndex == children.size() - 1;
                     if (shouldDeleteSeparator) {
-                        object->deleteLater();
+                       delete object;
                         list[i] = nullptr;
                         continue;
                     }
