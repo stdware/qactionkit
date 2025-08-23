@@ -26,7 +26,7 @@ struct ActionItemInfoMessage {
 
     bool topLevel = false;
 
-    QMap<QString, QString> attributes;
+    QMap<QAK::ActionAttributeKey, QString> attributes;
 
     QVector<ActionLayoutEntryMessage> children;
 

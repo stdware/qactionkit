@@ -8,6 +8,9 @@
 QJsonObject QMXmlAdaptorElement::toObject() const {
     QJsonObject obj;
     obj.insert("name", name);
+    if (!namespaceUri.isEmpty()) {
+        obj.insert("namespaceUri", namespaceUri);
+    }
     if (!value.isEmpty()) {
         obj.insert("value", value);
     } else {
@@ -17,9 +20,13 @@ QJsonObject QMXmlAdaptorElement::toObject() const {
         }
         obj.insert("children", arr);
     }
-    QJsonObject props;
+    QJsonArray props;
     for (auto it = properties.begin(); it != properties.end(); ++it) {
-        props.insert(it.key(), it.value());
+        QJsonObject propObj;
+        propObj.insert("name", it.key().name);
+        propObj.insert("namespace", it.key().namespaceUri);
+        propObj.insert("value", it.value());
+        props.append(propObj);
     }
     obj.insert("properties", props);
     return obj;
@@ -35,14 +42,35 @@ QMXmlAdaptorElement QMXmlAdaptorElement::fromObject(const QJsonObject &obj) {
     }
     res.name = it->toString();
 
+    it = obj.find("namespaceUri");
+    if (it != obj.end() && it->isString()) {
+        res.namespaceUri = it->toString();
+    }
+
     it = obj.find("properties");
-    if (it != obj.end() && it->isObject()) {
-        const auto &props = it->toObject();
-        for (auto it2 = props.begin(); it2 != props.end(); ++it2) {
-            if (it2->isDouble()) {
-                res.properties.insert(it2.key(), QString::number(it2->toDouble()));
-            } else {
-                res.properties.insert(it2.key(), it2->toString());
+    if (it != obj.end() && it->isArray()) {
+        const auto &props = it->toArray();
+        for (const auto &propValue : props) {
+            if (!propValue.isObject()) {
+                continue;
+            }
+            const auto &propObj = propValue.toObject();
+            auto nameIt = propObj.find("name");
+            auto namespaceIt = propObj.find("namespace");
+            auto valueIt = propObj.find("value");
+            
+            if (nameIt != propObj.end() && nameIt->isString() &&
+                namespaceIt != propObj.end() && namespaceIt->isString() &&
+                valueIt != propObj.end()) {
+                QString name = nameIt->toString();
+                QString namespace_ = namespaceIt->toString();
+                QString value;
+                if (valueIt->isDouble()) {
+                    value = QString::number(valueIt->toDouble());
+                } else {
+                    value = valueIt->toString();
+                }
+                res.properties.insert(QMXmlAdaptorAttributeKey(name, namespace_), value);
             }
         }
     }
@@ -77,10 +105,12 @@ void QMXmlAdaptorElement::writeXml(QXmlStreamWriter &writer) const {
     if (ele.name.isEmpty()) {
         return;
     }
-    writer.writeStartElement(ele.name);
+    writer.writeStartElement(ele.namespaceUri, ele.name);
 
     for (auto it = ele.properties.begin(); it != ele.properties.end(); ++it) {
-        writer.writeAttribute(it.key(), it.value());
+        const auto &key = it.key();
+        const auto &value = it.value();
+        writer.writeAttribute(key.namespaceUri, key.name, value);
     }
 
     if (!ele.value.isEmpty()) {
@@ -140,13 +170,17 @@ bool QMXmlAdaptor::loadData(const QByteArray &data) {
             case QXmlStreamReader::StartElement: {
                 auto ele = QMXmlAdaptorElement::Ref::create();
 
-                // Store name
+                // Store name and namespace
                 ele->name = reader.name().toString();
+                ele->namespaceUri = reader.namespaceUri().toString();
 
-                // Store attributes
+                // Store attributes with namespace
                 const auto &attrs = reader.attributes();
                 for (const auto &attr : attrs) {
-                    ele->properties.insert(attr.name().toString(), attr.value().toString());
+                    QString attrName = attr.name().toString();
+                    QString attrNamespace = attr.namespaceUri().toString();
+                    QString attrValue = attr.value().toString();
+                    ele->properties.insert(QMXmlAdaptorAttributeKey(attrName, attrNamespace), attrValue);
                 }
 
                 stack.push_back(qMakePair(ele, curLevel++));

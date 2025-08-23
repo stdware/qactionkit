@@ -151,8 +151,8 @@ public:
             fprintf(out, STRING_12_SPACE "{\n");
             for (auto it = item.attributes.begin(); it != item.attributes.end(); ++it) {
                 fprintf(out,
-                        STRING_16_SPACE "{ QStringLiteral(\"%s\"), QStringLiteral(\"%s\") },\n",
-                        escPrintable(it.key()), escPrintable(it.value()));
+                        STRING_16_SPACE "{ ActionAttributeKey(QStringLiteral(\"%s\"), QStringLiteral(\"%s\")), QStringLiteral(\"%s\") },\n",
+                        escPrintable(it.key().name), escPrintable(it.key().namespaceUri), escPrintable(it.value()));
             }
             fprintf(out, STRING_12_SPACE "},\n");
 

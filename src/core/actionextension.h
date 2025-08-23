@@ -16,6 +16,31 @@ namespace QAK {
 
     class ActionExtension;
 
+    /// \struct ActionAttributeKey
+    /// \brief Represents an attribute key with name and namespace URI
+    struct QAK_CORE_EXPORT ActionAttributeKey {
+        QString name;
+        QString namespaceUri;
+
+        ActionAttributeKey() = default;
+        ActionAttributeKey(const QString &name, const QString &namespaceUri = QString())
+            : name(name), namespaceUri(namespaceUri) {}
+
+        bool operator==(const ActionAttributeKey &other) const {
+            return name == other.name && namespaceUri == other.namespaceUri;
+        }
+
+        bool operator!=(const ActionAttributeKey &other) const {
+            return !(*this == other);
+        }
+
+        bool operator<(const ActionAttributeKey &other) const {
+            if (name != other.name)
+                return name < other.name;
+            return namespaceUri < other.namespaceUri;
+        }
+    };
+
     /// \class ActionLayoutEntry
     /// \brief An entry in an \c ActionLayout, representing an action, a group, a menu, a separator,
     /// or a stretch.
@@ -86,7 +111,8 @@ namespace QAK {
         ///   - textTr: the translation context of \c text()
         ///   - classTr: the translation context of \c actionClass()
         ///   - descriptionTr: the translation context of \c description()
-        QMap<QString, QString> attributes() const;
+        /// Key format: ActionAttributeKey(attributeName, namespaceUri) -> value
+        QMap<ActionAttributeKey, QString> attributes() const;
 
         /// \brief Returns the children of the action item, each child is an \c ActionLayoutEntry
         /// reference to another \c ActionItemInfo in the same extension.

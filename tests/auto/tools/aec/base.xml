@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<actionExtension>
+<actionExtension xmlns:custom="http://example.com/custom">
 
     <version>1.0</version>
     <id>com.test.property</id>
@@ -42,6 +42,9 @@
 
         <!-- Test translation contexts -->
         <action id="TestActionTr" textTr="x" classTr="y" descriptionTr="z" />
+
+        <!-- Test namespace attributes -->
+        <action id="TestActionNS" text="Namespace Test" custom:priority="high" custom:category="main" custom:enabled="true" />
 
         <!-- Test top level items -->
         <menu id="TestMenu" topLevel="true" />

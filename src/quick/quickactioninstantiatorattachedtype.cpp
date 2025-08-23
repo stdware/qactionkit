@@ -37,7 +37,18 @@ namespace QAK {
         if (property & QuickActionInstantiatorPrivate::Keymap) {
             setShortcuts(context->registry()->actionShortcuts(info.id()));
         }
-        setAttributes(info.attributes());
+        
+        // Convert ActionAttributeKey map to QVariantList format
+        QVariantList attributesList;
+        const auto infoAttributes = info.attributes();
+        for (auto it = infoAttributes.begin(); it != infoAttributes.end(); ++it) {
+            QVariantMap attributeMap;
+            attributeMap.insert("name", it.key().name);
+            attributeMap.insert("namespace", it.key().namespaceUri);
+            attributeMap.insert("value", it.value());
+            attributesList.append(attributeMap);
+        }
+        setAttributes(attributesList);
     }
 
     QString QuickActionInstantiatorAttachedType::id() const {
@@ -92,11 +103,11 @@ namespace QAK {
             emit shortcutsChanged();
         }
     }
-    QMap<QString, QString> QuickActionInstantiatorAttachedType::attributes() const {
+    QVariantList QuickActionInstantiatorAttachedType::attributes() const {
         Q_D(const QuickActionInstantiatorAttachedType);
         return d->attributes;
     }
-    void QuickActionInstantiatorAttachedType::setAttributes(const QMap<QString, QString> &attributes) {
+    void QuickActionInstantiatorAttachedType::setAttributes(const QVariantList &attributes) {
         Q_D(QuickActionInstantiatorAttachedType);
         d->attributes = attributes;
     }

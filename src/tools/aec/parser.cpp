@@ -134,12 +134,12 @@ struct ParserPrivate {
                             const QHash<QString, QString> &reservedVars) {
         QHash<QString, QString> vars;
         for (const auto &item : e.children) {
-            if (item->name == QStringLiteral("defaultCatalog")) {
+            if (item->name == QStringLiteral("defaultCatalog") && item->namespaceUri.isEmpty()) {
                 defaultCatalog = resolve(item->value);
                 continue;
             }
 
-            if (item->name == QStringLiteral("translationContext")) {
+            if (item->name == QStringLiteral("translationContext") && item->namespaceUri.isEmpty()) {
                 auto &properties = item->properties;
                 if (auto it = properties.find(QStringLiteral("text")); it != properties.end()) {
                     result.textTranslationContext = resolve(it.value());
@@ -154,7 +154,7 @@ struct ParserPrivate {
                 continue;
             }
 
-            if (item->name == QStringLiteral("vars")) {
+            if (item->name == QStringLiteral("vars") && item->namespaceUri.isEmpty()) {
                 QSet<QString> commandLineKeys;
                 for (auto it = q.variables.begin(); it != q.variables.end(); ++it) {
                     commandLineKeys.insert(it.key());
@@ -192,18 +192,19 @@ struct ParserPrivate {
             }
         };
         const auto &name = e.name;
-        if (name == QStringLiteral("action")) {
+        const auto &namespaceUri = e.namespaceUri;
+        if (name == QStringLiteral("action") && namespaceUri.isEmpty()) {
             info.type = QAK::ActionItemInfo::Action;
-        } else if (name == QStringLiteral("group")) {
+        } else if (name == QStringLiteral("group") && namespaceUri.isEmpty()) {
             info.type = QAK::ActionItemInfo::Group;
             readTopLevel();
-        } else if (name == QStringLiteral("menu")) {
+        } else if (name == QStringLiteral("menu") && namespaceUri.isEmpty()) {
             info.type = QAK::ActionItemInfo::Menu;
             readTopLevel();
-        } else if (name == QStringLiteral("menuBar") || name == QStringLiteral("toolBar")) {
+        } else if ((name == QStringLiteral("menuBar") || name == QStringLiteral("toolBar")) && namespaceUri.isEmpty()) {
             info.type = QAK::ActionItemInfo::Menu;
             info.topLevel = true;
-        } else if (name == QStringLiteral("phony")) {
+        } else if (name == QStringLiteral("phony") && namespaceUri.isEmpty()) {
             info.type = QAK::ActionItemInfo::Phony;
         } else {
             error("%s: %s item \"%s\" has an unknown tag \"%s\"\n", qPrintable(q.fileName), field,
@@ -260,18 +261,22 @@ struct ParserPrivate {
 
         // attributes
         for (auto it = e.properties.begin(); it != e.properties.end(); ++it) {
-            static const QSet<QString> reservedKeys = {
-                QStringLiteral("id"),       QStringLiteral("text"),
-                QStringLiteral("class"),    QStringLiteral("description"),
-                QStringLiteral("catalog"),  QStringLiteral("shortcuts"),
-                QStringLiteral("shortcut"), QStringLiteral("topLevel"),
-                QStringLiteral("icon"),
+            static const QMap<QMXmlAdaptorAttributeKey, int> reservedKeys = {
+                {QMXmlAdaptorAttributeKey(QStringLiteral("id")), {}},
+                {QMXmlAdaptorAttributeKey(QStringLiteral("text")), {}},
+                {QMXmlAdaptorAttributeKey(QStringLiteral("class")), {}},
+                {QMXmlAdaptorAttributeKey(QStringLiteral("description")), {}},
+                {QMXmlAdaptorAttributeKey(QStringLiteral("catalog")), {}},
+                {QMXmlAdaptorAttributeKey(QStringLiteral("shortcuts")), {}},
+                {QMXmlAdaptorAttributeKey(QStringLiteral("shortcut")), {}},
+                {QMXmlAdaptorAttributeKey(QStringLiteral("topLevel")), {}},
+                {QMXmlAdaptorAttributeKey(QStringLiteral("icon")), {}},
             };
             const auto &key = it.key();
             if (reservedKeys.contains(key)) {
                 continue;
             }
-            info.attributes.insert(key, resolve(it.value()));
+            info.attributes.insert(QAK::ActionAttributeKey(key.name, key.namespaceUri), resolve(it.value()));
         }
     }
 
@@ -324,7 +329,7 @@ struct ParserPrivate {
                     break;
                 }
                 case QAK::ActionItemInfo::Action: {
-                    if (e->name != QStringLiteral("action") && e->name != QStringLiteral("item")) {
+                    if ((e->name != QStringLiteral("action") && e->name != QStringLiteral("item")) || !e->namespaceUri.isEmpty()) {
                         typeMismatch = true;
                     }
                     break;
@@ -336,7 +341,7 @@ struct ParserPrivate {
                         QStringLiteral("menuBar"), QStringLiteral("toolBar"),
                         QStringLiteral("item"),
                     };
-                    if (!allowedTags.contains(e->name)) {
+                    if (!allowedTags.contains(e->name) || !e->namespaceUri.isEmpty()) {
                         typeMismatch = true;
                     }
                     break;
@@ -388,11 +393,11 @@ struct ParserPrivate {
         };
 
         ActionLayoutEntryMessage entry;
-        if (e->name == QStringLiteral("separator")) {
+        if (e->name == QStringLiteral("separator") && e->namespaceUri.isEmpty()) {
             checkChildren("separator");
             entry.type = QAK::ActionLayoutEntry::Separator;
             return entry;
-        } else if (e->name == QStringLiteral("stretch")) {
+        } else if (e->name == QStringLiteral("stretch") && e->namespaceUri.isEmpty()) {
             checkChildren("stretch");
             entry.type = QAK::ActionLayoutEntry::Stretch;
             return entry;
@@ -417,7 +422,7 @@ struct ParserPrivate {
             }
             case QAK::ActionItemInfo::Menu:
             case QAK::ActionItemInfo::Group: {
-                if (e->name == QStringLiteral("menu")) {
+                if (e->name == QStringLiteral("menu") && e->namespaceUri.isEmpty()) {
                     entry.type = QAK::ActionLayoutEntry::Menu;
                 } else {
                     entry.type = QAK::ActionLayoutEntry::Group;
@@ -451,7 +456,7 @@ struct ParserPrivate {
     }
 
     ActionInsertionMessage parseInsertion(const QMXmlAdaptorElement &root) {
-        if (const auto &rootName = root.name; rootName != QStringLiteral("insertion")) {
+        if (const auto &rootName = root.name; rootName != QStringLiteral("insertion") || !root.namespaceUri.isEmpty()) {
             error("%s: unknown insertion element tag \"%s\"\n", qPrintable(q.fileName),
                   qPrintable(rootName));
             std::exit(1);
@@ -504,9 +509,9 @@ struct ParserPrivate {
             auto &e = *item;
 
             ActionLayoutEntryMessage entry;
-            if (e.name == QStringLiteral("separator")) {
+            if (e.name == QStringLiteral("separator") && e.namespaceUri.isEmpty()) {
                 entry.type = QAK::ActionLayoutEntry::Separator;
-            } else if (e.name == QStringLiteral("stretch")) {
+            } else if (e.name == QStringLiteral("stretch") && e.namespaceUri.isEmpty()) {
                 entry.type = QAK::ActionLayoutEntry::Stretch;
             } else {
                 auto &info = findOrInsertItemInfo(&e, {}, "insertion");
@@ -525,7 +530,7 @@ struct ParserPrivate {
                     }
                     case QAK::ActionItemInfo::Menu:
                     case QAK::ActionItemInfo::Group: {
-                        if (e.name == QStringLiteral("menu")) {
+                        if (e.name == QStringLiteral("menu") && e.namespaceUri.isEmpty()) {
                             entry.type = QAK::ActionLayoutEntry::Menu;
                         } else {
                             entry.type = QAK::ActionLayoutEntry::Group;
@@ -551,9 +556,9 @@ struct ParserPrivate {
             std::exit(1);
         }
 
-        // Check root name
+        // Check root name and namespace
         const auto &root = xml.root;
-        if (const auto &rootName = root.name; rootName != QStringLiteral("actionExtension")) {
+        if (const auto &rootName = root.name; rootName != QStringLiteral("actionExtension") || !root.namespaceUri.isEmpty()) {
             error("%s: unknown root element tag \"%s\"\n", qPrintable(q.fileName),
                   qPrintable(rootName));
             std::exit(1);
@@ -568,33 +573,33 @@ struct ParserPrivate {
         QString id;
         const QMXmlAdaptorElement *configElement = nullptr;
         for (const auto &item : std::as_const(root.children)) {
-            if (item->name == QStringLiteral("items")) {
+            if (item->name == QStringLiteral("items") && item->namespaceUri.isEmpty()) {
                 for (const auto &subItem : std::as_const(item->children)) {
                     objElements.append(subItem.data());
                 }
                 continue;
             }
-            if (item->name == QStringLiteral("layouts")) {
+            if (item->name == QStringLiteral("layouts") && item->namespaceUri.isEmpty()) {
                 for (const auto &subItem : std::as_const(item->children)) {
                     layoutElements.append(subItem.data());
                 }
                 continue;
             }
-            if (item->name == QStringLiteral("insertions")) {
+            if (item->name == QStringLiteral("insertions") && item->namespaceUri.isEmpty()) {
                 for (const auto &subItem : std::as_const(item->children)) {
                     insertionElements.append(subItem.data());
                 }
                 continue;
             }
-            if (item->name == QStringLiteral("id")) {
+            if (item->name == QStringLiteral("id") && item->namespaceUri.isEmpty()) {
                 id = item->value;
                 continue;
             }
-            if (item->name == QStringLiteral("version")) {
+            if (item->name == QStringLiteral("version") && item->namespaceUri.isEmpty()) {
                 version = item->value;
                 continue;
             }
-            if (item->name == QStringLiteral("configuration")) {
+            if (item->name == QStringLiteral("configuration") && item->namespaceUri.isEmpty()) {
                 if (configElement) {
                     error("%s: duplicated configuration elements\n", qPrintable(q.fileName));
                     std::exit(1);

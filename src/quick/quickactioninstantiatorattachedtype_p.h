@@ -24,7 +24,7 @@ namespace QAK {
         Q_PROPERTY(QString description READ description NOTIFY descriptionChanged)
         Q_PROPERTY(QUrl iconSource READ iconSource NOTIFY iconSourceChanged)
         Q_PROPERTY(QList<QKeySequence> shortcuts READ shortcuts NOTIFY shortcutsChanged)
-        Q_PROPERTY(QMap<QString, QString> attributes READ attributes CONSTANT)
+        Q_PROPERTY(QVariantList attributes READ attributes CONSTANT)
         Q_PROPERTY(QuickActionInstantiator *instantiator READ instantiator CONSTANT)
 
     public:
@@ -48,8 +48,8 @@ namespace QAK {
         QList<QKeySequence> shortcuts() const;
         void setShortcuts(const QList<QKeySequence> &shortcuts);
 
-        QMap<QString, QString> attributes() const;
-        void setAttributes(const QMap<QString, QString> &attributes);
+        QVariantList attributes() const;
+        void setAttributes(const QVariantList &attributes);
 
         QuickActionInstantiator *instantiator() const;
         void setInstantiator(QuickActionInstantiator *instantiator);

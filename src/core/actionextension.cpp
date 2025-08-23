@@ -26,10 +26,22 @@ namespace QAK {
         ACTION_EXTENSION_VERSION, {}, {}, 0, &sharedNullItemInfoData, 0, &sharedNullInsertion,
     };
 
-    static inline QString translateString(const QString &s, const QMap<QString, QString> &attrs,
+    static inline QString translateString(const QString &s, const QMap<ActionAttributeKey, QString> &attrs,
                                           const QString &key, const QString &defaultCtx) {
+        // Look for the translation context in attributes (without namespace)
+        QString contextKey;
+        for (auto it = attrs.begin(); it != attrs.end(); ++it) {
+            if (it.key().name == key && it.key().namespaceUri.isEmpty()) {
+                contextKey = it.value();
+                break;
+            }
+        }
+        if (contextKey.isEmpty()) {
+            contextKey = defaultCtx;
+        }
+        
         bool ok;
-        QString res = tryTranslate(attrs.value(key, defaultCtx).toUtf8().constData(),
+        QString res = tryTranslate(contextKey.toUtf8().constData(),
                                    s.toUtf8().constData(), nullptr, -1, &ok);
         if (!ok) {
             return {};
@@ -81,7 +93,7 @@ namespace QAK {
     bool ActionItemInfo::topLevel() const {
         return e->items[i].topLevel;
     }
-    QMap<QString, QString> ActionItemInfo::attributes() const {
+    QMap<ActionAttributeKey, QString> ActionItemInfo::attributes() const {
         return e->items[i].attributes;
     }
     QVector<ActionLayoutEntry> ActionItemInfo::children() const {

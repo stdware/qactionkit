@@ -4,12 +4,36 @@
 #include <QJsonObject>
 #include <QXmlStreamWriter>
 
+struct QMXmlAdaptorAttributeKey {
+    QString name;
+    QString namespaceUri;
+
+    QMXmlAdaptorAttributeKey() = default;
+    QMXmlAdaptorAttributeKey(const QString &name, const QString &namespaceUri = QString())
+        : name(name), namespaceUri(namespaceUri) {}
+
+    bool operator==(const QMXmlAdaptorAttributeKey &other) const {
+        return name == other.name && namespaceUri == other.namespaceUri;
+    }
+
+    bool operator!=(const QMXmlAdaptorAttributeKey &other) const {
+        return !(*this == other);
+    }
+
+    bool operator<(const QMXmlAdaptorAttributeKey &other) const {
+        if (name != other.name)
+            return name < other.name;
+        return namespaceUri < other.namespaceUri;
+    }
+};
+
 class QMXmlAdaptorElement {
 public:
     using Ref = QSharedPointer<QMXmlAdaptorElement>;
 
     QString name;                      // Tag name
-    QMap<QString, QString> properties; // Tag properties
+    QString namespaceUri;              // Element namespace URI
+    QMap<QMXmlAdaptorAttributeKey, QString> properties; // Tag properties with namespace (name, namespaceUri) -> value
     QString value;                     // Characters if no children
     QList<Ref> children;               // Children
 
@@ -43,10 +67,11 @@ public:
 
     {
         "name": "document",
-        "properties": {
-            "key1": "val1",
-            ...
-        },
+        "namespaceUri": "http://example.com/ns",
+        "properties": [
+            {"name": "attr1", "namespace": "http://example.com/ns", "value": "value1"},
+            {"name": "attr2", "namespace": "", "value": "value2"}
+        ],
         "value": "...",
         "children": [
             ...

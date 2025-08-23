@@ -14,7 +14,7 @@ namespace QAK {
         QString description;
         QUrl iconSource;
         QList<QKeySequence> shortcuts;
-        QMap<QString, QString> attributes;
+        QVariantList attributes;
         QuickActionInstantiator *instantiator;
     };
 }
