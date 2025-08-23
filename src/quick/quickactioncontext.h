@@ -13,6 +13,7 @@ namespace QAK {
     class QAK_QUICK_EXPORT QuickActionContext : public ActionContext {
         Q_OBJECT
         Q_DECLARE_PRIVATE(QuickActionContext)
+        Q_PROPERTY(QStringList actions READ actions NOTIFY actionsChanged)
         Q_PROPERTY(QQmlComponent *menuComponent READ menuComponent WRITE setMenuComponent NOTIFY
                        menuComponentChanged)
         Q_PROPERTY(QQmlComponent *separatorComponent READ separatorComponent WRITE
@@ -27,6 +28,7 @@ namespace QAK {
         Q_INVOKABLE void addAction(const QString &id, QQmlComponent *component);
         Q_INVOKABLE QQmlComponent *action(const QString &id) const;
         Q_INVOKABLE void attachActionInfo(const QString &id, QObject *object);
+        QStringList actions() const;
 
         QQmlComponent *menuComponent() const;
         void setMenuComponent(QQmlComponent *component);
@@ -41,6 +43,7 @@ namespace QAK {
 
     signals:
         void actionChanged(const QString &id);
+        void actionsChanged();
         void menuComponentChanged();
         void separatorComponentChanged();
         void stretchComponentChanged();

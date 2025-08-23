@@ -23,6 +23,7 @@ namespace QAK {
         if (!d->actions.contains(id) || d->actions.value(id) != component) {
             d->actions.insert(id, component);
             emit actionChanged(id);
+            emit actionsChanged();
         }
     }
     QQmlComponent *QuickActionContext::action(const QString &id) const {
@@ -30,9 +31,11 @@ namespace QAK {
         return d->actions.value(id);
     }
     void QuickActionContext::attachActionInfo(const QString &id, QObject *object) {
-        auto attachedInfoObject = qobject_cast<QuickActionInstantiatorAttachedType *>(qmlAttachedPropertiesObject<QuickActionInstantiator>(object));
+        auto attachedInfoObject = qobject_cast<QuickActionInstantiatorAttachedType *>(
+            qmlAttachedPropertiesObject<QuickActionInstantiator>(object));
         Q_ASSERT(attachedInfoObject);
-        attachedInfoObject->init(registry()->actionInfo(id), this, QuickActionInstantiatorPrivate::All);
+        attachedInfoObject->init(registry()->actionInfo(id), this,
+                                 QuickActionInstantiatorPrivate::All);
         if (auto action = qobject_cast<QQuickAction *>(object)) {
             action->setText(attachedInfoObject->text());
             auto icon = action->icon();
@@ -42,6 +45,10 @@ namespace QAK {
                 action->setShortcut(attachedInfoObject->shortcuts().first());
             }
         }
+    }
+    QStringList QuickActionContext::actions() const {
+        Q_D(const QuickActionContext);
+        return d->actions.keys();
     }
     QQmlComponent *QuickActionContext::menuComponent() const {
         Q_D(const QuickActionContext);
