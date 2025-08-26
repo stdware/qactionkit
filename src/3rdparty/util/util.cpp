@@ -55,6 +55,9 @@ namespace Util {
     }
 
     QString absolutePath(const QString &path, const QString &baseDir) {
+        if (baseDir.isEmpty()) {
+            return path;
+        }
         if (const QFileInfo info(path); info.isAbsolute()) {
             return QDir::cleanPath(path);
         }

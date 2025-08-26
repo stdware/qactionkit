@@ -1,6 +1,7 @@
 #include <QtTest/QtTest>
 #include <QtCore/QFile>
 #include <QtCore/QTextStream>
+
 #include <qmxmladaptor/qmxmladaptor.h>
 #include <QAKCore/actionextension.h>
 

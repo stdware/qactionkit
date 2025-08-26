@@ -6,6 +6,7 @@
 
 #include <QtCore/QStack>
 #include <QtCore/QQueue>
+#include <QtCore/QJsonArray>
 
 #include "qakglobal_p.h"
 #include "actioncontext_p.h"
@@ -113,14 +114,106 @@ namespace QAK {
         setAdjacencyTable(inputAdjacencyMap);
     }
 
-    QAK_CORE_EXPORT QJsonObject ActionLayouts::toJsonObject() const {
-        // TODO
-        return {};
+    static QJsonObject actionLayoutEntryToJson(const ActionLayoutEntry &entry) {
+        QJsonObject obj;
+        obj["id"] = entry.id();
+        QString typeStr;
+        switch (entry.type()) {
+            case ActionLayoutEntry::Action:
+                typeStr = "Action";
+                break;
+            case ActionLayoutEntry::Group:
+                typeStr = "Group";
+                break;
+            case ActionLayoutEntry::Menu:
+                typeStr = "Menu";
+                break;
+            case ActionLayoutEntry::Separator:
+                typeStr = "Separator";
+                break;
+            case ActionLayoutEntry::Stretch:
+                typeStr = "Stretch";
+                break;
+            default:
+                typeStr = "Action";
+                break;
+        }
+        obj["type"] = typeStr;
+        return obj;
     }
 
-    QAK_CORE_EXPORT ActionLayouts ActionLayouts::fromJsonObject(const QJsonObject &obj) {
-        // TODO
-        return {};
+    static ActionLayoutEntry actionLayoutEntryFromJson(const QJsonObject &obj) {
+        QString id = obj["id"].toString();
+        if (id.isEmpty()) {
+            return {};
+        }
+        ActionLayoutEntry::Type type = ActionLayoutEntry::Action;
+        QString typeStr = obj["type"].toString();
+        if (typeStr == "Group") {
+            type = ActionLayoutEntry::Group;
+        } else if (typeStr == "Menu") {
+            type = ActionLayoutEntry::Menu;
+        } else if (typeStr == "Separator") {
+            type = ActionLayoutEntry::Separator;
+        } else if (typeStr == "Stretch") {
+            type = ActionLayoutEntry::Stretch;
+        }
+        return ActionLayoutEntry(id, type);
+    }
+
+    QJsonObject ActionLayouts::toJsonObject() const {
+        QJsonObject rootObj;
+
+        QJsonObject adjacencyMapObj;
+        for (auto it = m_adjacencyMap.constBegin(); it != m_adjacencyMap.constEnd(); ++it) {
+            QJsonArray entriesArray;
+            const QVector<ActionLayoutEntry> &entries = it.value();
+            for (const ActionLayoutEntry &entry : entries) {
+                entriesArray.append(actionLayoutEntryToJson(entry));
+            }
+            adjacencyMapObj.insert(it.key(), entriesArray);
+        }
+        rootObj.insert("adjacencyMap", adjacencyMapObj);
+
+        QJsonArray hashArray;
+        for (const QString &hash : m_hashList) {
+            hashArray.append(hash);
+        }
+        rootObj.insert("hashList", hashArray);
+        return rootObj;
+    }
+
+    ActionLayouts ActionLayouts::fromJsonObject(const QJsonObject &obj) {
+        QMap<QString, QVector<ActionLayoutEntry>> adjacencyMap;
+        QStringList hashList;
+        if (auto it = obj.find("adjacencyMap"); it != obj.end() && it->isObject()) {
+            const QJsonObject &adjacencyMapObj = it->toObject();
+            for (auto it1 = adjacencyMapObj.constBegin(); it1 != adjacencyMapObj.constEnd();
+                 ++it1) {
+                if (it1->isArray()) {
+                    const QJsonArray &entriesArray = it1->toArray();
+                    QVector<ActionLayoutEntry> entries;
+                    for (const QJsonValue &entryValue : entriesArray) {
+                        if (entryValue.isObject()) {
+                            auto entry = actionLayoutEntryFromJson(entryValue.toObject());
+                            if (!entry.isNull()) {
+                                entries.append(entry);
+                            }
+                        }
+                    }
+                    adjacencyMap.insert(it1.key(), entries);
+                }
+            }
+        }
+        if (auto it = obj.find("hashList"); it != obj.end() && obj["hashList"].isArray()) {
+            QJsonArray hashArray = obj["hashList"].toArray();
+            for (const QJsonValue &hashValue : hashArray) {
+                if (hashValue.isString()) {
+                    hashList.append(hashValue.toString());
+                }
+            }
+        }
+        return ActionLayouts(adjacencyMap, hashList);
     }
 
     void ActionRegistryPrivate::flushActionItems() const {

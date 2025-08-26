@@ -93,7 +93,7 @@ namespace QAK {
         QString actionClass(bool translated = false) const;
         QString description(bool translated = false) const;
 
-        /// \brief Returns the icon id of.
+        /// \brief Returns the icon id.
         QString icon() const;
 
         /// \brief Returns the shortcuts, only valid for action type.

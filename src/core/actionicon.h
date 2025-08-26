@@ -14,6 +14,7 @@ namespace QAK {
     class QAK_CORE_EXPORT ActionIcon {
     public:
         ActionIcon();
+        inline ActionIcon(const QString &filePath, QSize size = {});
         ~ActionIcon();
 
         ActionIcon(const ActionIcon &other);
@@ -22,9 +23,11 @@ namespace QAK {
         ActionIcon &operator=(ActionIcon &&other) noexcept;
 
     public:
-        QString filePath(QIcon::Mode mode, QIcon::State state) const;
-        void addFile(const QString &filePath, QSize size = {}, QIcon::Mode mode = QIcon::Normal,
-                     QIcon::State state = QIcon::Off);
+        QString filePath(bool enabled = true, bool checked = false) const;
+        QSize size(bool enabled = true, bool checked = false) const;
+
+        void addFile(const QString &filePath, QSize size = {}, bool enabled = true,
+                     bool checked = false);
 
         QIcon icon() const;
         bool isNull() const;
@@ -38,6 +41,10 @@ namespace QAK {
     protected:
         QSharedDataPointer<ActionIconPrivate> d_ptr;
     };
+
+    inline ActionIcon::ActionIcon(const QString &filePath, QSize size) : ActionIcon() {
+        addFile(filePath, size);
+    }
 
 }
 

@@ -50,7 +50,6 @@ namespace QAK {
             QHash<QString, QHash<QString, ActionIcon>> singles; // theme -> [id -> icon]
             QHash<QString, QHash<QString, QHash<QString, ActionIcon>>>
                 configFiles; // configFile -> [theme -> [id -> icon]]
-            stdc::linked_map<QStringList, int /* NOT USED */> indexes;
             QHash<QString, QHash<QString, ActionIcon>> storage; // theme -> [id -> icon]
         };
         mutable IconChange iconChange;
