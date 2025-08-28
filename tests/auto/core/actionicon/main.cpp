@@ -27,10 +27,8 @@ private Q_SLOTS:
     }
 
     void test() {
-    }
-
-    void testFromJson() {
         static QPair<QJsonValue, QAK::ActionIcon> testData[] = {
+            // 1: string
             {
              "1",    []() {
                     QAK::ActionIcon icon;
@@ -38,31 +36,38 @@ private Q_SLOTS:
                     return icon;
                 }(),
              },
+            // 2: path-size object
             {
              []() {
                     QJsonObject obj;
                     obj.insert("path", "2");
                     obj.insert("size", sizeToJson(QSize(2, 2)));
+                    obj.insert("currentColor", "c2");
                     return obj;
                 }(),
              []() {
                     QAK::ActionIcon icon;
                     icon.addFile("2", QSize(2, 2));
+                    icon.setCurrentColor("c2");
                     return icon;
                 }(),
              },
+            // 3: unchecked object > string
             {
              []() {
                     QJsonObject obj;
                     obj.insert("unchecked", "2.5");
+                    obj.insert("currentColor", "c2.5");
                     return obj;
                 }(),
              []() {
                     QAK::ActionIcon icon;
                     icon.addFile("2.5");
+                    icon.setCurrentColor("c2.5");
                     return icon;
                 }(),
              },
+            // 4. unchecked object > path-size object
             {
              []() {
                     QJsonObject obj;
@@ -72,14 +77,17 @@ private Q_SLOTS:
                         uncheckedObj.insert("size", sizeToJson(QSize(3, 3)));
                         obj.insert("unchecked", uncheckedObj);
                     }
+                    obj.insert("currentColor", "c3");
                     return obj;
                 }(),
              []() {
                     QAK::ActionIcon icon;
                     icon.addFile("3", QSize(3, 3), true, false);
+                    icon.setCurrentColor("c3");
                     return icon;
                 }(),
              },
+            // 5. unchecked object > enabled object + disabled object
             {
              []() {
                     QJsonObject obj;
@@ -99,15 +107,18 @@ private Q_SLOTS:
                         }
                         obj.insert("unchecked", uncheckedObj);
                     }
+                    obj.insert("currentColor", "c4");
                     return obj;
                 }(),
              []() {
                     QAK::ActionIcon icon;
                     icon.addFile("4", QSize(4, 4), true, false);
                     icon.addFile("5", QSize(5, 5), false, false);
+                    icon.setCurrentColor("c4");
                     return icon;
                 }(),
              },
+            // 6. unchecked object + checked object > enabled object + disabled object
             {
              []() {
                     QJsonObject obj;
@@ -143,6 +154,7 @@ private Q_SLOTS:
                         }
                         obj.insert("checked", checkedObj);
                     }
+                    obj.insert("currentColor", "c5");
                     return obj;
                 }(),
              []() {
@@ -151,6 +163,7 @@ private Q_SLOTS:
                     icon.addFile("7", QSize(7, 7), false, false);
                     icon.addFile("8", QSize(8, 8), true, true);
                     icon.addFile("9", QSize(9, 9), false, true);
+                    icon.setCurrentColor("c5");
                     return icon;
                 }(),
              },
@@ -169,6 +182,8 @@ private Q_SLOTS:
             QCOMPARE(actual.size(false, false), expected.size(false, false));
             QCOMPARE(actual.size(true, true), expected.size(true, true));
             QCOMPARE(actual.size(false, true), expected.size(false, true));
+
+            QCOMPARE(actual.currentColor(), expected.currentColor());
 
             QCOMPARE(actual.toJson(), expected.toJson());
         }

@@ -54,6 +54,7 @@ namespace QAK {
         };
         mutable IconChange iconChange;
         mutable IconStorage iconStorage;
+        mutable stdc::linked_map<QStringList, int /* NOT USED */> storeOrder;
 
         ActionFamily::ShortcutsFamily overriddenShortcuts;
         ActionFamily::IconFamily overriddenIcons;

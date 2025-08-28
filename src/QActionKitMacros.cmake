@@ -64,7 +64,7 @@ function(qak_add_action_extension _outfiles _manifest)
     endif()
 
     # helper macro to set up a moc rule
-    function(_create_command _infile _outfile _options _depends)
+    function(_qak_create_command _infile _outfile _options _depends)
         # Pass the parameters in a file.  Set the working directory to
         # be that containing the parameters file and reference it by
         # just the file name.  This is necessary because the moc tool on
@@ -115,7 +115,7 @@ function(qak_add_action_extension _outfiles _manifest)
     qak_make_output_file(${_manifest} qak_ cpp _outfile)
 
     # Create command
-    _create_command(${_manifest} ${_outfile} "${_options}" "${FUNC_DEPENDS}")
+    _qak_create_command(${_manifest} ${_outfile} "${_options}" "${FUNC_DEPENDS}")
 
     set(${_outfiles} ${_outfile} PARENT_SCOPE)
 endfunction()

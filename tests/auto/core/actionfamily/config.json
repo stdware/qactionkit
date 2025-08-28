@@ -1,0 +1,58 @@
+{
+    "configuration": {
+        "baseDir": "/path/to"
+    },
+    "themes": [
+        {
+            "id": "theme1",
+            "icons": [
+                {
+                    "id": "theme1.icon1",
+                    "icon": {
+                        "unchecked": {
+                            "enabled": "theme1.icon1.unchecked.enabled",
+                            "disabled": "theme1.icon1.unchecked.disabled"
+                        },
+                        "checked": {
+                            "enabled": "theme1.icon1.checked.enabled",
+                            "disabled": "theme1.icon1.checked.disabled"
+                        }
+                    }
+                },
+                {
+                    "id": "theme1.icon2",
+                    "icon": "theme1.icon2.icon"
+                },
+                {
+                    "id": "theme1.icon3",
+                    "icon": "theme1.icon3.icon"
+                }
+            ]
+        },
+        {
+            "id": "theme2",
+            "icons": [
+                {
+                    "id": "theme2.icon1",
+                    "icon": {
+                        "path": "theme2.icon1.icon",
+                        "size": {
+                            "width": 24,
+                            "height": 24
+                        },
+                        "currentColor": "red"
+                    }
+                }
+            ]
+        },
+        {
+            "id": "theme3",
+            "icons": [
+                {
+                    "id": "theme3.icon1",
+                    "icon": "theme3.icon1.icon"
+                }
+            ]
+        }
+    ]
+}

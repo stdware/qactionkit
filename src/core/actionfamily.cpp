@@ -21,10 +21,6 @@ namespace QAK {
         IconConfigParser(QString fileName) : fileName(std::move(fileName)) {
         }
 
-        inline QString resolve(const QString &s) const {
-            return Util::parseExpression(s, variables);
-        }
-
         QHash<QString, QHash<QString, ActionIcon>> parse() {
             QFile file(fileName);
             if (!file.open(QIODevice::ReadOnly)) {
@@ -76,7 +72,7 @@ namespace QAK {
                     it == themeObj.end() || !it->isString()) {
                     continue;
                 } else {
-                    themeId = resolve(it->toString());
+                    themeId = it->toString();
                 }
 
                 QJsonArray iconArr;
@@ -92,22 +88,21 @@ namespace QAK {
                         continue;
                     }
 
-                    auto iconObj = themeItem.toObject();
+                    auto iconObj = iconItem.toObject();
                     QString iconId;
-                    if (auto it = themeObj.find(QStringLiteral("id"));
-                        it == themeObj.end() || !it->isString()) {
+                    if (auto it = iconObj.find(QStringLiteral("id"));
+                        it == iconObj.end() || !it->isString()) {
                         continue;
                     } else {
-                        iconId = resolve(it->toString());
+                        iconId = it->toString();
                     }
 
                     ActionIcon icon;
-                    if (auto it = themeObj.find(QStringLiteral("icon")); it == themeObj.end()) {
+                    if (auto it = iconObj.find(QStringLiteral("icon")); it == iconObj.end()) {
                         continue;
                     } else {
                         icon = ActionIconFromJson(it.value(), baseDirectory);
                     }
-
                     icons.insert(iconId, icon);
                 }
                 result.insert(themeId, icons);
@@ -116,27 +111,9 @@ namespace QAK {
         }
 
         void parseConfig(const QJsonObject &obj) {
-            if (auto it = obj.find(QStringLiteral("vars")); it != obj.end() && it->isArray()) {
-                for (const auto &item : it->toArray()) {
-                    if (!item.isObject()) {
-                        continue;
-                    }
-
-                    auto varObj = item.toObject();
-                    auto key = resolve(varObj.value(QStringLiteral("key")).toString());
-                    if (key.isEmpty()) {
-                        continue;
-                    }
-                    auto value = resolve(varObj.value(QStringLiteral("value")).toString());
-                    if (value.isEmpty()) {
-                        continue;
-                    }
-                    variables.insert(key, value);
-                }
-            }
             if (auto it = obj.find(QStringLiteral("baseDir")); it != obj.end() && it->isString()) {
                 baseDirectory =
-                    Util::absolutePath(resolve(it->toString()), QFileInfo(fileName).absolutePath());
+                    Util::absolutePath(it->toString(), QFileInfo(fileName).absolutePath());
             }
         }
 
@@ -145,7 +122,6 @@ namespace QAK {
 
         // config
         QString baseDirectory;
-        QHash<QString, QString> variables;
     };
 
 }
@@ -153,7 +129,6 @@ namespace QAK {
 namespace QAK {
 
     ActionFamilyPrivate::ActionFamilyPrivate() {
-        std::hash<QStringList> hasher;
     }
 
     ActionFamilyPrivate::~ActionFamilyPrivate() = default;
@@ -171,20 +146,19 @@ namespace QAK {
         if (changes.empty())
             return;
 
-        stdc::linked_map<QStringList, int /* NOT USED */> storeOrder;
         for (const auto &pair : std::as_const(changes)) {
             auto &c = pair.second;
 
             switch (c.index()) {
                 case 0: {
                     auto &singles = iconStorage.singles;
-                    auto itemToBeChanged = std::get<0>(c);
+                    auto &itemToBeChanged = std::get<0>(c);
                     if (itemToBeChanged.remove) {
                         auto it = singles.find(itemToBeChanged.theme);
                         if (it != singles.end()) {
-                            auto &map0 = it.value();
-                            if (map0.remove(itemToBeChanged.id)) {
-                                if (map0.isEmpty()) {
+                            auto &map = it.value();
+                            if (map.remove(itemToBeChanged.id)) {
+                                if (map.isEmpty()) {
                                     singles.erase(it);
                                 }
                                 storeOrder.remove({itemToBeChanged.theme, itemToBeChanged.id});
@@ -200,7 +174,7 @@ namespace QAK {
                 }
                 case 1: {
                     auto &configFiles = iconStorage.configFiles;
-                    auto itemToBeChanged = std::get<1>(c);
+                    auto &itemToBeChanged = std::get<1>(c);
                     if (itemToBeChanged.remove) {
                         if (configFiles.remove(itemToBeChanged.fileName)) {
                             storeOrder.remove({itemToBeChanged.fileName});
@@ -469,9 +443,6 @@ namespace QAK {
             const auto &iconValue = obj.value(QStringLiteral("icon"));
             if (iconValue.isNull()) {
                 result.insert(id, {});
-                continue;
-            }
-            if (!iconValue.isString()) {
                 continue;
             }
             result.insert(id, ActionIcon::fromJson(iconValue));
