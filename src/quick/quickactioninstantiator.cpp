@@ -320,7 +320,8 @@ namespace QAK {
         if (d->context)
             disconnect(d->context, nullptr, this, nullptr);
         d->context = context;
-        d->updateContext();
+        if (d->context)
+            d->updateContext();
         emit contextChanged();
     }
     int QuickActionInstantiator::count() const {
