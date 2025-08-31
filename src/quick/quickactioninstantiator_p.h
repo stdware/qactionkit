@@ -52,6 +52,8 @@ namespace QAK {
         void setStretchComponent(QQmlComponent *component);
         void resetStretchComponent();
 
+        Q_INVOKABLE void forceUpdateLayouts();
+
     signals:
         void idChanged();
         void objectAdded(int index, QObject *object);

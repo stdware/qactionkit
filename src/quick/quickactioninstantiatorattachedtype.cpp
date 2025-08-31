@@ -32,7 +32,7 @@ namespace QAK {
         }
         if (property & QuickActionInstantiatorPrivate::Icon) {
             // TODO: theme
-            setIconSource(QUrl::fromLocalFile(context->registry()->actionIcon("", info.id()).filePath(QIcon::Normal, QIcon::Off)));
+            setIconSource(QUrl::fromLocalFile(context->registry()->actionIcon("", info.id()).filePath()));
         }
         if (property & QuickActionInstantiatorPrivate::Keymap) {
             setShortcuts(context->registry()->actionShortcuts(info.id()));

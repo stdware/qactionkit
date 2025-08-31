@@ -400,6 +400,10 @@ namespace QAK {
         d->updateElement(QuickActionInstantiatorPrivate::Stretch);
         emit stretchComponentChanged();
     }
+    void QuickActionInstantiator::forceUpdateLayouts() {
+        Q_D(QuickActionInstantiator);
+        d->updateLayouts();
+    }
 }
 
 #include "moc_quickactioninstantiator_p.cpp"
