@@ -58,6 +58,7 @@ namespace QAK {
     /// stored as an adjacency map and also retains hashes of each \c ActionExtension participating
     /// in its construction.​
     class ActionLayouts {
+        Q_GADGET
     public:
         /// Default constructor.
         inline ActionLayouts() = default;

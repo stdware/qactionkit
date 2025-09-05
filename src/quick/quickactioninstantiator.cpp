@@ -223,7 +223,7 @@ namespace QAK {
         auto info = context->registry()->actionInfo(id);
         if (info.isNull())
             return;
-        auto children = info.children();
+        auto children = context->registry()->layouts().adjacencyMap().value(info.id());
         for (int childIndex = 0; childIndex < children.size(); childIndex++) {
             const auto &child = children[childIndex];
             auto list = createObject(child);
