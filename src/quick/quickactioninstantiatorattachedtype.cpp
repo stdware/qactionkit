@@ -10,6 +10,10 @@
 
 namespace QAK {
     QuickActionInstantiatorAttachedType::QuickActionInstantiatorAttachedType(QObject *parent) : QObject(parent), d_ptr(new QuickActionInstantiatorAttachedTypePrivate) {
+        if (auto action = qobject_cast<QQuickAction *>(parent)) {
+            connect(action, &QQuickAction::enabledChanged, this, &QuickActionInstantiatorAttachedType::iconChanged);
+            connect(action, &QQuickAction::checkedChanged, this, &QuickActionInstantiatorAttachedType::iconChanged);
+        }
     }
     QuickActionInstantiatorAttachedType::~QuickActionInstantiatorAttachedType() = default;
 
@@ -32,7 +36,7 @@ namespace QAK {
         }
         if (property & QuickActionInstantiatorPrivate::Icon) {
             // TODO: theme
-            setIconSource(QUrl::fromLocalFile(context->registry()->actionIcon("", info.id()).filePath()));
+            setActionIcon(context->registry()->actionIcon("", info.id()));
         }
         if (property & QuickActionInstantiatorPrivate::Keymap) {
             setShortcuts(context->registry()->actionShortcuts(info.id()));
@@ -81,16 +85,11 @@ namespace QAK {
             emit descriptionChanged();
         }
     }
-    QUrl QuickActionInstantiatorAttachedType::iconSource() const {
-        Q_D(const QuickActionInstantiatorAttachedType);
-        return d->iconSource;
-    }
-    void QuickActionInstantiatorAttachedType::setIconSource(const QUrl &iconSource) {
-        Q_D(QuickActionInstantiatorAttachedType);
-        if (d->iconSource != iconSource) {
-            d->iconSource = iconSource;
-            emit iconSourceChanged();
+    QQuickIcon QuickActionInstantiatorAttachedType::icon() const {
+        if (auto action = qobject_cast<QQuickAction *>(parent())) {
+            return selectIconByStatus(action->isEnabled(), action->isChecked());
         }
+        return selectIconByStatus(true, false);
     }
     QList<QKeySequence> QuickActionInstantiatorAttachedType::shortcuts() const {
         Q_D(const QuickActionInstantiatorAttachedType);
@@ -118,6 +117,30 @@ namespace QAK {
     void QuickActionInstantiatorAttachedType::setInstantiator(QuickActionInstantiator *instantiator) {
         Q_D(QuickActionInstantiatorAttachedType);
         d->instantiator = instantiator;
+    }
+    void QuickActionInstantiatorAttachedType::setActionIcon(const ActionIcon &actionIcon) {
+        Q_D(QuickActionInstantiatorAttachedType);
+        for (int i = 0; i < 4; i++) {
+            QQuickIcon icon;
+            bool enabledFlag = i & 1;
+            bool checkedFlag = i & 2;
+            icon.setSource(QUrl::fromLocalFile(actionIcon.filePath(enabledFlag, checkedFlag)));
+            auto color = QColor::fromString(actionIcon.currentColor());
+            icon.setColor(color);
+            d->icons[i] = icon;
+            emit iconChanged();
+        }
+    }
+    QQuickIcon QuickActionInstantiatorAttachedType::selectIconByStatus(bool enabled, bool checked) const {
+        Q_D(const QuickActionInstantiatorAttachedType);
+        int flag = 0;
+        if (enabled) {
+            flag |= 1;
+        }
+        if (checked) {
+            flag |= 2;
+        }
+        return d->icons[flag];
     }
 }
 

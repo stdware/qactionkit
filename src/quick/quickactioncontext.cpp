@@ -4,6 +4,7 @@
 #include <QQmlComponent>
 
 #include <QtQuickTemplates2/private/qquickaction_p.h>
+#include <QtQuickTemplates2/private/qquickmenu_p.h>
 
 #include <QAKCore/actionregistry.h>
 #include <QAKQuick/private/quickactioninstantiatorattachedtype_p_p.h>
@@ -39,11 +40,32 @@ namespace QAK {
         if (auto action = qobject_cast<QQuickAction *>(object)) {
             action->setText(attachedInfoObject->text());
             auto icon = action->icon();
-            icon.setSource(attachedInfoObject->iconSource());
+            icon.setSource(attachedInfoObject->icon().source());
+            QObject::connect(attachedInfoObject, &QuickActionInstantiatorAttachedType::iconChanged, action, [=] {
+                auto icon = action->icon();
+                icon.setSource(attachedInfoObject->icon().source());
+                action->setIcon(icon);
+            });
+            if (attachedInfoObject->icon().color().isValid()) {
+                icon.setColor(attachedInfoObject->icon().color());
+            }
             action->setIcon(icon);
             if (!attachedInfoObject->shortcuts().isEmpty()) {
                 action->setShortcut(attachedInfoObject->shortcuts().first());
             }
+        } else if (auto menu = qobject_cast<QQuickMenu *>(object)) {
+            menu->setTitle(attachedInfoObject->text());
+            auto icon = menu->icon();
+            icon.setSource(attachedInfoObject->icon().source());
+            QObject::connect(attachedInfoObject, &QuickActionInstantiatorAttachedType::iconChanged, menu, [=] {
+                auto icon = menu->icon();
+                icon.setSource(attachedInfoObject->icon().source());
+                menu->setIcon(icon);
+            });
+            if (attachedInfoObject->icon().color().isValid()) {
+                icon.setColor(attachedInfoObject->icon().color());
+            }
+            menu->setIcon(icon);
         }
     }
     QStringList QuickActionContext::actions() const {

@@ -4,7 +4,11 @@
 #include <QObject>
 #include <qqmlintegration.h>
 
+class QQuickIcon;
+
 namespace QAK {
+
+    class ActionIcon;
 
     class ActionItemInfo;
 
@@ -22,7 +26,7 @@ namespace QAK {
         Q_PROPERTY(QString id READ id CONSTANT)
         Q_PROPERTY(QString text READ text NOTIFY textChanged)
         Q_PROPERTY(QString description READ description NOTIFY descriptionChanged)
-        Q_PROPERTY(QUrl iconSource READ iconSource NOTIFY iconSourceChanged)
+        Q_PROPERTY(QQuickIcon icon READ icon NOTIFY iconChanged)
         Q_PROPERTY(QList<QKeySequence> shortcuts READ shortcuts NOTIFY shortcutsChanged)
         Q_PROPERTY(QVariantList attributes READ attributes CONSTANT)
         Q_PROPERTY(QuickActionInstantiator *instantiator READ instantiator CONSTANT)
@@ -42,8 +46,7 @@ namespace QAK {
         QString description() const;
         void setDescription(const QString &description);
 
-        QUrl iconSource() const;
-        void setIconSource(const QUrl &iconSource);
+        QQuickIcon icon() const;
 
         QList<QKeySequence> shortcuts() const;
         void setShortcuts(const QList<QKeySequence> &shortcuts);
@@ -54,10 +57,14 @@ namespace QAK {
         QuickActionInstantiator *instantiator() const;
         void setInstantiator(QuickActionInstantiator *instantiator);
 
+        void setActionIcon(const ActionIcon &actionIcon);
+
+        Q_INVOKABLE QQuickIcon selectIconByStatus(bool enabled, bool checked) const;
+
     signals:
         void textChanged();
         void descriptionChanged();
-        void iconSourceChanged();
+        void iconChanged();
         void shortcutsChanged();
 
     private:

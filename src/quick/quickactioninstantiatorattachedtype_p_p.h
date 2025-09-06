@@ -5,6 +5,7 @@
 
 #include <QVariant>
 #include <QUrl>
+#include <QtQuickTemplates2/private//qquickaction_p.h>
 
 namespace QAK {
     class QuickActionInstantiatorAttachedTypePrivate {
@@ -16,6 +17,8 @@ namespace QAK {
         QList<QKeySequence> shortcuts;
         QVariantList attributes;
         QuickActionInstantiator *instantiator;
+
+        QQuickIcon icons[4];
     };
 }
 
