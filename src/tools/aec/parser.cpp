@@ -143,12 +143,12 @@ static QString itemIdToText(const QString &id, int sectionIndex = -1) {
             suffix = QStringLiteral("...");
             part = part.mid(0, part.size() - 1);
         }
-        auto s = part.toString();
+        auto s = part.toString().toLower();
         if (i == 0 || i == parts.size() - 1 || !lowerCase.contains(s)) {
             if (!s.isEmpty())
                 s[0] = s[0].toUpper();
-            convertedParts.append(prefix + s + suffix);
         }
+        convertedParts.append(prefix + s + suffix);
     }
     return convertedParts.join(" ");
 }
