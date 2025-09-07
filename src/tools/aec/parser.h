@@ -15,6 +15,7 @@ struct ActionLayoutEntryMessage {
 
 struct ActionItemInfoMessage {
     QString id;
+    QString rawId;
     QAK::ActionItemInfo::Type type;
 
     QString text;

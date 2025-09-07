@@ -37,40 +37,120 @@ static QString calculateContentSha256(const QByteArray &data) {
     return hash.result().toHex();
 }
 
-static QString itemIdToText(const QString &id) {
-    QStringList parts;
-    QString currentPart;
-
-    QStringView idView(id);
-    auto dotIdx = id.lastIndexOf('.');
-    if (dotIdx >= 0 && dotIdx < id.size() - 1) {
-        idView = idView.mid(dotIdx + 1);
-    }
-    for (const auto &ch : std::as_const(idView)) {
-        if (ch.isUpper() && !currentPart.isEmpty()) {
-            parts.append(currentPart);
-            currentPart.clear();
+static QString parseItemId(const QString &id) {
+    QString parsed(id.size(), QChar::Null);
+    int idx = 0;
+    bool previousSectionContainsSpecialCharactor = false;
+    bool currentSectionContainsSpecialCharactor = false;
+    for (int pos = 0; pos < id.size(); pos++) {
+        QChar ch = id[pos];
+        if (ch.unicode() > 0x7f) {
+            return {};
         }
-        currentPart += currentPart.isEmpty() ? ch.toUpper() : ch;
-    }
-    if (!currentPart.isEmpty()) {
-        parts.append(currentPart);
-    }
+        if (ch == QLatin1Char('&')) {
+            if (pos != 0 && id[pos - 1] == QLatin1Char('&')) {
+                return {};
+            }
+            currentSectionContainsSpecialCharactor = true;
+            continue;
+        }
+        if (ch == QLatin1Char('^')) {
+            currentSectionContainsSpecialCharactor = true;
+            if (pos == id.size() - 1) {
+                continue;
+            } else {
+                return {};
+            }
+        }
+        if (ch == QLatin1Char('.')) {
+            if (idx == 0 || parsed[idx - 1] == QLatin1Char('.')) {
+                return {};
+            }
 
-    // Lower case special words
-    static QSet<QString> specialWords{
-        QStringLiteral("and"), QStringLiteral("but"),  QStringLiteral("or"), QStringLiteral("nor"),
-        QStringLiteral("for"), QStringLiteral("yet"),  QStringLiteral("so"), QStringLiteral("as"),
-        QStringLiteral("at"),  QStringLiteral("by"),   QStringLiteral("in"), QStringLiteral("of"),
-        QStringLiteral("on"),  QStringLiteral("to"),   QStringLiteral("up"), QStringLiteral("a"),
-        QStringLiteral("an"),  QStringLiteral("the "),
+            previousSectionContainsSpecialCharactor = previousSectionContainsSpecialCharactor || currentSectionContainsSpecialCharactor;
+            currentSectionContainsSpecialCharactor = false;
+            parsed[idx++] = QLatin1Char('.');
+            continue;
+        }
+        if (ch.isLetterOrNumber() || ch == QLatin1Char('_')) {
+            parsed[idx++] = ch;
+            continue;
+        }
+        return {};
+    }
+    if (previousSectionContainsSpecialCharactor) {
+        return {};
+    }
+    parsed.truncate(idx);
+    return parsed;
+}
+
+static QString itemIdToText(const QString &id, int sectionIndex = -1) {
+    static QSet<QString> lowerCase {
+
+        QStringLiteral("a"),
+        QStringLiteral("an"),
+        QStringLiteral("the"),
+
+        QStringLiteral("for"),
+        QStringLiteral("and"),
+        QStringLiteral("nor"),
+        QStringLiteral("but"),
+        QStringLiteral("or"),
+
+        QStringLiteral("amid"),
+        QStringLiteral("as"),
+        QStringLiteral("at"),
+        QStringLiteral("by"),
+        QStringLiteral("down"),
+        QStringLiteral("from"),
+        QStringLiteral("in"),
+        QStringLiteral("into"),
+        QStringLiteral("near"),
+        QStringLiteral("of"),
+        QStringLiteral("off"),
+        QStringLiteral("on"),
+        QStringLiteral("onto"),
+        QStringLiteral("out"),
+        QStringLiteral("over"),
+        QStringLiteral("per"),
+        QStringLiteral("than"),
+        QStringLiteral("till"),
+        QStringLiteral("to"),
+        QStringLiteral("up"),
+        QStringLiteral("upon"),
+        QStringLiteral("via"),
+        QStringLiteral("with"),
     };
-    for (auto &part : parts) {
-        if (auto lower = part.toLower(); specialWords.contains(lower)) {
-            part = lower;
+    QStringView idView(id);
+    auto sections = idView.split(QLatin1Char('.'));
+    if (sections.size() + sectionIndex < 0) {
+        return {};
+    }
+    idView = sections[sections.size() + sectionIndex];
+    static const auto rx = QRegularExpression("(?<=.)(?=(?:[A-Z]|&[A-Z]))(?<!(?:^|[^&])&)");
+    QList<QStringView> parts = idView.split(rx, Qt::SkipEmptyParts);
+    QStringList convertedParts;
+    for (int i = 0; i < parts.size(); ++i) {
+        auto part = parts[i];
+        QString prefix;
+        QString suffix;
+        if (part.startsWith(QLatin1Char('&'))) {
+            prefix = QStringLiteral("&");
+            part = part.mid(1);
+        }
+        if (part.endsWith(QLatin1Char('^'))) {
+            suffix = QStringLiteral("...");
+            part = part.mid(0, part.size() - 1);
+        }
+        auto s = part.toString();
+        if (i == 0 || i == parts.size() - 1 || !lowerCase.contains(s)) {
+            if (!s.isEmpty())
+                s[0] = s[0].toUpper();
+            convertedParts.append(prefix + s + suffix);
         }
     }
-    return parts.join(QChar(' '));
+    return convertedParts.join(" ");
 }
 
 static QString simplifyActionText(const QString &s) {
@@ -191,6 +271,14 @@ struct ParserPrivate {
                 info.topLevel = true;
             }
         };
+
+        info.id = parseItemId(info.rawId);
+        if (info.id.isEmpty()) {
+            error("%s: item \"%s\" has an invalid \"id\" value \"%s\"\n", qPrintable(q.fileName),
+                  qPrintable(e.name), qPrintable(info.rawId));
+            std::exit(1);
+        }
+
         const auto &name = e.name;
         const auto &namespaceUri = e.namespaceUri;
         if (name == QStringLiteral("action") && namespaceUri.isEmpty()) {
@@ -218,7 +306,7 @@ struct ParserPrivate {
         if (auto text = resolve(e.properties.value(QStringLiteral("text"))); !text.isEmpty()) {
             info.text = text;
         } else {
-            info.text = itemIdToText(info.id);
+            info.text = itemIdToText(info.rawId);
         }
 
         // class
@@ -226,6 +314,8 @@ struct ParserPrivate {
             if (auto actionClass = resolve(e.properties.value(QStringLiteral("class")));
                 !actionClass.isEmpty()) {
                 info.actionClass = actionClass;
+            } else {
+                info.actionClass = itemIdToText(info.rawId, -2);
             }
         }
 
@@ -280,7 +370,7 @@ struct ParserPrivate {
         }
     }
 
-    ActionItemInfoMessage parseItem(const QMXmlAdaptorElement &e) {
+    ActionItemInfoMessage parseItem(const QMXmlAdaptorElement &e) const {
         ActionItemInfoMessage info;
         auto id = resolve(e.properties.value(QStringLiteral("id")));
         if (id.isEmpty()) {
@@ -288,7 +378,7 @@ struct ParserPrivate {
                   qPrintable(e.name));
             std::exit(1);
         }
-        info.id = id;
+        info.rawId = id;
 
         parseItemAttrs(e, info, "item");
 
@@ -366,7 +456,7 @@ struct ParserPrivate {
         } else {
             // Create one
             ActionItemInfoMessage info;
-            info.id = id;
+            info.rawId = id;
             parseItemAttrs(*e, info, field);
             if (info.type == QAK::ActionItemInfo::Phony) {
                 errorPhony();
