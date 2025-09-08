@@ -1,7 +1,5 @@
 #include "widgetactioncontext.h"
 
-#include <variant>
-
 #include <QtWidgets/QWidgetAction>
 
 #include <QAKCore/actionregistry.h>

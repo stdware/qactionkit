@@ -24,7 +24,8 @@ namespace QAK {
 
         ActionAttributeKey() = default;
         ActionAttributeKey(const QString &name, const QString &namespaceUri = QString())
-            : name(name), namespaceUri(namespaceUri) {}
+            : name(name), namespaceUri(namespaceUri) {
+        }
 
         bool operator==(const ActionAttributeKey &other) const {
             return name == other.name && namespaceUri == other.namespaceUri;
@@ -67,7 +68,7 @@ namespace QAK {
             return m_type;
         }
         inline bool isNull() const {
-            return !m_id.isEmpty();
+            return m_type != Action || !m_id.isEmpty();
         }
 
     protected:

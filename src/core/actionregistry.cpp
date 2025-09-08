@@ -21,6 +21,9 @@ namespace QAK {
         static QString getChildId(const Child &child) {
             return child;
         }
+        static constexpr bool childIsSeparator(const Child &child) {
+            return false;
+        }
     };
 
     struct LayoutsTrait {
@@ -30,6 +33,10 @@ namespace QAK {
         using InputMap = QMap<QString, QVector<ActionLayoutEntry>>;
         static QString getChildId(const Child &child) {
             return child.id();
+        }
+        static bool childIsSeparator(const Child &child) {
+            return child.type() == ActionLayoutEntry::Separator ||
+                   child.type() == ActionLayoutEntry::Stretch;
         }
     };
 
@@ -59,6 +66,11 @@ namespace QAK {
         // Build the real children list
         typename Trait::ChildList realChildren;
         for (const auto &child : children) {
+            if (Trait::childIsSeparator(child)) {
+                realChildren.append(child);
+                continue;
+            }
+
             QString childId = Trait::getChildId(child);
             if (childId.isEmpty()) {
                 // Child should not use the reserved forest id
@@ -79,6 +91,12 @@ namespace QAK {
             }
         }
         result.insert(id, std::move(realChildren));
+
+        if (!id.isEmpty()) {
+            visiting.erase(id);
+            // Actually, we do not need to remove the node id from visiting set, because it is
+            // already a valid node in result map.
+        }
         return true;
     }
 
