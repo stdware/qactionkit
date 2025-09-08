@@ -45,7 +45,7 @@ namespace QAK {
     /// \class ActionLayoutEntry
     /// \brief An entry in an \c ActionLayout, representing an action, a group, a menu, a separator,
     /// or a stretch.
-    class ActionLayoutEntry {
+    class QAK_CORE_EXPORT ActionLayoutEntry {
         Q_GADGET
         Q_PROPERTY(QString id READ id CONSTANT)
         Q_PROPERTY(ActionLayoutEntry::Type type READ type CONSTANT)

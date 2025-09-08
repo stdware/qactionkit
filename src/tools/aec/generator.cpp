@@ -69,10 +69,6 @@ static QByteArray escapeString(const QByteArray &bytes) {
     QByteArray res;
     res.reserve(bytes.size());
     for (const auto &ch : bytes) {
-        if (ch >= 32 && ch <= 126) {
-            res += ch;
-            continue;
-        }
         switch (ch) {
             case '\\':
                 res += R"(\\)";
@@ -85,6 +81,10 @@ static QByteArray escapeString(const QByteArray &bytes) {
                 continue;
             default:
                 break;
+        }
+        if (ch >= 32 && ch <= 126) {
+            res += ch;
+            continue;
         }
         QString hexStr = QString::number(static_cast<unsigned char>(ch), 16).toUpper();
         if (hexStr.length() < 2) {
