@@ -130,6 +130,11 @@ namespace QAK {
             d->icons[i] = icon;
             emit iconChanged();
         }
+        for (auto &icon : d->icons) {
+            if (icon.source().isEmpty()) {
+                icon = d->icons[1];
+            }
+        }
     }
     QQuickIcon QuickActionInstantiatorAttachedType::selectIconByStatus(bool enabled, bool checked) const {
         Q_D(const QuickActionInstantiatorAttachedType);
