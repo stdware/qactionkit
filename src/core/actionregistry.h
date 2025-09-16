@@ -16,7 +16,7 @@ namespace QAK {
     /// \class ActionCatalog
     /// \brief ActionCatalog is a multi-way tree that defines the logical hierarchy of Actions,
     /// Groups, or Menus within a window. It can be constructed using either an adjacency map or a
-    /// child-parent mapping table.​
+    /// child-parent mapping table.
     class ActionCatalog {
     public:
         /// Default constructor.
@@ -56,7 +56,7 @@ namespace QAK {
     /// \brief ActionLayouts is a directed acyclic graph (DAG) that defines the compositional
     /// relationships between action, group, menu, and other menu elements within a view. It is
     /// stored as an adjacency map and also retains hashes of each \c ActionExtension participating
-    /// in its construction.​
+    /// in its construction.
     class ActionLayouts {
         Q_GADGET
     public:
