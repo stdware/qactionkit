@@ -208,10 +208,7 @@ public:
                     it != item.attributes.end()) {
                     ctx = it.value();
                 }
-                if (ctx.isEmpty()) {
-                    ctx = q.parseResult.textTranslationContext;
-                }
-
+                
                 fprintf(out, STRING_4_SPACE "QCoreApplication::translate(\"%s\", \"%s\");\n",
                         qPrintable(ctx), escPrintable(item.text));
             }

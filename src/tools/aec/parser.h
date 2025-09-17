@@ -53,9 +53,9 @@ struct ActionExtensionMessage {
 };
 
 struct ParseResult {
-    QString textTranslationContext = QStringLiteral("textTr");
-    QString classTranslationContext = QStringLiteral("classTr");
-    QString descriptionTranslationContext = QStringLiteral("descriptionTr");
+    QString textTranslationContext;
+    QString classTranslationContext;
+    QString descriptionTranslationContext;
 
     ActionExtensionMessage extension;
 };

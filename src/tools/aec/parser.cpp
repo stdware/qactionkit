@@ -368,6 +368,17 @@ struct ParserPrivate {
             }
             info.attributes.insert(QAK::ActionAttributeKey(key.name, key.namespaceUri), resolve(it.value()));
         }
+
+        // translation context fallbacks
+        if (auto it = e.properties.find({"textTr", {}}); it == e.properties.end() && !result.textTranslationContext.isEmpty()) {
+            info.attributes.insert(QAK::ActionAttributeKey("textTr", {}), result.textTranslationContext);
+        }
+        if (auto it = e.properties.find({"classTr", {}}); it == e.properties.end() && !result.classTranslationContext.isEmpty()) {
+            info.attributes.insert(QAK::ActionAttributeKey("classTr", {}), result.classTranslationContext);
+        }
+        if (auto it = e.properties.find({"descriptionTr", {}}); it == e.properties.end() && !result.descriptionTranslationContext.isEmpty()) {
+            info.attributes.insert(QAK::ActionAttributeKey("descriptionTr", {}), result.descriptionTranslationContext);
+        }
     }
 
     ActionItemInfoMessage parseItem(const QMXmlAdaptorElement &e) const {
