@@ -32,6 +32,42 @@ namespace QAK {
         /// This set of functions is used to query or modify the base icon collection of the
         /// \c ActionFamily.
         void addIcon(const QString &theme, const QString &id, const ActionIcon &icon);
+
+        /// \brief Adds the icon manifest file.
+        /// \param fileName The path to the icon manifest file.
+        /// \example
+        ///
+        /// \code
+        /// {
+        ///     "configuration": {
+        ///         "baseDir": "c:/path/to/" // or "baseUrl": "file://c:/path/to/"
+        ///     },
+        ///     "themes": [
+        ///         {
+        ///             "id": "theme1",
+        ///             "icons": [
+        ///                 {
+        ///                     "id": "icon1",
+        ///                     "icon": "icon1.svg"
+        ///                 },
+        ///                 {
+        ///                     "id": "icon2",
+        ///                     "icon":  {
+        ///                         "unchecked": {
+        ///                             "enabled": "icon2_UE.svg",
+        ///                             "disabled": "icon2_UD.svg"
+        ///                         },
+        ///                         "checked": {
+        ///                             "enabled": "icon2_CE.svg",
+        ///                             "disabled": "icon2_CD.svg"
+        ///                         }
+        ///                     }
+        ///                 }
+        ///             ]
+        ///         }
+        ///     ]
+        /// }
+        /// \endcode
         void addIconManifest(const QString &fileName);
         void removeIcon(const QString &theme, const QString &id);
         void removeIconManifest(const QString &fileName);

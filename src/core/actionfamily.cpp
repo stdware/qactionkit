@@ -14,7 +14,7 @@
 
 namespace QAK {
 
-    ActionIcon ActionIconFromJson(const QJsonValue &json, const QString &baseDir);
+    ActionIcon ActionIconFromJson(const QJsonValue &json, const QUrl &baseUrl);
 
     class IconConfigParser {
     public:
@@ -43,7 +43,7 @@ namespace QAK {
             }
 
             auto docObj = doc.object();
-            baseDirectory = QFileInfo(fileName).absolutePath();
+            baseUrl = QUrl::fromLocalFile(QFileInfo(fileName).absolutePath() + "/");
 
             if (auto it = docObj.find(QStringLiteral("configuration"));
                 it != docObj.end() && it->isObject()) {
@@ -101,7 +101,7 @@ namespace QAK {
                     if (auto it = iconObj.find(QStringLiteral("icon")); it == iconObj.end()) {
                         continue;
                     } else {
-                        icon = ActionIconFromJson(it.value(), baseDirectory);
+                        icon = ActionIconFromJson(it.value(), baseUrl);
                     }
                     icons.insert(iconId, icon);
                 }
@@ -112,8 +112,14 @@ namespace QAK {
 
         void parseConfig(const QJsonObject &obj) {
             if (auto it = obj.find(QStringLiteral("baseDir")); it != obj.end() && it->isString()) {
-                baseDirectory =
-                    Util::absolutePath(it->toString(), QFileInfo(fileName).absolutePath());
+                auto base = it->toString();
+                if (!base.endsWith('/'))
+                    base += '/';
+                baseUrl = Util::absoluteUrl(
+                    QUrl::fromLocalFile(base),
+                    QUrl::fromLocalFile(QFileInfo(fileName).absolutePath() + "/"));
+            } else if (auto it = obj.find(QStringLiteral("baseUrl")); it != obj.end() && it->isString()) {
+                baseUrl = Util::absoluteUrl(it->toString(), baseUrl);
             }
         }
 
@@ -121,7 +127,7 @@ namespace QAK {
         QString fileName;
 
         // config
-        QString baseDirectory;
+        QUrl baseUrl;
     };
 
 }

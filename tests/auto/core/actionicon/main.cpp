@@ -30,9 +30,10 @@ private Q_SLOTS:
         static QPair<QJsonValue, QAK::ActionIcon> testData[] = {
             // 1: string
             {
-             "1",    []() {
+             "file:///1", //
+                []() {
                     QAK::ActionIcon icon;
-                    icon.addFile("1");
+                    icon.addUrl(QUrl("file:///1"));
                     return icon;
                 }(),
              },
@@ -40,14 +41,14 @@ private Q_SLOTS:
             {
              []() {
                     QJsonObject obj;
-                    obj.insert("path", "2");
+                    obj.insert("url", "file:///2");
                     obj.insert("size", sizeToJson(QSize(2, 2)));
                     obj.insert("currentColor", "c2");
                     return obj;
                 }(),
              []() {
                     QAK::ActionIcon icon;
-                    icon.addFile("2", QSize(2, 2));
+                    icon.addUrl(QUrl("file:///2"), QSize(2, 2));
                     icon.setCurrentColor("c2");
                     return icon;
                 }(),
@@ -56,13 +57,13 @@ private Q_SLOTS:
             {
              []() {
                     QJsonObject obj;
-                    obj.insert("unchecked", "2.5");
+                    obj.insert("unchecked", "file:///2.5");
                     obj.insert("currentColor", "c2.5");
                     return obj;
                 }(),
              []() {
                     QAK::ActionIcon icon;
-                    icon.addFile("2.5");
+                    icon.addUrl(QUrl("file:///2.5"));
                     icon.setCurrentColor("c2.5");
                     return icon;
                 }(),
@@ -73,7 +74,7 @@ private Q_SLOTS:
                     QJsonObject obj;
                     {
                         QJsonObject uncheckedObj;
-                        uncheckedObj.insert("path", "3");
+                        uncheckedObj.insert("url", "file:///3");
                         uncheckedObj.insert("size", sizeToJson(QSize(3, 3)));
                         obj.insert("unchecked", uncheckedObj);
                     }
@@ -82,7 +83,7 @@ private Q_SLOTS:
                 }(),
              []() {
                     QAK::ActionIcon icon;
-                    icon.addFile("3", QSize(3, 3), true, false);
+                    icon.addUrl(QUrl("file:///3"), QSize(3, 3), true, false);
                     icon.setCurrentColor("c3");
                     return icon;
                 }(),
@@ -95,13 +96,13 @@ private Q_SLOTS:
                         QJsonObject uncheckedObj;
                         {
                             QJsonObject enabledObj;
-                            enabledObj.insert("path", "4");
+                            enabledObj.insert("url", "file:///4");
                             enabledObj.insert("size", sizeToJson(QSize(4, 4)));
                             uncheckedObj.insert("enabled", enabledObj);
                         }
                         {
                             QJsonObject disabledObj;
-                            disabledObj.insert("path", "5");
+                            disabledObj.insert("url", "file:///5");
                             disabledObj.insert("size", sizeToJson(QSize(5, 5)));
                             uncheckedObj.insert("disabled", disabledObj);
                         }
@@ -112,8 +113,8 @@ private Q_SLOTS:
                 }(),
              []() {
                     QAK::ActionIcon icon;
-                    icon.addFile("4", QSize(4, 4), true, false);
-                    icon.addFile("5", QSize(5, 5), false, false);
+                    icon.addUrl(QUrl("file:///4"), QSize(4, 4), true, false);
+                    icon.addUrl(QUrl("file:///5"), QSize(5, 5), false, false);
                     icon.setCurrentColor("c4");
                     return icon;
                 }(),
@@ -126,13 +127,13 @@ private Q_SLOTS:
                         QJsonObject uncheckedObj;
                         {
                             QJsonObject enabledObj;
-                            enabledObj.insert("path", "6");
+                            enabledObj.insert("url", "file:///6");
                             enabledObj.insert("size", sizeToJson(QSize(6, 6)));
                             uncheckedObj.insert("enabled", enabledObj);
                         }
                         {
                             QJsonObject disabledObj;
-                            disabledObj.insert("path", "7");
+                            disabledObj.insert("url", "file:///7");
                             disabledObj.insert("size", sizeToJson(QSize(7, 7)));
                             uncheckedObj.insert("disabled", disabledObj);
                         }
@@ -142,13 +143,13 @@ private Q_SLOTS:
                         QJsonObject checkedObj;
                         {
                             QJsonObject enabledObj;
-                            enabledObj.insert("path", "8");
+                            enabledObj.insert("url", "file:///8");
                             enabledObj.insert("size", sizeToJson(QSize(8, 8)));
                             checkedObj.insert("enabled", enabledObj);
                         }
                         {
                             QJsonObject disabledObj;
-                            disabledObj.insert("path", "9");
+                            disabledObj.insert("url", "file:///9");
                             disabledObj.insert("size", sizeToJson(QSize(9, 9)));
                             checkedObj.insert("disabled", disabledObj);
                         }
@@ -159,10 +160,10 @@ private Q_SLOTS:
                 }(),
              []() {
                     QAK::ActionIcon icon;
-                    icon.addFile("6", QSize(6, 6), true, false);
-                    icon.addFile("7", QSize(7, 7), false, false);
-                    icon.addFile("8", QSize(8, 8), true, true);
-                    icon.addFile("9", QSize(9, 9), false, true);
+                    icon.addUrl(QUrl("file:///6"), QSize(6, 6), true, false);
+                    icon.addUrl(QUrl("file:///7"), QSize(7, 7), false, false);
+                    icon.addUrl(QUrl("file:///8"), QSize(8, 8), true, true);
+                    icon.addUrl(QUrl("file:///9"), QSize(9, 9), false, true);
                     icon.setCurrentColor("c5");
                     return icon;
                 }(),
@@ -173,10 +174,10 @@ private Q_SLOTS:
             QJsonValue json = data.first;
             QAK::ActionIcon expected = data.second;
             QAK::ActionIcon actual = QAK::ActionIcon::fromJson(json);
-            QCOMPARE(actual.filePath(true, false), expected.filePath(true, false));
-            QCOMPARE(actual.filePath(false, false), expected.filePath(false, false));
-            QCOMPARE(actual.filePath(true, true), expected.filePath(true, true));
-            QCOMPARE(actual.filePath(false, true), expected.filePath(false, true));
+            QCOMPARE(actual.url(true, false), expected.url(true, false));
+            QCOMPARE(actual.url(false, false), expected.url(false, false));
+            QCOMPARE(actual.url(true, true), expected.url(true, true));
+            QCOMPARE(actual.url(false, true), expected.url(false, true));
 
             QCOMPARE(actual.size(true, false), expected.size(true, false));
             QCOMPARE(actual.size(false, false), expected.size(false, false));

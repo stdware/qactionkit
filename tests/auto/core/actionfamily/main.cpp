@@ -73,8 +73,8 @@ private Q_SLOTS:
     void testIconOverride() {
         QAK::ActionFamily family;
 
-        QAK::ActionIcon icon1("icon1");
-        QAK::ActionIcon icon2("icon2");
+        QAK::ActionIcon icon1(QUrl("file:///icon1"));
+        QAK::ActionIcon icon2(QUrl("file:///icon2"));
 
         QAK::ActionFamily::IconFamily iconFamily{
             {"icon1", icon1            },
@@ -85,12 +85,12 @@ private Q_SLOTS:
         family.setIconFamily(iconFamily);
 
         QVERIFY(family.icon("icon1"));
-        QCOMPARE(family.icon("icon1")->filePath(), "icon1");
+        QCOMPARE(family.icon("icon1")->url(), QUrl("file:///icon1"));
         QVERIFY(family.icon("icon2"));
-        QCOMPARE(family.icon("icon2")->filePath(), "icon2");
+        QCOMPARE(family.icon("icon2")->url(), QUrl("file:///icon2"));
         QVERIFY(!family.icon("icon3"));
         QVERIFY(family.icon("icon4"));
-        QCOMPARE(family.icon("icon4")->filePath(), "");
+        QCOMPARE(family.icon("icon4")->url(), QUrl(""));
 
         auto actualToJson = QAK::ActionFamily::iconFamilyToJson(iconFamily);
         auto expectedToJson = QJsonArray({
@@ -121,21 +121,25 @@ private Q_SLOTS:
         auto actualFromJson = QAK::ActionFamily::iconFamilyFromJson(actualToJson);
         family.setIconFamily(actualFromJson);
         QVERIFY(family.icon("icon1"));
-        QCOMPARE(family.icon("icon1")->filePath(), "icon1");
+        QCOMPARE(family.icon("icon1")->url(), QUrl("file:///icon1"));
         QVERIFY(family.icon("icon2"));
-        QCOMPARE(family.icon("icon2")->filePath(), "icon2");
+        QCOMPARE(family.icon("icon2")->url(), QUrl("file:///icon2"));
         QVERIFY(!family.icon("icon3"));
         QVERIFY(family.icon("icon4"));
-        QCOMPARE(family.icon("icon4")->filePath(), "");
+        QCOMPARE(family.icon("icon4")->url(), QUrl(""));
     }
 
     void testAddRemoveIcon() {
         QAK::ActionFamily family;
-        family.addIcon("theme1", "theme1.icon2", QAK::ActionIcon("/path/to/theme1.icon2.first"));
-        family.addIcon("theme1", "theme1.icon4", QAK::ActionIcon("/path/to/theme1.icon4.first"));
+        family.addIcon("theme1", "theme1.icon2",
+                       QAK::ActionIcon(QUrl("file:///path/to/theme1.icon2.first")));
+        family.addIcon("theme1", "theme1.icon4",
+                       QAK::ActionIcon(QUrl("file:///path/to/theme1.icon4.first")));
         family.addIconManifest(":/config.json");
-        family.addIcon("theme2", "theme2.icon1", QAK::ActionIcon("/path/to/theme2.icon1.second"));
-        family.addIcon("theme2", "theme2.icon2", QAK::ActionIcon("/path/to/theme2.icon2.second"));
+        family.addIcon("theme2", "theme2.icon1",
+                       QAK::ActionIcon(QUrl("file:///path/to/theme2.icon1.second")));
+        family.addIcon("theme2", "theme2.icon2",
+                       QAK::ActionIcon(QUrl("file:///path/to/theme2.icon2.second")));
 
         // check themes
         QCOMPARE(stringListToSet(family.iconThemes()),
@@ -151,14 +155,20 @@ private Q_SLOTS:
                  stringListToSet(QStringList({"theme3.icon1"})));
 
         // check icon data
-        QCOMPARE(family.icon("theme1", "theme1.icon1").filePath(),
-                 "/path/to/theme1.icon1.unchecked.enabled");
-        QCOMPARE(family.icon("theme1", "theme1.icon2").filePath(), "/path/to/theme1.icon2.icon");
-        QCOMPARE(family.icon("theme1", "theme1.icon3").filePath(), "/path/to/theme1.icon3.icon");
-        QCOMPARE(family.icon("theme1", "theme1.icon4").filePath(), "/path/to/theme1.icon4.first");
-        QCOMPARE(family.icon("theme2", "theme2.icon1").filePath(), "/path/to/theme2.icon1.second");
-        QCOMPARE(family.icon("theme2", "theme2.icon2").filePath(), "/path/to/theme2.icon2.second");
-        QCOMPARE(family.icon("theme3", "theme3.icon1").filePath(), "/path/to/theme3.icon1.icon");
+        QCOMPARE(family.icon("theme1", "theme1.icon1").url(),
+                 QUrl("file:///path/to/theme1.icon1.unchecked.enabled"));
+        QCOMPARE(family.icon("theme1", "theme1.icon2").url(),
+                 QUrl("file:///path/to/theme1.icon2.icon"));
+        QCOMPARE(family.icon("theme1", "theme1.icon3").url(),
+                 QUrl("file:///path/to/theme1.icon3.icon"));
+        QCOMPARE(family.icon("theme1", "theme1.icon4").url(),
+                 QUrl("file:///path/to/theme1.icon4.first"));
+        QCOMPARE(family.icon("theme2", "theme2.icon1").url(),
+                 QUrl("file:///path/to/theme2.icon1.second"));
+        QCOMPARE(family.icon("theme2", "theme2.icon2").url(),
+                 QUrl("file:///path/to/theme2.icon2.second"));
+        QCOMPARE(family.icon("theme3", "theme3.icon1").url(),
+                 QUrl("file:///path/to/theme3.icon1.icon"));
 
         // remove icon
         family.removeIcon("theme2", "theme2.icon1");
@@ -169,7 +179,8 @@ private Q_SLOTS:
                  stringListToSet(QStringList({"theme2.icon1"})));
 
         // check icon data
-        QCOMPARE(family.icon("theme2", "theme2.icon1").filePath(), "/path/to/theme2.icon1.icon");
+        QCOMPARE(family.icon("theme2", "theme2.icon1").url(),
+                 QUrl("file:///path/to/theme2.icon1.icon"));
 
         // remove icon config
         family.removeIconManifest(":/config.json");
@@ -180,8 +191,10 @@ private Q_SLOTS:
         // check icon ids
         QCOMPARE(stringListToSet(family.iconIds("theme1")),
                  stringListToSet(QStringList({"theme1.icon2", "theme1.icon4"})));
-        QCOMPARE(family.icon("theme1", "theme1.icon2").filePath(), "/path/to/theme1.icon2.first");
-        QCOMPARE(family.icon("theme1", "theme1.icon4").filePath(), "/path/to/theme1.icon4.first");
+        QCOMPARE(family.icon("theme1", "theme1.icon2").url(),
+                 QUrl("file:///path/to/theme1.icon2.first"));
+        QCOMPARE(family.icon("theme1", "theme1.icon4").url(),
+                 QUrl("file:///path/to/theme1.icon4.first"));
     }
 };
 

@@ -1,6 +1,6 @@
 {
     "configuration": {
-        "baseDir": "/path/to"
+        "baseUrl": "/path/to"
     },
     "themes": [
         {
@@ -35,7 +35,7 @@
                 {
                     "id": "theme2.icon1",
                     "icon": {
-                        "path": "theme2.icon1.icon",
+                        "url": "theme2.icon1.icon",
                         "size": {
                             "width": 24,
                             "height": 24

@@ -7,13 +7,17 @@
 
 namespace QAK {
 
+    static inline bool isEffectiveUrl(const QUrl &url) {
+        return url.isValid() && !url.isEmpty();
+    }
+
     class ActionIconPrivate : public QSharedData {
     public:
         QIcon icon;
         QString currentColor;
 
         struct AddFileInfo {
-            QString filePath;
+            QUrl url;
             QSize size;
         };
 
@@ -29,36 +33,37 @@ namespace QAK {
     ActionIcon &ActionIcon::operator=(const ActionIcon &other) = default;
     ActionIcon &ActionIcon::operator=(ActionIcon &&other) noexcept = default;
 
-    QString ActionIcon::filePath(bool enabled, bool checked) const {
-        return d_ptr->files[enabled][checked].filePath;
+    QUrl ActionIcon::url(bool enabled, bool checked) const {
+        return d_ptr->files[enabled][checked].url;
     }
 
     QSize ActionIcon::size(bool enabled, bool checked) const {
         return d_ptr->files[enabled][checked].size;
     }
 
-    void ActionIcon::addFile(const QString &filePath, QSize size, bool enabled, bool checked) {
+    void ActionIcon::addUrl(const QUrl &url, QSize size, bool enabled, bool checked) {
         auto &d = *d_ptr;
-        d.files[enabled][checked] = {filePath, size};
+        d.files[enabled][checked] = {url, size};
 
         if (!checked) {
             // set unchecked-enabled icon if not set
-            if (!enabled && d.files[true][false].filePath.isEmpty()) {
-                d.files[true][false] = {filePath, size};
+            if (!enabled && !isEffectiveUrl(d.files[true][false].url)) {
+                d.files[true][false] = {url, size};
             }
         } else {
             // set unchecked-enabled icon if not set
-            if (d.files[true][false].filePath.isEmpty()) {
-                d.files[true][false] = {filePath, size};
+            if (!isEffectiveUrl(d.files[true][false].url)) {
+                d.files[true][false] = {url, size};
             }
 
             // set checked-disabled icon if not set
-            if (!enabled && d.files[true][true].filePath.isEmpty()) {
-                d.files[false][true] = {filePath, size};
+            if (!enabled && !isEffectiveUrl(d.files[false][true].url)) {
+                d.files[false][true] = {url, size};
             }
         }
-        d.icon.addFile(filePath, size, enabled ? QIcon::Normal : QIcon::Disabled,
-                       checked ? QIcon::On : QIcon::Off);
+        if (url.isLocalFile())
+            d.icon.addFile(url.toLocalFile(), size, enabled ? QIcon::Normal : QIcon::Disabled,
+                           checked ? QIcon::On : QIcon::Off);
     }
 
     QIcon ActionIcon::icon() const {
@@ -87,7 +92,7 @@ namespace QAK {
 
         const auto &toObject = [](const ActionIconPrivate::AddFileInfo &info) {
             QJsonObject obj;
-            obj["path"] = info.filePath;
+            obj["url"] = info.url.toString();
             if (!info.size.isEmpty()) {
                 QJsonObject sizeObj;
                 sizeObj["width"] = info.size.width();
@@ -98,10 +103,10 @@ namespace QAK {
         };
 
         QJsonObject uncheckedObj;
-        if (auto &item = d.files[true][false]; !item.filePath.isEmpty()) {
+        if (auto &item = d.files[true][false]; isEffectiveUrl(item.url)) {
             uncheckedObj["enabled"] = toObject(item);
         }
-        if (auto &item = d.files[false][false]; !item.filePath.isEmpty()) {
+        if (auto &item = d.files[false][false]; isEffectiveUrl(item.url)) {
             uncheckedObj["disabled"] = toObject(item);
         }
         if (!uncheckedObj.isEmpty()) {
@@ -109,10 +114,10 @@ namespace QAK {
         }
 
         QJsonObject checkedObj;
-        if (auto &item = d.files[true][true]; !item.filePath.isEmpty()) {
+        if (auto &item = d.files[true][true]; isEffectiveUrl(item.url)) {
             checkedObj["enabled"] = toObject(item);
         }
-        if (auto &item = d.files[false][true]; !item.filePath.isEmpty()) {
+        if (auto &item = d.files[false][true]; isEffectiveUrl(item.url)) {
             checkedObj["disabled"] = toObject(item);
         }
         if (!checkedObj.isEmpty()) {
@@ -133,10 +138,9 @@ namespace QAK {
         return {};
     }
 
-    ActionIcon ActionIconFromJson(const QJsonValue &json, const QString &baseDir) {
+    ActionIcon ActionIconFromJson(const QJsonValue &json, const QUrl &baseUrl) {
         if (json.isString()) {
-            // path
-            return ActionIcon(Util::absolutePath(json.toString(), baseDir));
+            return ActionIcon(Util::absoluteUrl(json.toString(), baseUrl));
         }
 
         if (json.isObject()) {
@@ -144,7 +148,7 @@ namespace QAK {
 
             /*
                 {
-                    "path": "path/to/file.png",
+                    "url": "file://C:/path/to/file.png",
                     "size": {
                         "width": 16,
                         "height": 16
@@ -152,13 +156,13 @@ namespace QAK {
                 }
             */
             const auto testOne = [&](const QJsonObject &obj, bool enabled, bool checked) {
-                if (auto it = obj.find("path"); it != obj.end() && it->isString()) {
-                    QString path = Util::absolutePath(it.value().toString(), baseDir);
+                if (auto it = obj.find("url"); it != obj.end() && it->isString()) {
+                    QUrl url = Util::absoluteUrl(it.value().toString(), baseUrl);
                     QSize size;
                     if (it = obj.find("size"); it != obj.end()) {
                         size = sizeFromJson(it.value());
                     }
-                    ai.addFile(path, size, enabled, checked);
+                    ai.addUrl(url, size, enabled, checked);
                     return true;
                 }
                 return false;
@@ -176,7 +180,7 @@ namespace QAK {
 
             const auto &testState = [&](const QJsonValue &value, bool checked) {
                 if (value.isString()) {
-                    ai.addFile(Util::absolutePath(value.toString(), baseDir), {}, true, checked);
+                    ai.addUrl(Util::absoluteUrl(value.toString(), baseUrl), {}, true, checked);
                     return;
                 }
 
@@ -188,20 +192,20 @@ namespace QAK {
 
                     if (auto it = obj2.find("enabled"); it != obj2.end()) {
                         if (it->isString()) {
-                            ai.addFile(Util::absolutePath(it.value().toString(), baseDir), {}, true,
-                                       checked);
+                            ai.addUrl(Util::absoluteUrl(it.value().toString(), baseUrl), {}, true,
+                                      checked);
                         } else if (it->isObject()) {
                             const auto &obj3 = it->toObject();
                             std::ignore = testOne(obj3, true, checked);
                         }
                     }
 
-                    if (auto it2 = obj2.find("disabled"); it2 != obj2.end()) {
-                        if (it2->isString()) {
-                            ai.addFile(Util::absolutePath(it2.value().toString(), baseDir), {},
-                                       false, checked);
-                        } else if (it2->isObject()) {
-                            const auto &obj3 = it2->toObject();
+                    if (auto it = obj2.find("disabled"); it != obj2.end()) {
+                        if (it->isString()) {
+                            ai.addUrl(Util::absoluteUrl(it.value().toString(), baseUrl), {}, false,
+                                      checked);
+                        } else if (it->isObject()) {
+                            const auto &obj3 = it->toObject();
                             std::ignore = testOne(obj3, false, checked);
                         }
                     }

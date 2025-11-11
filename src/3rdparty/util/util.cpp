@@ -64,4 +64,18 @@ namespace Util {
         return QDir(baseDir).absoluteFilePath(path);
     }
 
+
+    QUrl absoluteUrl(const QUrl &url, const QUrl &baseUrl) {
+        if (baseUrl.isEmpty() || !baseUrl.isValid()) {
+            return url;
+        }
+        if (url.isLocalFile()) {
+            QFileInfo info(url.toLocalFile());
+            if (info.isAbsolute()) {
+                return url;
+            }
+        }
+        return baseUrl.resolved(url);
+    }
+
 }
