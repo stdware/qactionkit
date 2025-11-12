@@ -36,7 +36,7 @@ namespace QAK {
         }
         if (property & QuickActionInstantiatorPrivate::Icon) {
             // TODO: theme
-            setActionIcon(context->registry()->actionIcon("", info.id()));
+            setActionIcon(context->registry()->actionIcon("", info.icon()));
         }
         if (property & QuickActionInstantiatorPrivate::Keymap) {
             setShortcuts(context->registry()->actionShortcuts(info.id()));
@@ -124,7 +124,7 @@ namespace QAK {
             QQuickIcon icon;
             bool enabledFlag = i & 1;
             bool checkedFlag = i & 2;
-            icon.setSource(QUrl::fromLocalFile(actionIcon.filePath(enabledFlag, checkedFlag)));
+            icon.setSource(actionIcon.url(enabledFlag, checkedFlag));
             auto color = QColor::fromString(actionIcon.currentColor());
             icon.setColor(color);
             d->icons[i] = icon;
