@@ -197,6 +197,19 @@ static QStringList parseStringList(const QString &s) {
     return parts;
 }
 
+static bool interpretBoolean(const QString &s) {
+    auto lower = s.toLower();
+    if (lower.isEmpty() ||
+        lower == QStringLiteral("false") ||
+        lower == QStringLiteral("no") ||
+        lower == QStringLiteral("0") ||
+        lower == QStringLiteral("n") ||
+        lower == QStringLiteral("off")) {
+        return false;
+    }
+    return true;
+}
+
 static inline bool isStringDigits(const QString &s) {
     return std::all_of(s.begin(), s.end(), [](const QChar &ch) { return ch.isDigit(); });
 }
@@ -261,6 +274,15 @@ struct ParserPrivate {
 
     inline QString resolve(const QString &s) const {
         return Util::parseExpression(s, q.variables);
+    }
+
+    inline bool shouldSkipElement(const QMXmlAdaptorElement &e) const {
+        if (!e.properties.contains(QStringLiteral("if"))) {
+            return false;
+        }
+        auto varName = e.properties.value(QStringLiteral("if"));
+        auto varValue = q.variables.value(varName);
+        return !interpretBoolean(varValue);
     }
 
     // Infer item type when parsing item info
@@ -547,6 +569,9 @@ struct ParserPrivate {
 
             QVector<ActionLayoutEntryMessage> children;
             for (const auto &child : e->children) {
+                if (shouldSkipElement(*child)) {
+                    continue;
+                }
                 children.append(parseLayoutRecursively(child.data(), id, path));
             }
             path.erase(std::prev(path.end()));
@@ -601,14 +626,11 @@ struct ParserPrivate {
         insertion.target = target;
         insertion.relativeTo = relative;
 
-        if (root.children.isEmpty()) {
-            error("%s: empty insertion\n", qPrintable(q.fileName));
-            std::exit(1);
-        }
-
         for (const auto &item : root.children) {
             auto &e = *item;
-
+            if (shouldSkipElement(e)) {
+                continue;
+            }
             ActionLayoutEntryMessage entry;
             if (e.name == QStringLiteral("separator") && e.namespaceUri.isEmpty()) {
                 entry.type = QAK::ActionLayoutEntry::Separator;
@@ -745,6 +767,9 @@ struct ParserPrivate {
 
         // Parse items
         for (const auto &item : std::as_const(objElements)) {
+            if (shouldSkipElement(*item)) {
+                continue;
+            }
             auto entity = parseItem(*item);
             if (itemInfoMap.contains(entity.id)) {
                 error("%s: duplicated item id %s\n", qPrintable(q.fileName), qPrintable(entity.id));
@@ -755,12 +780,18 @@ struct ParserPrivate {
 
         // Parse layouts
         for (const auto &item : std::as_const(layoutElements)) {
+            if (shouldSkipElement(*item)) {
+                continue;
+            }
             stdc::linked_map<QString, int /*NOT USED*/> path;
             std::ignore = parseLayoutRecursively(item, {}, path);
         }
 
         // Parse insertions
         for (const auto &item : std::as_const(insertionElements)) {
+            if (shouldSkipElement(*item)) {
+                continue;
+            }
             result.extension.insertions.append(parseInsertion(*item));
         }
 
