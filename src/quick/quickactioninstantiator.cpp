@@ -72,7 +72,7 @@ namespace QAK {
                 o = createSeparator();
                 if (o)
                     list.append(o);
-                for (const auto &child : context->registry()->actionInfo(entry.id()).children()) {
+                for (const auto &child : context->registry()->layouts().adjacencyMap().value(entry.id())) {
                     list += createObject(child);
                 }
                 o = createSeparator();
