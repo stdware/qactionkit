@@ -2,6 +2,7 @@
 
 #include <QtCore/QCoreApplication>
 #include <QtCore/private/qcoreapplication_p.h>
+#include <QtGui/private/qguiapplication_p.h>
 
 namespace QAK {
 
@@ -42,16 +43,9 @@ namespace QAK {
             return result;
         }
 
-        class HackedApplication : public QCoreApplication {
-        public:
-            inline QCoreApplicationPrivate *d_func() {
-                return static_cast<QCoreApplicationPrivate *>(d_ptr.data());
-            }
-        };
-
         auto self = QCoreApplication::instance();
         if (self) {
-            QCoreApplicationPrivate *d = static_cast<HackedApplication *>(self)->d_func();
+            QCoreApplicationPrivate *d = QGuiApplicationPrivate::instance();
             QReadLocker locker(&d->translateMutex);
             if (!d->translators.isEmpty()) {
                 QList<QTranslator *>::ConstIterator it;
