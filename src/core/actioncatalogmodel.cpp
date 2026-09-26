@@ -36,9 +36,12 @@ namespace QAK {
             return QModelIndex(); // Root index
         }
 
-        QString parentId = catalog.parent(nodeId);
-        int row = findRowInParent(nodeId, parentId);
-        
+        const auto parentId = catalog.parent(nodeId);
+        if (!parentId) {
+            return QModelIndex();
+        }
+        int row = findRowInParent(nodeId, *parentId);
+
         if (row == -1) {
             return QModelIndex();
         }
@@ -126,13 +129,13 @@ namespace QAK {
         }
 
         QString childId = d->nodeIdFromIndex(child);
-        QString parentId = d->catalog.parent(childId);
-        
-        if (parentId.isEmpty()) {
+        const auto parentId = d->catalog.parent(childId);
+
+        if (!parentId || parentId->isEmpty()) {
             return QModelIndex(); // Parent is root
         }
 
-        return d->indexFromNodeId(parentId);
+        return d->indexFromNodeId(*parentId);
     }
 
     int ActionCatalogModel::rowCount(const QModelIndex &parent) const {

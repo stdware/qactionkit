@@ -425,10 +425,13 @@ namespace QAK {
         return d->actionItems.keys_qlist();
     }
 
-    ActionItemInfo ActionRegistry::actionInfo(const QString &id) const {
+    std::optional<ActionItemInfo> ActionRegistry::actionInfo(const QString &id) const {
         Q_D(const ActionRegistry);
         d->flushActionItems();
-        return d->actionItems.value(id);
+        if (auto it = d->actionItems.find(id); it != d->actionItems.end()) {
+            return it->second;
+        }
+        return std::nullopt;
     }
 
     ActionCatalog ActionRegistry::catalog() const {

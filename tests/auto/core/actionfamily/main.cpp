@@ -155,19 +155,19 @@ private Q_SLOTS:
                  stringListToSet(QStringList({"theme3.icon1"})));
 
         // check icon data
-        QCOMPARE(family.icon("theme1", "theme1.icon1").url(),
+        QCOMPARE(family.icon("theme1", "theme1.icon1")->url(),
                  QUrl("file:///path/to/theme1.icon1.unchecked.enabled"));
-        QCOMPARE(family.icon("theme1", "theme1.icon2").url(),
+        QCOMPARE(family.icon("theme1", "theme1.icon2")->url(),
                  QUrl("file:///path/to/theme1.icon2.icon"));
-        QCOMPARE(family.icon("theme1", "theme1.icon3").url(),
+        QCOMPARE(family.icon("theme1", "theme1.icon3")->url(),
                  QUrl("file:///path/to/theme1.icon3.icon"));
-        QCOMPARE(family.icon("theme1", "theme1.icon4").url(),
+        QCOMPARE(family.icon("theme1", "theme1.icon4")->url(),
                  QUrl("file:///path/to/theme1.icon4.first"));
-        QCOMPARE(family.icon("theme2", "theme2.icon1").url(),
+        QCOMPARE(family.icon("theme2", "theme2.icon1")->url(),
                  QUrl("file:///path/to/theme2.icon1.second"));
-        QCOMPARE(family.icon("theme2", "theme2.icon2").url(),
+        QCOMPARE(family.icon("theme2", "theme2.icon2")->url(),
                  QUrl("file:///path/to/theme2.icon2.second"));
-        QCOMPARE(family.icon("theme3", "theme3.icon1").url(),
+        QCOMPARE(family.icon("theme3", "theme3.icon1")->url(),
                  QUrl("file:///path/to/theme3.icon1.icon"));
 
         // remove icon
@@ -179,8 +179,10 @@ private Q_SLOTS:
                  stringListToSet(QStringList({"theme2.icon1"})));
 
         // check icon data
-        QCOMPARE(family.icon("theme2", "theme2.icon1").url(),
+        QCOMPARE(family.icon("theme2", "theme2.icon1")->url(),
                  QUrl("file:///path/to/theme2.icon1.icon"));
+        QVERIFY(!family.icon("theme2", "theme2.icon2"));
+        QVERIFY(!family.icon("theme4", "theme2.icon1"));
 
         // remove icon config
         family.removeIconManifest(":/config.json");
@@ -191,9 +193,9 @@ private Q_SLOTS:
         // check icon ids
         QCOMPARE(stringListToSet(family.iconIds("theme1")),
                  stringListToSet(QStringList({"theme1.icon2", "theme1.icon4"})));
-        QCOMPARE(family.icon("theme1", "theme1.icon2").url(),
+        QCOMPARE(family.icon("theme1", "theme1.icon2")->url(),
                  QUrl("file:///path/to/theme1.icon2.first"));
-        QCOMPARE(family.icon("theme1", "theme1.icon4").url(),
+        QCOMPARE(family.icon("theme1", "theme1.icon4")->url(),
                  QUrl("file:///path/to/theme1.icon4.first"));
     }
 };

@@ -318,10 +318,20 @@ namespace QAK {
         return d->iconStorage.storage.value(theme).keys();
     }
 
-    ActionIcon ActionFamily::icon(const QString &theme, const QString &iconId) const {
+    std::optional<ActionIcon> ActionFamily::icon(const QString &theme,
+                                                 const QString &iconId) const {
         Q_D(const ActionFamily);
         d->flushIcons();
-        return d->iconStorage.storage.value(theme).value(iconId);
+        const auto &storage = d->iconStorage.storage;
+        auto themeIt = storage.constFind(theme);
+        if (themeIt == storage.constEnd()) {
+            return std::nullopt;
+        }
+        auto iconIt = themeIt->constFind(iconId);
+        if (iconIt == themeIt->constEnd()) {
+            return std::nullopt;
+        }
+        return iconIt.value();
     }
 
     ActionFamily::ShortcutsFamily ActionFamily::shortcutsFamily() const {

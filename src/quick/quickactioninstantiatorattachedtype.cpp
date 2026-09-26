@@ -37,7 +37,7 @@ namespace QAK {
         }
         if (property & QuickActionInstantiatorPrivate::Icon) {
             // TODO: theme
-            setActionIcon(context->registry()->actionIcon("", info.icon()));
+            setActionIcon(context->registry()->actionIcon("", info.icon()).value_or(ActionIcon()));
         }
         if (property & QuickActionInstantiatorPrivate::Keymap) {
             setShortcuts(context->registry()->actionShortcuts(info.id()));

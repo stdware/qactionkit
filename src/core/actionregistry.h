@@ -1,6 +1,8 @@
 #ifndef ACTIONREGISTRY_H
 #define ACTIONREGISTRY_H
 
+#include <optional>
+
 #include <QtCore/QMap>
 #include <QtCore/QSharedData>
 
@@ -33,8 +35,13 @@ namespace QAK {
         inline QMap<QString, QStringList> adjacencyTable() const {
             return m_adjacencyMap;
         }
-        inline QString parent(const QString &id) const {
-            return m_parentMap.value(id);
+        /// Returns the id of the parent of \a id, which is empty for a top-level node, or
+        /// \c std::nullopt if the catalog does not contain \a id.
+        inline std::optional<QString> parent(const QString &id) const {
+            if (auto it = m_parentMap.constFind(id); it != m_parentMap.constEnd()) {
+                return it.value();
+            }
+            return std::nullopt;
         }
         inline QStringList children(const QString &id) const {
             return m_adjacencyMap.value(id);
@@ -97,7 +104,8 @@ namespace QAK {
         void addExtension(const ActionExtension *extension);
 
         QStringList actionIds() const;
-        ActionItemInfo actionInfo(const QString &id) const;
+        /// Returns the item \a id, or \c std::nullopt if no registered extension declares it.
+        std::optional<ActionItemInfo> actionInfo(const QString &id) const;
         ActionCatalog catalog() const;
 
     public:
@@ -125,7 +133,10 @@ namespace QAK {
         if (const auto o = shortcuts(id); o) {
             return o.value();
         }
-        return actionInfo(id).shortcuts();
+        if (const auto info = actionInfo(id)) {
+            return info->shortcuts();
+        }
+        return {};
     }
 
 }

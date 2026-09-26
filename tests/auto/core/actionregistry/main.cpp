@@ -49,6 +49,27 @@ private Q_SLOTS:
     void cleanup() {
     }
 
+    void testCatalogParent() {
+        const ActionCatalog catalog(QVector<QPair<QString, QString>>({
+            {QStringLiteral("menu1"),   QString()              },
+            {QStringLiteral("action1"), QStringLiteral("menu1")},
+        }));
+
+        QVERIFY(catalog.parent(QStringLiteral("action1")));
+        QCOMPARE(*catalog.parent(QStringLiteral("action1")), QStringLiteral("menu1"));
+
+        // A top-level node has the empty id as its parent, which differs from an unknown id
+        QVERIFY(catalog.parent(QStringLiteral("menu1")));
+        QVERIFY(catalog.parent(QStringLiteral("menu1"))->isEmpty());
+        QVERIFY(!catalog.parent(QStringLiteral("action2")));
+    }
+
+    void testUnknownActionInfo() {
+        ActionRegistry registry;
+        QVERIFY(!registry.actionInfo(QStringLiteral("action1")));
+        QVERIFY(registry.actionShortcuts(QStringLiteral("action1")).isEmpty());
+    }
+
     void testLayoutEntryIsNull() {
         // An entry that refers to an item is only usable with an id
         QVERIFY(ActionLayoutEntry().isNull());

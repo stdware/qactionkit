@@ -36,7 +36,7 @@ namespace QAK {
         auto attachedInfoObject = qobject_cast<QuickActionInstantiatorAttachedType *>(
             qmlAttachedPropertiesObject<QuickActionInstantiator>(object));
         Q_ASSERT(attachedInfoObject);
-        attachedInfoObject->init(registry()->actionInfo(id), this,
+        attachedInfoObject->init(registry()->actionInfo(id).value_or(ActionItemInfo()), this,
                                  QuickActionInstantiatorPrivate::All);
         if (auto action = qobject_cast<QQuickAction *>(object)) {
             action->setText(attachedInfoObject->text());

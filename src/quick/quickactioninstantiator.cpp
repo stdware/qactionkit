@@ -197,7 +197,7 @@ namespace QAK {
     }
     QuickActionInstantiatorAttachedType *QuickActionInstantiatorPrivate::attachInfoObjectTo(const QString &id, QObject *object, ActionProperty property) const {
         Q_Q(const QuickActionInstantiator);
-        auto info = context->registry()->actionInfo(id);
+        auto info = context->registry()->actionInfo(id).value_or(ActionItemInfo());
         auto attachedInfoObject = qobject_cast<QuickActionInstantiatorAttachedType *>(qmlAttachedPropertiesObject<QuickActionInstantiator>(object));
         attachedInfoObject->init(info, context, property);
         attachedInfoObject->setInstantiator(const_cast<QuickActionInstantiator *>(q));
@@ -245,9 +245,9 @@ namespace QAK {
         if (!context || !context->registry())
             return;
         auto info = context->registry()->actionInfo(id);
-        if (info.isNull())
+        if (!info)
             return;
-        auto children = context->registry()->layouts().adjacencyMap().value(info.id());
+        auto children = context->registry()->layouts().adjacencyMap().value(info->id());
         for (int childIndex = 0; childIndex < children.size(); childIndex++) {
             const auto &child = children[childIndex];
             auto list = createObject(child);

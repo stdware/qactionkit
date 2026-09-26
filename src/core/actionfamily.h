@@ -74,7 +74,9 @@ namespace QAK {
         void removeAllIcons();
         QStringList iconThemes() const;
         QStringList iconIds(const QString &theme);
-        ActionIcon icon(const QString &theme, const QString &iconId) const;
+        /// Returns the icon \a iconId of the theme \a theme, or \c std::nullopt if the theme has no
+        /// such icon.
+        std::optional<ActionIcon> icon(const QString &theme, const QString &iconId) const;
 
     public:
         /// Returns the current keymap.
@@ -99,7 +101,9 @@ namespace QAK {
         /// Resets the overridden icons for all actions.
         void resetIcons();
 
-        inline ActionIcon actionIcon(const QString &theme, const QString &id) const;
+        /// Returns the icon overridden for \a id if the user has overridden it, and otherwise the
+        /// icon \a id of the theme \a theme, or \c std::nullopt if neither exists.
+        inline std::optional<ActionIcon> actionIcon(const QString &theme, const QString &id) const;
 
     public:
         static QJsonArray shortcutsFamilyToJson(const ShortcutsFamily &shortcutsFamily);
@@ -114,9 +118,10 @@ namespace QAK {
         std::unique_ptr<ActionFamilyPrivate> d_ptr;
     };
 
-    inline ActionIcon ActionFamily::actionIcon(const QString &theme, const QString &id) const {
+    inline std::optional<ActionIcon> ActionFamily::actionIcon(const QString &theme,
+                                                              const QString &id) const {
         if (const auto o = icon(id); o) {
-            return o.value();
+            return o;
         }
         return icon(theme, id);
     }

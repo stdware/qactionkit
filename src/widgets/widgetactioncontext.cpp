@@ -172,19 +172,22 @@ namespace QAK {
         const auto info = reg->actionInfo(id);
 
         if (element == AE_Layouts || element == AE_Texts) {
-            QString text = info.text(true);
-            if (text.isEmpty()) {
-                text = info.text();
+            QString text;
+            if (info) {
+                text = info->text(true);
+                if (text.isEmpty()) {
+                    text = info->text();
+                }
             }
             if (text.isEmpty()) {
                 text = id;
             }
             action->setText(text);
 
-            if (attrs & WidgetActionContext::UpdateToolTipWithDescription) {
-                QString description = info.description(true);
+            if (info && (attrs & WidgetActionContext::UpdateToolTipWithDescription)) {
+                QString description = info->description(true);
                 if (description.isEmpty()) {
-                    description = info.description();
+                    description = info->description();
                 }
                 if (!description.isEmpty()) {
                     action->setToolTip(description);
@@ -196,9 +199,10 @@ namespace QAK {
             action->setShortcuts(reg->actionShortcuts(id));
         }
 
-        if ((element == AE_Layouts || element == AE_Icons) && !info.isNull()) {
+        if ((element == AE_Layouts || element == AE_Icons) && info) {
             // TODO: theme
-            action->setIcon(reg->actionIcon(QString(), info.icon()).icon());
+            const auto icon = reg->actionIcon(QString(), info->icon());
+            action->setIcon(icon ? icon->icon() : QIcon());
         }
     }
 
