@@ -295,7 +295,7 @@ public:
         }
         fprintf(out, "\n");
 
-        // // Groups
+        // Groups
         fprintf(out, STRING_4_SPACE "[Group]\n");
         for (const auto &item : std::as_const(groups)) {
             fprintf(out, STRING_4_SPACE "%s\n", qPrintable(item.id));

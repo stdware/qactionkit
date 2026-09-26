@@ -26,8 +26,8 @@ private:
     QMenuBar *menuBar = nullptr;
     QToolBar *toolBar = nullptr;
 
-    /// Returns the texts of the actions of \a widget, with separators shown as a bar and widget
-    /// actions as an ellipsis.
+    // Returns the texts of the actions of the widget, with separators shown as a bar and widget
+    // actions as an ellipsis.
     static QStringList contents(const QWidget *widget) {
         QStringList result;
         const auto actions = widget->actions();

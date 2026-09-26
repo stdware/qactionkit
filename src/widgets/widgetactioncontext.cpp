@@ -27,10 +27,9 @@ namespace QAK {
         std::function<QWidget *(QWidget *)> fac;
     };
 
-    /// An item registered by the application through \c WidgetActionContext .
-    ///
-    /// \note A plain value. The object it refers to is owned by the application or parented to
-    ///       the context, therefore copying an item neither transfers nor duplicates ownership.
+    // An item registered by the application through WidgetActionContext. The item is a plain
+    // value. The object it refers to is owned by the application or parented to the context,
+    // therefore copying an item neither transfers nor duplicates ownership.
     struct ActionItem {
         enum Type {
             Invalid,
@@ -43,8 +42,8 @@ namespace QAK {
 
         Type t = Invalid;
         QPointer<QObject> o;
-        /// Whether the object was created by the context and should be destroyed when the item is
-        /// replaced or removed.
+        // Whether the object was created by the context and is destroyed when the item is
+        // replaced or removed.
         bool owned = false;
 
         ActionItem() = default;
@@ -68,8 +67,8 @@ namespace QAK {
             return t == Widget ? static_cast<WidgetAction *>(o.data()) : nullptr;
         }
 
-        /// Returns the action that represents the item in a parent container, or \c nullptr for a
-        /// menu bar or a tool bar, which cannot be nested.
+        // Returns the action that represents the item in a parent container, or nullptr for a
+        // menu bar or a tool bar, which cannot be nested.
         QAction *asAction() const {
             if (auto a = action()) {
                 return a;
@@ -83,8 +82,8 @@ namespace QAK {
             return nullptr;
         }
 
-        /// Returns the widget into which the layout entries of the item are built, or \c nullptr
-        /// for an item that is not a container.
+        // Returns the widget into which the layout entries of the item are built, or nullptr for
+        // an item that is not a container.
         QWidget *asContainer() const {
             if (auto m = menu()) {
                 return m;
@@ -104,14 +103,14 @@ namespace QAK {
 
         WidgetActionContext::Attributes attrs;
 
-        /// The items registered by the application.
+        // The items registered by the application.
         QMap<QString, ActionItem> items;
-        /// The actions and sub-menus created while building the layouts, keyed by item id. Each
-        /// is parented to the context or to its container, which may destroy it, therefore the
-        /// pointers are guarded.
+        // The actions and sub-menus created while building the layouts, keyed by item id. Each
+        // is parented to the context or to its container, which may destroy it, therefore the
+        // pointers are guarded.
         QMap<QString, QPointer<QObject>> autoItems;
-        /// The separators and stretches, which have no id and are created anew on every build
-        /// pass.
+        // The separators and stretches, which have no id and are created anew on every build
+        // pass.
         QList<QPointer<QObject>> transientItems;
 
         void setItem(const QString &id, const ActionItem &item);
@@ -121,7 +120,7 @@ namespace QAK {
         void updateProperties(ActionElement element);
 
     private:
-        /// An entry resolved during a build pass, before redundant separators are collapsed.
+        // An entry resolved during a build pass, before redundant separators are collapsed.
         struct PendingEntry {
             enum Kind {
                 Item,
@@ -132,7 +131,7 @@ namespace QAK {
             Kind kind = Item;
         };
 
-        /// The layouts of the pass currently in progress.
+        // The layouts of the pass currently in progress.
         QMap<QString, QVector<ActionLayoutEntry>> currentLayouts;
 
         QAction *actionForId(const QString &id, QSet<QString> &usedIds);

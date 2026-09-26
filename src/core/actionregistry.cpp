@@ -94,8 +94,8 @@ namespace QAK {
 
         if (!id.isEmpty()) {
             visiting.erase(id);
-            // Actually, we do not need to remove the node id from visiting set, because it is
-            // already a valid node in result map.
+            // The erasure is not required, because the node is already in the result map, which
+            // is checked before the visiting set.
         }
         return true;
     }

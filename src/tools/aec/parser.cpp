@@ -29,8 +29,6 @@ void error(const char *fmt, ...) {
     va_start(args, fmt);
     vfprintf(stderr, fmt, args);
     va_end(args);
-
-    // fprintf(stderr, "\n");
 }
 
 static QString calculateContentSha256(const QByteArray &data) {
