@@ -36,24 +36,24 @@ namespace QAK {
     void QuickActionCollectionPrivate::appendItem(QQmlListProperty<QuickActionItem> *property, QuickActionItem *item) {
         if (!item)
             return;
-        auto *d = static_cast<QuickActionCollectionPrivate *>(property->data);
+        auto d = static_cast<QuickActionCollectionPrivate *>(property->data);
         d->items.append(item);
     }
 
     qsizetype QuickActionCollectionPrivate::itemCount(QQmlListProperty<QuickActionItem> *property) {
-        auto *d = static_cast<QuickActionCollectionPrivate *>(property->data);
+        auto d = static_cast<QuickActionCollectionPrivate *>(property->data);
         return d->items.count();
     }
 
     QuickActionItem *QuickActionCollectionPrivate::itemAt(QQmlListProperty<QuickActionItem> *property, qsizetype index) {
-        auto *d = static_cast<QuickActionCollectionPrivate *>(property->data);
+        auto d = static_cast<QuickActionCollectionPrivate *>(property->data);
         if (index < 0 || index >= d->items.count())
             return nullptr;
         return d->items.at(index);
     }
 
     void QuickActionCollectionPrivate::clearItems(QQmlListProperty<QuickActionItem> *property) {
-        auto *d = static_cast<QuickActionCollectionPrivate *>(property->data);
+        auto d = static_cast<QuickActionCollectionPrivate *>(property->data);
         d->items.clear();
     }
 
