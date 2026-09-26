@@ -161,10 +161,6 @@ namespace QAK {
     }
 
     static ActionLayoutEntry actionLayoutEntryFromJson(const QJsonObject &obj) {
-        QString id = obj["id"].toString();
-        if (id.isEmpty()) {
-            return {};
-        }
         ActionLayoutEntry::Type type = ActionLayoutEntry::Action;
         QString typeStr = obj["type"].toString();
         if (typeStr == "Group") {
@@ -176,7 +172,9 @@ namespace QAK {
         } else if (typeStr == "Stretch") {
             type = ActionLayoutEntry::Stretch;
         }
-        return ActionLayoutEntry(id, type);
+        // Separators and stretches have no id, and every other type requires one. The caller
+        // checks the id through ActionLayoutEntry::isNull().
+        return ActionLayoutEntry(obj["id"].toString(), type);
     }
 
     QJsonObject ActionLayouts::toJsonObject() const {

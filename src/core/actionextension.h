@@ -67,8 +67,10 @@ namespace QAK {
         inline Type type() const {
             return m_type;
         }
+        /// Returns whether the entry is unusable: an entry that refers to an item and has no id.
+        /// Separators and stretches have no id and are never null.
         inline bool isNull() const {
-            return m_type != Action || !m_id.isEmpty();
+            return m_type != Separator && m_type != Stretch && m_id.isEmpty();
         }
 
     protected:
