@@ -1,8 +1,8 @@
 #ifndef QUICKACTIONITEM_P_H
 #define QUICKACTIONITEM_P_H
 
-#include <QObject>
-#include <qqmlintegration.h>
+#include <QtCore/QObject>
+#include <QtQmlIntegration/qqmlintegration.h>
 
 class QQmlComponent;
 

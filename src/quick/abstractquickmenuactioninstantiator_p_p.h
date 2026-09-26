@@ -3,7 +3,7 @@
 
 #include "abstractquickmenuactioninstantiator_p.h"
 
-#include <QPointer>
+#include <QtCore/QPointer>
 
 namespace QAK {
     class AbstractQuickMenuActionInstantiatorPrivate {

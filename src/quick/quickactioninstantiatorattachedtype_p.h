@@ -1,8 +1,8 @@
 #ifndef QUICKACTIONINSTANTIATORATTACHEDTYPE_P_H
 #define QUICKACTIONINSTANTIATORATTACHEDTYPE_P_H
 
-#include <QObject>
-#include <qqmlintegration.h>
+#include <QtCore/QObject>
+#include <QtQmlIntegration/qqmlintegration.h>
 
 class QQuickIcon;
 

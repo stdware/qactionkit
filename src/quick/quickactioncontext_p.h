@@ -3,7 +3,7 @@
 
 #include <QAKQuick/quickactioncontext.h>
 
-#include <QPointer>
+#include <QtCore/QPointer>
 
 namespace QAK {
 

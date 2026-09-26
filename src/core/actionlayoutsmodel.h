@@ -1,7 +1,7 @@
 #ifndef ACTIONLAYOUTSMODEL_H
 #define ACTIONLAYOUTSMODEL_H
 
-#include <QAbstractItemModel>
+#include <QtCore/QAbstractItemModel>
 
 #include <QAKCore/qakglobal.h>
 #include <QAKCore/actionregistry.h>

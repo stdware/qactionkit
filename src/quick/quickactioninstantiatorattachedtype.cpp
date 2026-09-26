@@ -1,7 +1,7 @@
 #include "quickactioninstantiatorattachedtype_p.h"
 #include "quickactioninstantiatorattachedtype_p_p.h"
 
-#include <QKeySequence>
+#include <QtGui/QKeySequence>
 
 #include <QAKQuick/private/quickactioninstantiator_p.h>
 #include <QAKQuick/private/quickactioninstantiator_p_p.h>

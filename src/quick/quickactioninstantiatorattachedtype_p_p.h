@@ -3,8 +3,8 @@
 
 #include <QAKQuick/private/quickactioninstantiatorattachedtype_p.h>
 
-#include <QVariant>
-#include <QUrl>
+#include <QtCore/QVariant>
+#include <QtCore/QUrl>
 #include <QtQuickTemplates2/private//qquickaction_p.h>
 
 namespace QAK {

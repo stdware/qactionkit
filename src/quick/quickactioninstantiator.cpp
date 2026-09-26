@@ -1,9 +1,9 @@
 #include "quickactioninstantiator_p.h"
 #include "quickactioninstantiator_p_p.h"
 
-#include <QQmlComponent>
-#include <QQmlEngine>
-#include <QQmlInfo>
+#include <QtQml/QQmlComponent>
+#include <QtQml/QQmlEngine>
+#include <QtQml/QQmlInfo>
 #include <QtQuickTemplates2/private/qquickaction_p.h>
 #include <QtQuickTemplates2/private/qquickmenu_p.h>
 

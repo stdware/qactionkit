@@ -1,6 +1,6 @@
-#include <QGuiApplication>
-#include <QQmlApplicationEngine>
-#include <QQmlComponent>
+#include <QtGui/QGuiApplication>
+#include <QtQml/QQmlApplicationEngine>
+#include <QtQml/QQmlComponent>
 
 #include <QAKCore/actionextension.h>
 #include <QAKCore/actionregistry.h>

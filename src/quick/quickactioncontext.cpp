@@ -1,7 +1,7 @@
 #include "quickactioncontext.h"
 #include "quickactioncontext_p.h"
 
-#include <QQmlComponent>
+#include <QtQml/QQmlComponent>
 
 #include <QtQuickTemplates2/private/qquickaction_p.h>
 #include <QtQuickTemplates2/private/qquickmenu_p.h>

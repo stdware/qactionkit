@@ -1,7 +1,7 @@
 #include "quickactionitem_p.h"
 #include "quickactionitem_p_p.h"
 
-#include <QQmlComponent>
+#include <QtQml/QQmlComponent>
 
 namespace QAK {
 

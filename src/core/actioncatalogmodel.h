@@ -1,7 +1,7 @@
 #ifndef ACTIONCATALOGMODEL_H
 #define ACTIONCATALOGMODEL_H
 
-#include <QAbstractItemModel>
+#include <QtCore/QAbstractItemModel>
 
 #include <QAKCore/qakglobal.h>
 #include <QAKCore/actionregistry.h>

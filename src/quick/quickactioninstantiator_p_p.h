@@ -3,7 +3,7 @@
 
 #include <QAKQuick/private/quickactioninstantiator_p.h>
 
-#include <QPointer>
+#include <QtCore/QPointer>
 
 #include <QAKCore/actionregistry.h>
 

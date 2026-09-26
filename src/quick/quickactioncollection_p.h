@@ -1,9 +1,9 @@
 #ifndef QUICKACTIONCOLLECTION_P_H
 #define QUICKACTIONCOLLECTION_P_H
 
-#include <QObject>
-#include <qqmlintegration.h>
-#include <qqmllist.h>
+#include <QtCore/QObject>
+#include <QtQmlIntegration/qqmlintegration.h>
+#include <QtQml/QQmlListProperty>
 
 namespace QAK {
 

@@ -1,8 +1,8 @@
 #include "actionlayoutsmodel.h"
 
-#include <QHash>
-#include <QQueue>
-#include <QSet>
+#include <QtCore/QHash>
+#include <QtCore/QQueue>
+#include <QtCore/QSet>
 
 namespace QAK {
 

@@ -1,6 +1,6 @@
 #include "quickmenuactioninstantiator_p.h"
 
-#include <QQmlInfo>
+#include <QtQml/QQmlInfo>
 
 #include <QtQuickTemplates2/private/qquickaction_p.h>
 #include <QtQuickTemplates2/private/qquickmenu_p.h>

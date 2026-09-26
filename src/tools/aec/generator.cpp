@@ -1,6 +1,6 @@
 #include "generator.h"
 
-#include <QSet>
+#include <QtCore/QSet>
 
 template <template <class> class Array, class T>
 static QString joinNumbers(const Array<T> &arr, const QString &glue) {

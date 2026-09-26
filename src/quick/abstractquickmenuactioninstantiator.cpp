@@ -1,7 +1,7 @@
 #include "abstractquickmenuactioninstantiator_p.h"
 #include "abstractquickmenuactioninstantiator_p_p.h"
 
-#include <QPointer>
+#include <QtCore/QPointer>
 
 namespace QAK {
 

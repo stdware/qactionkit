@@ -2,7 +2,7 @@
 #define QUICKACTIONCOLLECTION_P_P_H
 
 #include "quickactioncollection_p.h"
-#include <QList>
+#include <QtCore/QList>
 
 namespace QAK {
 

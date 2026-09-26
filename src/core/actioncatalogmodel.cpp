@@ -1,6 +1,6 @@
 #include "actioncatalogmodel.h"
 
-#include <QHash>
+#include <QtCore/QHash>
 
 namespace QAK {
 
