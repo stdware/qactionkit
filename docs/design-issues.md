@@ -113,7 +113,7 @@ qak_aec: r.xml: layout element "r.recentFiles" has inconsistent tag "action" wit
 
 ## 31. 与类型相关的字段没有体现在模型中
 
-`shortcuts` 只对 Action 解析，`category` 只对 Action 推导，而 `ActionItemInfo` 对所有类型都提供这些访问函数，非 Action 条目返回空值。这一约束依靠约定，而不是类型。
+`shortcuts` 只对 Action 解析，`category` 只对 Action 读取，而 `ActionItemInfo` 对所有类型都提供这些访问函数，非 Action 条目返回空值。这一约束依靠约定，而不是类型。
 
 ## 43. 身份与形态的不变量在持久化边界失效
 
@@ -141,6 +141,6 @@ registry 同时持有条目表与布局，是唯一能够进行这一检查的�
 
 `parse()` 对被 `if` 跳过的 `<items>` 元素直接跳过，该元素不进入 `itemInfoMap`。随后布局中的引用经过 `findOrInsertItemInfo()` 的 else 分支，以引用处的标签与属性创建一个新条目。
 
-例如声明为 `<action id="c.debugDump" text="Dump State" category="Debug" shortcut="Ctrl+D" description="dumps" if="ENABLE_DEBUG" />`，布局中只写 `<action id="c.debugDump" />`。关闭开关后，编译结果的文本为 Debug Dump，类别为 C，描述与快捷键为空。条目没有消失，只是全部元数据被降级，而且身份改由引用处的标签决定，违反了「声明类型决定身份」的原则。
+例如声明为 `<action id="c.debugDump" text="Dump State" category="Debug" shortcut="Ctrl+D" description="dumps" if="ENABLE_DEBUG" />`，布局中只写 `<action id="c.debugDump" />`。关闭开关后，编译结果的文本为 Debug Dump，类别、描述与快捷键为空。条目没有消失，只是全部元数据被降级，而且身份改由引用处的标签决定，违反了「声明类型决定身份」的原则。
 
 应当在 `if` 跳过声明时记录该标识，此后的引用一律报错（提示引用处也须加上 `if`）；或者规定 `if` 只从布局中移除条目，保留其声明。

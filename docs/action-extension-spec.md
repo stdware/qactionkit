@@ -124,7 +124,7 @@ manifest.xml ──qak_aec──> qak_manifest.cpp ──> ActionExtension ─�
 | --- | --- | --- |
 | `id` | 全部 | 必需 |
 | `text` | 全部 | 由标识推导，见下文 |
-| `category` | action | 由标识推导，见下文 |
+| `category` | action | 空 |
 | `description` | 全部 | 空 |
 | `icon` | 全部 | 条目的标识 |
 | `shortcut`、`shortcuts` | action | 无 |
@@ -133,6 +133,8 @@ manifest.xml ──qak_aec──> qak_manifest.cpp ──> ActionExtension ─�
 | `textTr`、`categoryTr`、`descriptionTr` | 全部 | 取自 `configuration` |
 
 `shortcuts` 为以 `;` 分隔的列表，优先于 `shortcut`。`\` 转义其后的一个字符，字面的分号写作 `\;`。
+
+`category` 是命令面板显示在文本之前的类别标签，例如「File: Open」中的 `File`。它与 `catalog` 无关，后者决定条目在设置页层级中的位置。
 
 `topLevel` 只有在展开后恰为字符串 `true` 时才为真。`menuBar` 与 `toolBar` 总是顶层。
 
@@ -150,8 +152,6 @@ manifest.xml ──qak_aec──> qak_manifest.cpp ──> ActionExtension ─�
 ### 推导文本
 
 未指定 `text` 时，由标识的最后一段推导：该段在每个大写字母之前断开，各部分转为小写，再将首字母大写，但位于首尾之外的短功能词（`a`、`the`、`of`、`to`、`with` 等）除外。例如 `core.openRecentFile` 推导为 `Open Recent File`，`core.tableOfContents` 推导为 `Table of Contents`。
-
-未指定 `category` 时，以同样的方法由**倒数第二段**推导，例如 `edit.text.replaceAll` 的类别为 `Text`。
 
 ## 布局
 

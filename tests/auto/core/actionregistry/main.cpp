@@ -3,6 +3,11 @@
 #include <QAKCore/actioncontext.h>
 #include <QAKCore/actionregistry.h>
 
+// Declared in the global namespace, as QAK_STATIC_ACTION_EXTENSION requires
+static auto testActionExtension() {
+    return QAK_STATIC_ACTION_EXTENSION(actions);
+}
+
 using namespace QAK;
 
 class TestContext : public ActionContext {
@@ -68,6 +73,20 @@ private Q_SLOTS:
         ActionRegistry registry;
         QVERIFY(!registry.actionInfo(QStringLiteral("action1")));
         QVERIFY(registry.actionShortcuts(QStringLiteral("action1")).isEmpty());
+    }
+
+    void testCategory() {
+        ActionRegistry registry;
+        registry.addExtension(testActionExtension());
+
+        const auto openFile = registry.actionInfo(QStringLiteral("test.file.openFile"));
+        QVERIFY(openFile);
+        QCOMPARE(openFile->category(), QStringLiteral("File"));
+
+        // The category is empty if the manifest does not specify one, whatever the id
+        const auto saveFile = registry.actionInfo(QStringLiteral("test.file.saveFile"));
+        QVERIFY(saveFile);
+        QVERIFY(saveFile->category().isEmpty());
     }
 
     void testLayoutEntryIsNull() {

@@ -333,12 +333,7 @@ struct ParserPrivate {
 
         // category
         if (info.type == QAK::ActionItemInfo::Action) {
-            if (auto category = resolve(e.properties.value(QStringLiteral("category")));
-                !category.isEmpty()) {
-                info.category = category;
-            } else {
-                info.category = itemIdToText(info.rawId, -2);
-            }
+            info.category = resolve(e.properties.value(QStringLiteral("category")));
         }
 
         // description

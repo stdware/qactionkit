@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<actionExtension>
+
+    <version>1.0</version>
+    <id>org.qactionkit.test.registry</id>
+
+    <items>
+        <action id="test.file.openFile" text="Open File" category="File" />
+        <action id="test.file.saveFile" text="Save File" />
+        <menu id="test.file" text="File" />
+    </items>
+
+    <layouts>
+        <menu id="test.file">
+            <action id="test.file.openFile" />
+            <action id="test.file.saveFile" />
+        </menu>
+    </layouts>
+
+</actionExtension>
