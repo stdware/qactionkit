@@ -237,8 +237,8 @@ struct ParserPrivate {
                 if (auto it = properties.find(QStringLiteral("text")); it != properties.end()) {
                     result.textTranslationContext = resolve(it.value());
                 }
-                if (auto it = properties.find(QStringLiteral("class")); it != properties.end()) {
-                    result.classTranslationContext = resolve(it.value());
+                if (auto it = properties.find(QStringLiteral("category")); it != properties.end()) {
+                    result.categoryTranslationContext = resolve(it.value());
                 }
                 if (auto it = properties.find(QStringLiteral("description"));
                     it != properties.end()) {
@@ -331,13 +331,13 @@ struct ParserPrivate {
             info.text = itemIdToText(info.rawId);
         }
 
-        // class
+        // category
         if (info.type == QAK::ActionItemInfo::Action) {
-            if (auto actionClass = resolve(e.properties.value(QStringLiteral("class")));
-                !actionClass.isEmpty()) {
-                info.actionClass = actionClass;
+            if (auto category = resolve(e.properties.value(QStringLiteral("category")));
+                !category.isEmpty()) {
+                info.category = category;
             } else {
-                info.actionClass = itemIdToText(info.rawId, -2);
+                info.category = itemIdToText(info.rawId, -2);
             }
         }
 
@@ -374,15 +374,15 @@ struct ParserPrivate {
         // attributes
         for (auto it = e.properties.begin(); it != e.properties.end(); ++it) {
             static const QMap<QMXmlAdaptorAttributeKey, int> reservedKeys = {
-                {QMXmlAdaptorAttributeKey(QStringLiteral("id")), {}},
-                {QMXmlAdaptorAttributeKey(QStringLiteral("text")), {}},
-                {QMXmlAdaptorAttributeKey(QStringLiteral("class")), {}},
+                {QMXmlAdaptorAttributeKey(QStringLiteral("id")),          {}},
+                {QMXmlAdaptorAttributeKey(QStringLiteral("text")),        {}},
+                {QMXmlAdaptorAttributeKey(QStringLiteral("category")),    {}},
                 {QMXmlAdaptorAttributeKey(QStringLiteral("description")), {}},
-                {QMXmlAdaptorAttributeKey(QStringLiteral("catalog")), {}},
-                {QMXmlAdaptorAttributeKey(QStringLiteral("shortcuts")), {}},
-                {QMXmlAdaptorAttributeKey(QStringLiteral("shortcut")), {}},
-                {QMXmlAdaptorAttributeKey(QStringLiteral("topLevel")), {}},
-                {QMXmlAdaptorAttributeKey(QStringLiteral("icon")), {}},
+                {QMXmlAdaptorAttributeKey(QStringLiteral("catalog")),     {}},
+                {QMXmlAdaptorAttributeKey(QStringLiteral("shortcuts")),   {}},
+                {QMXmlAdaptorAttributeKey(QStringLiteral("shortcut")),    {}},
+                {QMXmlAdaptorAttributeKey(QStringLiteral("topLevel")),    {}},
+                {QMXmlAdaptorAttributeKey(QStringLiteral("icon")),        {}},
             };
             const auto &key = it.key();
             if (reservedKeys.contains(key)) {
@@ -395,8 +395,10 @@ struct ParserPrivate {
         if (auto it = e.properties.find({"textTr", {}}); it == e.properties.end() && !result.textTranslationContext.isEmpty()) {
             info.attributes.insert(QAK::ActionAttributeKey("textTr", {}), result.textTranslationContext);
         }
-        if (auto it = e.properties.find({"classTr", {}}); it == e.properties.end() && !result.classTranslationContext.isEmpty()) {
-            info.attributes.insert(QAK::ActionAttributeKey("classTr", {}), result.classTranslationContext);
+        if (auto it = e.properties.find({"categoryTr", {}});
+            it == e.properties.end() && !result.categoryTranslationContext.isEmpty()) {
+            info.attributes.insert(QAK::ActionAttributeKey("categoryTr", {}),
+                                   result.categoryTranslationContext);
         }
         if (auto it = e.properties.find({"descriptionTr", {}}); it == e.properties.end() && !result.descriptionTranslationContext.isEmpty()) {
             info.attributes.insert(QAK::ActionAttributeKey("descriptionTr", {}), result.descriptionTranslationContext);

@@ -19,7 +19,7 @@ struct ActionItemInfoMessage {
     QAK::ActionItemInfo::Type type;
 
     QString text;
-    QString actionClass;
+    QString category;
     QString description;
     QString icon;
     QStringList shortcutTokens;
@@ -54,7 +54,7 @@ struct ActionExtensionMessage {
 
 struct ParseResult {
     QString textTranslationContext;
-    QString classTranslationContext;
+    QString categoryTranslationContext;
     QString descriptionTranslationContext;
 
     ActionExtensionMessage extension;

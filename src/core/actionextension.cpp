@@ -67,12 +67,12 @@ namespace QAK {
         return translateString(d.text, d.attributes, QStringLiteral("textTr"),
                                QStringLiteral("QActionKit::ActionText"));
     }
-    QString ActionItemInfo::actionClass(bool translated) const {
+    QString ActionItemInfo::category(bool translated) const {
         auto &d = e->items[i];
         if (!translated)
-            return d.actionClass;
-        return translateString(d.actionClass, d.attributes, QStringLiteral("classTr"),
-                               QStringLiteral("QActionKit::ActionClass"));
+            return d.category;
+        return translateString(d.category, d.attributes, QStringLiteral("categoryTr"),
+                               QStringLiteral("QActionKit::ActionCategory"));
     }
     QString ActionItemInfo::description(bool translated) const {
         auto &d = e->items[i];

@@ -133,7 +133,7 @@ public:
             GENERATE_STRING(id, item.id);
             GENERATE_ENUM(type, "ActionItemInfo", itemInfoTypeToString(item.type));
             GENERATE_STRING(text, item.text);
-            GENERATE_STRING(actionClass, item.actionClass);
+            GENERATE_STRING(category, item.category);
             GENERATE_STRING(description, item.description);
             GENERATE_STRING(icon, item.icon);
 
@@ -222,24 +222,24 @@ public:
         }
 
         {
-            QSet<QString> actionClasses{{}};
-            fprintf(out, STRING_4_SPACE "// Action Class\n");
+            QSet<QString> categories{{}};
+            fprintf(out, STRING_4_SPACE "// Action Category\n");
             for (const auto &item : std::as_const(items)) {
-                if (item.actionClass.isEmpty() || actionClasses.contains(item.actionClass))
+                if (item.category.isEmpty() || categories.contains(item.category))
                     continue;
-                actionClasses.insert(item.actionClass);
+                categories.insert(item.category);
 
                 QString ctx;
-                if (auto it = item.attributes.find(QStringLiteral("classTr"));
+                if (auto it = item.attributes.find(QStringLiteral("categoryTr"));
                     it != item.attributes.end()) {
                     ctx = it.value();
                 }
                 if (ctx.isEmpty()) {
-                    ctx = q.parseResult.classTranslationContext;
+                    ctx = q.parseResult.categoryTranslationContext;
                 }
 
                 fprintf(out, STRING_4_SPACE "QCoreApplication::translate(\"%s\", \"%s\");\n",
-                        qPrintable(ctx), escPrintable(item.actionClass));
+                        qPrintable(ctx), escPrintable(item.category));
             }
             fprintf(out, "\n");
         }

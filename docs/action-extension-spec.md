@@ -48,7 +48,7 @@ manifest.xml ──qak_aec──> qak_manifest.cpp ──> ActionExtension ─�
 
     <translationContext
         text="Application::ActionText"
-        class="Application::ActionClass"
+        category="Application::ActionCategory"
         description="Application::ActionDescription"
     />
 
@@ -60,7 +60,7 @@ manifest.xml ──qak_aec──> qak_manifest.cpp ──> ActionExtension ─�
 
 `defaultCatalog` 指定目录节点，未指明目录的条目都归入该节点。若没有条目声明该节点，编译器自动为它创建一个 `phony` 条目。
 
-`translationContext` 指定三个可翻译字段的 Qt 翻译上下文。条目可以用 `textTr`、`classTr`、`descriptionTr` 属性分别覆盖。
+`translationContext` 指定三个可翻译字段的 Qt 翻译上下文。条目可以用 `textTr`、`categoryTr`、`descriptionTr` 属性分别覆盖。
 
 `vars` 声明供 `${...}` 展开的变量。命令行上以 `-D` 定义的变量优先于清单中的定义，构建过程因此可以在不修改清单的情况下为其指定参数。
 
@@ -99,7 +99,7 @@ manifest.xml ──qak_aec──> qak_manifest.cpp ──> ActionExtension ─�
 
 ```xml
 <items>
-    <action id="core.openFile" text="Open File" class="File" shortcut="Ctrl+O" />
+    <action id="core.openFile" text="Open File" category="File" shortcut="Ctrl+O" />
     <menu id="core.mainMenu" topLevel="true" />
     <toolBar id="core.mainToolBar" />
     <phony id="core.catalog.plugins" />
@@ -124,13 +124,13 @@ manifest.xml ──qak_aec──> qak_manifest.cpp ──> ActionExtension ─�
 | --- | --- | --- |
 | `id` | 全部 | 必需 |
 | `text` | 全部 | 由标识推导，见下文 |
-| `class` | action | 由标识推导，见下文 |
+| `category` | action | 由标识推导，见下文 |
 | `description` | 全部 | 空 |
 | `icon` | 全部 | 条目的标识 |
 | `shortcut`、`shortcuts` | action | 无 |
 | `catalog` | 全部 | 所在的布局条目，其次为 `defaultCatalog` |
 | `topLevel` | group、menu | `false` |
-| `textTr`、`classTr`、`descriptionTr` | 全部 | 取自 `configuration` |
+| `textTr`、`categoryTr`、`descriptionTr` | 全部 | 取自 `configuration` |
 
 `shortcuts` 为以 `;` 分隔的列表，优先于 `shortcut`。`\` 转义其后的一个字符，字面的分号写作 `\;`。
 
@@ -151,7 +151,7 @@ manifest.xml ──qak_aec──> qak_manifest.cpp ──> ActionExtension ─�
 
 未指定 `text` 时，由标识的最后一段推导：该段在每个大写字母之前断开，各部分转为小写，再将首字母大写，但位于首尾之外的短功能词（`a`、`the`、`of`、`to`、`with` 等）除外。例如 `core.openRecentFile` 推导为 `Open Recent File`，`core.tableOfContents` 推导为 `Table of Contents`。
 
-未指定 `class` 时，以同样的方法由**倒数第二段**推导，例如 `edit.text.replaceAll` 的类别为 `Text`。
+未指定 `category` 时，以同样的方法由**倒数第二段**推导，例如 `edit.text.replaceAll` 的类别为 `Text`。
 
 ## 布局
 
@@ -224,7 +224,7 @@ qak_aec [options] <manifest>
 | `-i <identifier>` | 指定扩展的标识符，默认为清单的基本文件名 |
 | `-D <key>[=<value>]` | 定义变量。省略值时，值为键本身，为真 |
 | `--text-translation-context <ctx>` | 覆盖 `text` 的翻译上下文 |
-| `--class-translation-context <ctx>` | 覆盖 `class` 的翻译上下文 |
+| `--category-translation-context <ctx>` | 覆盖 `category` 的翻译上下文 |
 | `--description-translation-context <ctx>` | 覆盖 `description` 的翻译上下文 |
 
 任何错误都输出到标准错误，并以退出码 `1` 结束。

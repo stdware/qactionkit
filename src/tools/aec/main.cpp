@@ -41,11 +41,12 @@ int main(int argc, char *argv[]) {
     textTranslationContextOption.setValueName(QStringLiteral("context"));
     parser.addOption(textTranslationContextOption);
 
-    QCommandLineOption classTranslationContextOption(QStringLiteral("class-translation-context"));
-    classTranslationContextOption.setDescription(
-        QStringLiteral("Action class translation context."));
-    classTranslationContextOption.setValueName(QStringLiteral("context"));
-    parser.addOption(classTranslationContextOption);
+    QCommandLineOption categoryTranslationContextOption(
+        QStringLiteral("category-translation-context"));
+    categoryTranslationContextOption.setDescription(
+        QStringLiteral("Action category translation context."));
+    categoryTranslationContextOption.setValueName(QStringLiteral("context"));
+    parser.addOption(categoryTranslationContextOption);
 
     QCommandLineOption descriptionTranslationContextOption(
         QStringLiteral("description-translation-context"));
@@ -121,8 +122,8 @@ int main(int argc, char *argv[]) {
     if (auto ctx = parser.value(textTranslationContextOption); !ctx.isEmpty()) {
         parseResult.textTranslationContext = ctx;
     }
-    if (auto ctx = parser.value(classTranslationContextOption); !ctx.isEmpty()) {
-        parseResult.classTranslationContext = ctx;
+    if (auto ctx = parser.value(categoryTranslationContextOption); !ctx.isEmpty()) {
+        parseResult.categoryTranslationContext = ctx;
     }
     if (auto ctx = parser.value(descriptionTranslationContextOption); !ctx.isEmpty()) {
         parseResult.descriptionTranslationContext = ctx;

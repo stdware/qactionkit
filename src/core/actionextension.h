@@ -102,7 +102,11 @@ namespace QAK {
         ///
         /// \note The translated text is empty if no translation is installed.
         QString text(bool translated = false) const;
-        QString actionClass(bool translated = false) const;
+        /// Returns the category of the action, a label that a command palette shows before the
+        /// text, such as File in File: Open, translated in the context of the \c categoryTr
+        /// attribute if \a translated is \c true. Only actions carry a category. The category is
+        /// unrelated to the catalog, which places the item in the hierarchy of a settings page.
+        QString category(bool translated = false) const;
         QString description(bool translated = false) const;
 
         /// Returns the icon id, which defaults to the item id.
@@ -123,7 +127,7 @@ namespace QAK {
         /// Returns the attributes of the item, keyed by name and namespace URI. Three attribute
         /// names are reserved and hold translation contexts:
         /// \li \c textTr for \c text()
-        /// \li \c classTr for \c actionClass()
+        /// \li \c categoryTr for \c category()
         /// \li \c descriptionTr for \c description()
         QMap<ActionAttributeKey, QString> attributes() const;
 

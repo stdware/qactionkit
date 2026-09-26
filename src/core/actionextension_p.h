@@ -19,7 +19,7 @@ namespace QAK {
         ActionItemInfo::Type type;
 
         QString text;
-        QString actionClass;
+        QString category;
         QString description;
         QString icon;
         QList<QKeySequence> shortcuts;

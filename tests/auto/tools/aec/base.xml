@@ -18,7 +18,7 @@
         <!-- Set global translation contexts -->
         <translationContext
             text="Application::ActionText"
-            class="Application::ActionClass"
+            category="Application::ActionCategory"
             description="Application::ActionDescription"
         />
     </configuration>
@@ -37,11 +37,11 @@
         <action id="fileBaseName" text="${_FILEBASENAME_}" />
 
         <!-- Test properties -->
-        <action id="TestAction" text="text" description="description" icon="icon" class="class"
+        <action id="TestAction" text="text" description="description" icon="icon" category="category"
             shortcut="Ctrl+T" />
 
         <!-- Test translation contexts -->
-        <action id="TestActionTr" textTr="x" classTr="y" descriptionTr="z" />
+        <action id="TestActionTr" textTr="x" categoryTr="y" descriptionTr="z" />
 
         <!-- Test namespace attributes -->
         <action id="TestActionNS" text="Namespace Test" custom:priority="high" custom:category="main" custom:enabled="true" />

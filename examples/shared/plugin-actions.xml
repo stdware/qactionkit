@@ -13,7 +13,7 @@
 
         <translationContext
             text="Plugin::ActionText"
-            class="Plugin::ActionClass"
+            category="Plugin::ActionCategory"
             description="Plugin::ActionDescription"
         />
 
