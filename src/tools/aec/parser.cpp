@@ -442,7 +442,7 @@ struct ParserPrivate {
         ActionItemInfoMessage *pInfo;
         if (auto it = itemInfoMap.find(id); it != itemInfoMap.end()) {
             // This layout item has been declared in the items field
-            auto &info = it.value();
+            auto &info = it->second;
 
             // Check if the tag matches
             bool typeMismatch = false;
@@ -499,7 +499,7 @@ struct ParserPrivate {
             }
 
             auto insertResult = itemInfoMap.append(id, info);
-            pInfo = &insertResult.first.value();
+            pInfo = &insertResult.first->second;
         }
         return *pInfo;
     }

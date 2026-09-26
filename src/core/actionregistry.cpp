@@ -258,7 +258,7 @@ namespace QAK {
     ActionCatalog ActionRegistryPrivate::defaultCatalog() const {
         QVector<QPair<QString, QString>> nodeParentLinks;
         for (auto it = actionItems.begin(); it != actionItems.end(); ++it) {
-            nodeParentLinks.emplace_back(it.key(), it.value().catalog());
+            nodeParentLinks.emplace_back(it->first, it->second.catalog());
         }
         return ActionCatalog(nodeParentLinks);
     }
@@ -311,7 +311,7 @@ namespace QAK {
     ActionLayouts ActionRegistryPrivate::defaultLayouts() const {
         QMap<QString, QVector<ActionLayoutEntry>> oldAdjacencyMap;
         for (auto it = actionItems.begin(); it != actionItems.end(); ++it) {
-            oldAdjacencyMap.insert(it.key(), it.value().children());
+            oldAdjacencyMap.insert(it->first, it->second.children());
         }
 
         QStringList hashList;
