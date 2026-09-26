@@ -96,7 +96,10 @@ static QByteArray escapeString(const QByteArray &bytes) {
     return res;
 }
 
-#define escPrintable(STR) escapeString((STR).toLocal8Bit()).constData()
+// The generated file is compiled as UTF-8, and the escaped bytes are placed in QStringLiteral,
+// which decodes them as UTF-8. Encoding in the local 8-bit codec would corrupt non-ASCII text on
+// a system whose locale codec is not UTF-8.
+#define escPrintable(STR) escapeString((STR).toUtf8()).constData()
 
 #define STRING_4_SPACE  "    "
 #define STRING_8_SPACE  "        "
@@ -208,7 +211,10 @@ public:
                     it != item.attributes.end()) {
                     ctx = it.value();
                 }
-                
+                if (ctx.isEmpty()) {
+                    ctx = q.parseResult.textTranslationContext;
+                }
+
                 fprintf(out, STRING_4_SPACE "QCoreApplication::translate(\"%s\", \"%s\");\n",
                         qPrintable(ctx), escPrintable(item.text));
             }
@@ -221,7 +227,7 @@ public:
             for (const auto &item : std::as_const(items)) {
                 if (item.actionClass.isEmpty() || actionClasses.contains(item.actionClass))
                     continue;
-                actionClasses.insert(item.text);
+                actionClasses.insert(item.actionClass);
 
                 QString ctx;
                 if (auto it = item.attributes.find(QStringLiteral("classTr"));

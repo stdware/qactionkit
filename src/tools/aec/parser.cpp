@@ -597,7 +597,9 @@ struct ParserPrivate {
         auto anchorToken = root.properties.value(QStringLiteral("anchor"));
         QAK::ActionInsertion::Anchor anchor;
         bool needRelative = false;
-        if (anchorToken == QStringLiteral("last") || anchorToken == QStringLiteral("back")) {
+        if (anchorToken.isEmpty() || anchorToken == QStringLiteral("last") ||
+            anchorToken == QStringLiteral("back")) {
+            // "last" is the documented default
             anchor = QAK::ActionInsertion::Last;
         } else if (anchorToken == QStringLiteral("first") ||
                    anchorToken == QStringLiteral("front")) {
@@ -605,7 +607,7 @@ struct ParserPrivate {
         } else if (anchorToken == QStringLiteral("before")) {
             anchor = QAK::ActionInsertion::Before;
             needRelative = true;
-        } else if (anchorToken.isEmpty() || anchorToken == QStringLiteral("after")) {
+        } else if (anchorToken == QStringLiteral("after")) {
             anchor = QAK::ActionInsertion::After;
             needRelative = true;
         } else {
