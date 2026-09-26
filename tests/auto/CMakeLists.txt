@@ -7,6 +7,7 @@ function(qak_add_auto_test)
         LINKS QAKCore
         QT_LINKS Test
     )
+    add_test(NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME})
 endfunction()
 
 add_subdirectory(core)
