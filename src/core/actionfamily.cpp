@@ -121,6 +121,12 @@ namespace QAK {
             } else if (auto it = obj.find(QStringLiteral("baseUrl")); it != obj.end() && it->isString()) {
                 baseUrl = Util::absoluteUrl(it->toString(), baseUrl);
             }
+
+            // The base URL denotes a directory. Without a trailing slash, QUrl::resolved() treats
+            // its last segment as a file name and removes it.
+            if (auto path = baseUrl.path(); !path.endsWith(QLatin1Char('/'))) {
+                baseUrl.setPath(path + QLatin1Char('/'));
+            }
         }
 
     public:
