@@ -24,7 +24,7 @@ public:
         setAlignment(Qt::AlignCenter);
     }
 
-    ~ClockWidget() override = default;
+    ~ClockWidget() = default;
 
 protected:
     void timerEvent(QTimerEvent *event) override {

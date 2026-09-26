@@ -19,7 +19,7 @@ namespace QAK {
         Q_CLASSINFO("DefaultProperty", "actionComponent")
     public:
         explicit QuickActionItem(QObject *parent = nullptr);
-        ~QuickActionItem() override;
+        ~QuickActionItem();
 
         QString actionId() const;
         void setActionId(const QString &actionId);

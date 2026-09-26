@@ -16,7 +16,7 @@ namespace QAK {
 
     public:
         explicit ActionCatalogModel(QObject *parent = nullptr);
-        ~ActionCatalogModel() override;
+        ~ActionCatalogModel();
 
         ActionCatalog catalog() const;
         void setCatalog(const ActionCatalog &catalog);

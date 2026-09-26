@@ -10,7 +10,7 @@ namespace QAK {
         QML_NAMED_ELEMENT(MenuBarActionInstantiator)
     public:
         explicit QuickMenuBarActionInstantiator(QObject *parent = nullptr);
-        ~QuickMenuBarActionInstantiator() override;
+        ~QuickMenuBarActionInstantiator();
 
     protected:
         void addToMenu(int index, QObject *object) override;

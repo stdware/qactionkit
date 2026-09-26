@@ -16,7 +16,7 @@ namespace QAK {
 
     public:
         explicit ActionLayoutsModel(QObject *parent = nullptr);
-        ~ActionLayoutsModel() override;
+        ~ActionLayoutsModel();
 
         ActionLayouts actionLayouts() const;
         void setActionLayouts(const ActionLayouts &layouts);

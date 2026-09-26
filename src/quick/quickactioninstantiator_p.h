@@ -26,7 +26,7 @@ namespace QAK {
         Q_PROPERTY(QQmlComponent *stretchComponent READ stretchComponent WRITE setStretchComponent RESET resetStretchComponent NOTIFY stretchComponentChanged)
     public:
         explicit QuickActionInstantiator(QObject *parent = nullptr);
-        ~QuickActionInstantiator() override;
+        ~QuickActionInstantiator();
 
         static QuickActionInstantiatorAttachedType *qmlAttachedProperties(QObject *object);
 

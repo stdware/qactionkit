@@ -14,7 +14,7 @@ namespace QAK {
         Q_PROPERTY(QObject *target READ target WRITE setTarget RESET resetTarget NOTIFY targetChanged)
     public:
         explicit AbstractQuickMenuActionInstantiator(QObject *parent = nullptr);
-        ~AbstractQuickMenuActionInstantiator() override;
+        ~AbstractQuickMenuActionInstantiator();
 
         QObject *parent() const;
         void setParent(QObject *parent);

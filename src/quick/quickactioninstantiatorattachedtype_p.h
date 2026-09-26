@@ -33,7 +33,7 @@ namespace QAK {
 
     public:
         explicit QuickActionInstantiatorAttachedType(QObject *parent = nullptr);
-        ~QuickActionInstantiatorAttachedType() override;
+        ~QuickActionInstantiatorAttachedType();
 
         void init(const ActionItemInfo &info, QuickActionContext *context, int);
 

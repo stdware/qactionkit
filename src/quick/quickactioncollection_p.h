@@ -19,7 +19,7 @@ namespace QAK {
         Q_CLASSINFO("DefaultProperty", "data")
     public:
         explicit QuickActionCollection(QObject *parent = nullptr);
-        ~QuickActionCollection() override;
+        ~QuickActionCollection();
 
         QQmlListProperty<QuickActionItem> data();
 
