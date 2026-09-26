@@ -7,9 +7,9 @@
 #include <QtQuickTemplates2/private/qquickaction_p.h>
 #include <QtQuickTemplates2/private/qquickmenu_p.h>
 
-#include <QAKQuick/quickactioncontext.h>
-#include <QAKQuick/private/quickactioninstantiatorattachedtype_p.h>
-#include <QAKQuick/private/quickmenuactioninstantiator_p.h>
+#include "quickactioncontext.h"
+#include "quickactioninstantiatorattachedtype_p.h"
+#include "quickmenuactioninstantiator_p.h"
 
 namespace QAK {
 

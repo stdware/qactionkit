@@ -12,7 +12,9 @@
 #include <QtCore/QVersionNumber>
 
 #include <qmxmladaptor/qmxmladaptor.h>
+
 #include <stdcorelib/linked_map.h>
+
 #include <util/util.h>
 
 static const QVersionNumber &parserVersion() {

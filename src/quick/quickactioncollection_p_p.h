@@ -1,8 +1,9 @@
 #ifndef QUICKACTIONCOLLECTION_P_P_H
 #define QUICKACTIONCOLLECTION_P_P_H
 
-#include "quickactioncollection_p.h"
 #include <QtCore/QList>
+
+#include <QAKQuick/private/quickactioncollection_p.h>
 
 namespace QAK {
 

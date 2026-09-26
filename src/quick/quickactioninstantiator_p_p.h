@@ -1,11 +1,11 @@
 #ifndef QUICKACTIONINSTANTIATOR_P_P_H
 #define QUICKACTIONINSTANTIATOR_P_P_H
 
-#include <QAKQuick/private/quickactioninstantiator_p.h>
-
 #include <QtCore/QPointer>
 
 #include <QAKCore/actionregistry.h>
+
+#include <QAKQuick/private/quickactioninstantiator_p.h>
 
 namespace QAK {
     class QuickActionInstantiatorPrivate {

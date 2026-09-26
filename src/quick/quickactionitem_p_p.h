@@ -1,7 +1,7 @@
 #ifndef QUICKACTIONITEM_P_P_H
 #define QUICKACTIONITEM_P_P_H
 
-#include "quickactionitem_p.h"
+#include <QAKQuick/private/quickactionitem_p.h>
 
 class QQmlComponent;
 

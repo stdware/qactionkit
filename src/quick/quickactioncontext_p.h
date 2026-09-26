@@ -1,9 +1,9 @@
 #ifndef QUICKACTIONCONTEXT_P_H
 #define QUICKACTIONCONTEXT_P_H
 
-#include <QAKQuick/quickactioncontext.h>
-
 #include <QtCore/QPointer>
+
+#include <QAKQuick/quickactioncontext.h>
 
 namespace QAK {
 

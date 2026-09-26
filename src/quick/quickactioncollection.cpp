@@ -1,7 +1,8 @@
 #include "quickactioncollection_p.h"
 #include "quickactioncollection_p_p.h"
+
+#include "quickactioncontext.h"
 #include "quickactionitem_p.h"
-#include <QAKQuick/quickactioncontext.h>
 
 namespace QAK {
 

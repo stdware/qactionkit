@@ -1,9 +1,9 @@
 #ifndef ABSTRACTQUICKMENUACTIONINSTANTIATOR_P_P_H
 #define ABSTRACTQUICKMENUACTIONINSTANTIATOR_P_P_H
 
-#include "abstractquickmenuactioninstantiator_p.h"
-
 #include <QtCore/QPointer>
+
+#include <QAKQuick/private/abstractquickmenuactioninstantiator_p.h>
 
 namespace QAK {
     class AbstractQuickMenuActionInstantiatorPrivate {

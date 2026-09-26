@@ -1,7 +1,7 @@
 #ifndef QUICKMENUACTIONINSTANTIATOR_P_H
 #define QUICKMENUACTIONINSTANTIATOR_P_H
 
-#include "abstractquickmenuactioninstantiator_p.h"
+#include <QAKQuick/private/abstractquickmenuactioninstantiator_p.h>
 
 namespace QAK {
 

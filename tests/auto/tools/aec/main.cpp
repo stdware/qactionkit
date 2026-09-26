@@ -3,6 +3,7 @@
 #include <QtCore/QTextStream>
 
 #include <qmxmladaptor/qmxmladaptor.h>
+
 #include <QAKCore/actionextension.h>
 
 class Test : public QObject {

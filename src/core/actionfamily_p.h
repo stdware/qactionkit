@@ -12,10 +12,10 @@
 
 #include <variant>
 
+#include <stdcorelib/linked_map.h>
+
 #include <QAKCore/actionfamily.h>
 #include <QAKCore/private/qakglobal_p.h>
-
-#include <stdcorelib/linked_map.h>
 
 namespace QAK {
 

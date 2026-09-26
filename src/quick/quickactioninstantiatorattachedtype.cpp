@@ -3,10 +3,11 @@
 
 #include <QtGui/QKeySequence>
 
-#include <QAKQuick/private/quickactioninstantiator_p.h>
-#include <QAKQuick/private/quickactioninstantiator_p_p.h>
-#include <QAKQuick/quickactioncontext.h>
 #include <QAKCore/actionextension.h>
+
+#include "quickactioncontext.h"
+#include "quickactioninstantiator_p.h"
+#include "quickactioninstantiator_p_p.h"
 
 namespace QAK {
     QuickActionInstantiatorAttachedType::QuickActionInstantiatorAttachedType(QObject *parent) : QObject(parent), d_ptr(new QuickActionInstantiatorAttachedTypePrivate) {

@@ -2,6 +2,7 @@
 #define QUICKACTIONCONTEXT_H
 
 #include <QAKCore/actioncontext.h>
+
 #include <QAKQuick/qakquickglobal.h>
 
 class QQmlComponent;
