@@ -377,7 +377,17 @@ namespace QAK {
         : ActionFamily(*new ActionRegistryPrivate(), parent) {
     }
 
-    ActionRegistry::~ActionRegistry() = default;
+    ActionRegistry::~ActionRegistry() {
+        Q_D(ActionRegistry);
+        // The remaining contexts are detached, because each would otherwise keep a dangling
+        // pointer to the registry. A context is not necessarily destroyed together with its
+        // registry, and the destruction order of sibling QObject children is unspecified.
+        for (const auto &ctx : std::as_const(d->contexts)) {
+            if (ctx) {
+                ctx->d_func()->registry = nullptr;
+            }
+        }
+    }
 
     QList<const ActionExtension *> ActionRegistry::extensions() const {
         Q_D(const ActionRegistry);
@@ -451,19 +461,27 @@ namespace QAK {
 
     void ActionRegistry::addContext(ActionContext *ctx) {
         Q_D(ActionRegistry);
-        d->contexts.removeAll(nullptr);
-        d->contexts.removeAll(ctx);
-        d->contexts.append(ctx);
+        if (!ctx) {
+            return;
+        }
 
-        auto &reg = ctx->d_func()->registry;
-        if (reg) {
+        // Detached from its previous registry before it is appended. In the reverse order, adding
+        // a context again to the registry it belongs to would null the entry just appended.
+        if (auto reg = ctx->d_func()->registry) {
             reg->removeContext(ctx);
         }
-        reg = this;
+
+        d->contexts.removeAll(nullptr);
+        d->contexts.append(ctx);
+        ctx->d_func()->registry = this;
     }
 
     void ActionRegistry::removeContext(ActionContext *ctx) {
         Q_D(ActionRegistry);
+        if (!ctx) {
+            return;
+        }
+        // The entries are nulled rather than erased, and addContext() removes the null entries.
         for (auto &item : d->contexts) {
             if (item == ctx) {
                 item = nullptr;
@@ -474,7 +492,10 @@ namespace QAK {
 
     void ActionRegistry::updateContext(ActionElement element) {
         Q_D(ActionRegistry);
-        for (auto &ctx : d->contexts) {
+        // Iterated over a copy, because a context may register or unregister contexts, or be
+        // destroyed, while it is updated.
+        const auto contexts = d->contexts;
+        for (const auto &ctx : contexts) {
             if (ctx) {
                 ctx->updateElement(element);
             }

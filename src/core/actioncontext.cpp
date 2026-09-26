@@ -1,6 +1,8 @@
 #include "actioncontext.h"
 #include "actioncontext_p.h"
 
+#include "actionregistry.h"
+
 namespace QAK {
 
     ActionContextPrivate::ActionContextPrivate() = default;
@@ -14,7 +16,13 @@ namespace QAK {
         : ActionContext(*new ActionContextPrivate(), parent) {
     }
 
-    ActionContext::~ActionContext() = default;
+    ActionContext::~ActionContext() {
+        Q_D(ActionContext);
+        // Unregistered, so that the registry keeps no entry for a destroyed context.
+        if (d->registry) {
+            d->registry->removeContext(this);
+        }
+    }
 
     ActionRegistry *ActionContext::registry() const {
         Q_D(const ActionContext);

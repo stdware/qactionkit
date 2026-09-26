@@ -1,8 +1,21 @@
 #include <QtTest/QtTest>
 
+#include <QAKCore/actioncontext.h>
 #include <QAKCore/actionregistry.h>
 
 using namespace QAK;
+
+class TestContext : public ActionContext {
+public:
+    explicit TestContext(QObject *parent = nullptr) : ActionContext(parent) {
+    }
+
+    void updateElement(ActionElement element) override {
+        updates.append(element);
+    }
+
+    QList<ActionElement> updates;
+};
 
 class Test : public QObject {
     Q_OBJECT
@@ -67,6 +80,70 @@ private Q_SLOTS:
         const auto children = restored.adjacencyMap().value(QStringLiteral("menu1"));
         QCOMPARE(children.size(), 1);
         QCOMPARE(children.first().id(), QStringLiteral("action2"));
+    }
+
+    void testContextRegistration() {
+        ActionRegistry registry;
+        auto context = new TestContext;
+
+        registry.addContext(context);
+        QCOMPARE(context->registry(), &registry);
+
+        registry.updateContext(AE_Layouts);
+        QCOMPARE(context->updates.size(), 1);
+        QCOMPARE(int(context->updates.first()), int(AE_Layouts));
+
+        // Adding the same context again must keep it registered
+        registry.addContext(context);
+        QCOMPARE(context->registry(), &registry);
+        registry.updateContext(AE_Texts);
+        QCOMPARE(context->updates.size(), 2);
+
+        registry.removeContext(context);
+        QCOMPARE(context->registry(), nullptr);
+        registry.updateContext(AE_Icons);
+        QCOMPARE(context->updates.size(), 2);
+
+        delete context;
+    }
+
+    void testContextMovedBetweenRegistries() {
+        ActionRegistry registry1;
+        ActionRegistry registry2;
+        auto context = new TestContext;
+
+        registry1.addContext(context);
+        registry2.addContext(context);
+        QCOMPARE(context->registry(), &registry2);
+
+        registry1.updateContext(AE_Layouts);
+        QCOMPARE(context->updates.size(), 0);
+
+        registry2.updateContext(AE_Layouts);
+        QCOMPARE(context->updates.size(), 1);
+
+        delete context;
+    }
+
+    void testContextDestroyedBeforeRegistry() {
+        ActionRegistry registry;
+        auto context = new TestContext;
+        registry.addContext(context);
+
+        delete context;
+        // The registry must not touch the destroyed context
+        registry.updateContext(AE_Layouts);
+    }
+
+    void testRegistryDestroyedBeforeContext() {
+        TestContext context;
+        {
+            ActionRegistry registry;
+            registry.addContext(&context);
+            QCOMPARE(context.registry(), &registry);
+        }
+        // The context must not keep a dangling registry pointer
+        QCOMPARE(context.registry(), nullptr);
     }
 };
 
