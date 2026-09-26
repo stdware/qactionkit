@@ -16,8 +16,7 @@ namespace QAK {
 
     class ActionExtension;
 
-    /// \struct ActionAttributeKey
-    /// \brief Represents an attribute key with name and namespace URI
+    /// An attribute key, identified by its name and the namespace URI it was declared in.
     struct QAK_CORE_EXPORT ActionAttributeKey {
         QString name;
         QString namespaceUri;
@@ -42,20 +41,20 @@ namespace QAK {
         }
     };
 
-    /// \class ActionLayoutEntry
-    /// \brief An entry in an \c ActionLayout, representing an action, a group, a menu, a separator,
-    /// or a stretch.
+    /// An entry of an \c ActionLayouts node, referring to an action, a group or a menu declared in
+    /// the same extension, or standing for a separator or a stretch.
     class QAK_CORE_EXPORT ActionLayoutEntry {
         Q_GADGET
         Q_PROPERTY(QString id READ id CONSTANT)
         Q_PROPERTY(ActionLayoutEntry::Type type READ type CONSTANT)
     public:
+        /// The kinds of entry a layout node can hold.
         enum Type {
-            Action,
-            Group,
-            Menu,
-            Separator,
-            Stretch,
+            Action,    ///< A reference to an action item
+            Group,     ///< A reference to a group, whose children are placed here directly
+            Menu,      ///< A reference to a sub-menu
+            Separator, ///< A separator, which has no id
+            Stretch,   ///< An expanding space, which has no id
         };
 
         inline ActionLayoutEntry(const QString &id = {}, Type type = Action)
@@ -78,50 +77,58 @@ namespace QAK {
         Type m_type;
     };
 
-    /// \class ActionItemInfo
-    /// \brief Provides metadata about an action item.
+    /// The metadata of a single item declared by an \c ActionExtension.
+    ///
+    /// A view on the static data of the extension, which is inexpensive to copy and must not
+    /// outlive the extension.
     class QAK_CORE_EXPORT ActionItemInfo {
     public:
         ActionItemInfo();
         bool isNull() const;
 
+        /// The kinds of item an extension can declare.
         enum Type {
-            Action,
-            Group,
-            Menu,
-            Phony,
+            Action, ///< A leaf item the user can invoke
+            Group,  ///< A named list of items, whose children are placed in its parent directly
+            Menu,   ///< A menu, a menu bar or a tool bar
+            Phony,  ///< A catalog node only, which no view displays
         };
 
         QString id() const;
         Type type() const;
 
+        /// Returns the text of the item, translated in the context of the \c textTr attribute if
+        /// \a translated is \c true.
+        ///
+        /// \note The translated text is empty if no translation is installed.
         QString text(bool translated = false) const;
         QString actionClass(bool translated = false) const;
         QString description(bool translated = false) const;
 
-        /// \brief Returns the icon id.
+        /// Returns the icon id, which defaults to the item id.
         QString icon() const;
 
-        /// \brief Returns the shortcuts, only valid for action type.
+        /// Returns the shortcuts declared by the extension. Only actions carry shortcuts.
+        /// \note These are the defaults. \c ActionRegistry::actionShortcuts() returns the shortcuts
+        ///       with the keymap of the user applied.
         QList<QKeySequence> shortcuts() const;
 
-        /// \brief Returns the catalog parent id of the action item.
+        /// Returns the id of the catalog node this item belongs to.
         QString catalog() const;
 
-        /// \brief Returns whether the action item is a top-level menu-like item such as a pop-up
-        /// menu, menubar or toolbar.
+        /// Returns whether the item is a top-level menu-like item, such as a pop-up menu, a menu
+        /// bar or a tool bar.
         bool topLevel() const;
 
-        /// \brief Returns the attributes of the action item.
-        /// Reserved attributes:
-        ///   - textTr: the translation context of \c text()
-        ///   - classTr: the translation context of \c actionClass()
-        ///   - descriptionTr: the translation context of \c description()
-        /// Key format: ActionAttributeKey(attributeName, namespaceUri) -> value
+        /// Returns the attributes of the item, keyed by name and namespace URI. Three attribute
+        /// names are reserved and hold translation contexts:
+        /// \li \c textTr for \c text()
+        /// \li \c classTr for \c actionClass()
+        /// \li \c descriptionTr for \c description()
         QMap<ActionAttributeKey, QString> attributes() const;
 
-        /// \brief Returns the children of the action item, each child is an \c ActionLayoutEntry
-        /// reference to another \c ActionItemInfo in the same extension.
+        /// Returns the children of the item, each of which refers to another item of the same
+        /// extension.
         QVector<ActionLayoutEntry> children() const;
 
     private:
@@ -132,37 +139,32 @@ namespace QAK {
         friend class ActionRegistry;
     };
 
-    /// \class ActionInsertion
-    /// \brief Provides metadata about an insertion routine  which should be applied when building
-    /// the action layouts.
+    /// An instruction to insert items into a menu declared by another extension, applied while the
+    /// action layouts are built. An extension contributes to a menu it does not own through
+    /// insertions only.
     class QAK_CORE_EXPORT ActionInsertion {
     public:
         ActionInsertion();
         bool isNull() const;
 
-        /// \enum Anchor
-        /// \brief The position where the insertion should be applied.
+        /// The position within the target where the items are inserted.
         enum Anchor {
-            /// \brief Insert the items at the beginning.
-            Last,
-            /// \brief Insert the items at the end.
-            First,
-            /// \brief Insert the items after the item \c relativeTo.
-            After,
-            /// \brief Insert the items before the item \c relativeTo.
-            Before,
+            Last,   ///< At the end of the target, the default
+            First,  ///< At the beginning of the target
+            After,  ///< Right after \c relativeTo
+            Before, ///< Right before \c relativeTo
         };
         Anchor anchor() const;
 
-        /// \brief Returns the target item id.
+        /// Returns the id of the item the insertion applies to.
         QString target() const;
 
-        /// \brief Returns the relative item id in \c target(), only valid for \c After and
-        /// \c Before anchors.
+        /// Returns the id of the item within \c target() next to which the items are placed. Used
+        /// by the \c After and \c Before anchors only.
         QString relativeTo() const;
 
-        /// \brief Returns the items to be inserted, each item is an \c ActionLayoutEntry reference
-        /// to another \c ActionItemInfo in the same extension.
+        /// Returns the items to be inserted, each of which refers to an item of the same
+        /// extension.
         QVector<ActionLayoutEntry> items() const;
 
     private:
@@ -173,10 +175,11 @@ namespace QAK {
         friend class ActionRegistry;
     };
 
-    /// \class ActionExtension
-    /// \brief Contains the action item metadata to build the action layouts.
-    /// \note An \c ActionExtension is created by the Action Extension Compiler in a generated C++
-    /// source file, and is referenced by using \c QAK_STATIC_ACTION_EXTENSION macro.
+    /// The compiled form of an action extension manifest, holding every item and insertion from
+    /// which the registry builds the catalog and the layouts.
+    ///
+    /// The Action Extension Compiler emits it as static data in a generated C++ source file, and
+    /// \c QAK_STATIC_ACTION_EXTENSION returns it.
     class QAK_CORE_EXPORT ActionExtension {
     public:
         QString version() const;
@@ -198,13 +201,10 @@ namespace QAK {
 
 }
 
-/// \macro QAK_STATIC_ACTION_EXTENSION
-/// \brief Returns a reference to the static action extension with the given name.
-/// \warning This macro cannot be used in a namespace.
+/// Returns the static action extension \a name , the identifier passed to the Action Extension
+/// Compiler for the manifest.
+/// \warning The macro declares an extern function, so it cannot be used inside a namespace.
 ///
-/// \example
-///     A function that returns a reference to a given action extension with identifier
-///     "core_actions"
 /// \code
 ///     static auto getActionExtension() {
 ///         return QAK_STATIC_ACTION_EXTENSION(core_actions);

@@ -13,19 +13,18 @@ namespace QAK {
 
     class ActionRegistryPrivate;
 
-    /// \class ActionCatalog
-    /// \brief ActionCatalog is a multi-way tree that defines the logical hierarchy of Actions,
-    /// Groups, or Menus within a window. It can be constructed using either an adjacency map or a
-    /// child-parent mapping table.
+    /// The logical hierarchy of the action items, from which a settings page presents them to the
+    /// user. The hierarchy is a forest whose root is the empty id, and it is independent of the
+    /// layout of the items in the menus.
     class ActionCatalog {
     public:
         /// Default constructor.
         inline ActionCatalog() = default;
-        /// Constructs from an adjacency map.
+        /// Constructs from a list of child-parent pairs.
         inline explicit ActionCatalog(const QVector<QPair<QString, QString>> &input) {
             setParentMap(input);
         }
-        /// Constructs from a child-parent mapping table.
+        /// Constructs from an adjacency table.
         inline explicit ActionCatalog(const QMap<QString, QStringList> &input) {
             setAdjacencyTable(input);
         }
@@ -52,11 +51,10 @@ namespace QAK {
         QMap<QString, QString> m_parentMap;
     };
 
-    /// \class ActionLayouts
-    /// \brief ActionLayouts is a directed acyclic graph (DAG) that defines the compositional
-    /// relationships between action, group, menu, and other menu elements within a view. It is
-    /// stored as an adjacency map and also retains hashes of each \c ActionExtension participating
-    /// in its construction.
+    /// The composition of the menus, tool bars and groups of a view, stored as the adjacency map
+    /// of a directed acyclic graph, together with the hash of every \c ActionExtension from which
+    /// it was built. \c ActionRegistry compares the hashes to update a layout saved by the user
+    /// after an extension has been added or changed.
     class ActionLayouts {
         Q_GADGET
     public:
@@ -83,9 +81,9 @@ namespace QAK {
         QStringList m_hashList; // hash of extensions
     };
 
-    /// \class ActionRegistry
-    /// \brief ActionRegistry is a central repository of all \c ActionExtension instances and
-    /// manages the catalog and layouts.
+    /// The central repository of the action extensions of an application, holding the catalog, the
+    /// layouts and the customizations made by the user. An application normally has one registry,
+    /// with one \c ActionContext per window registered with it.
     class QAK_CORE_EXPORT ActionRegistry : public ActionFamily {
         Q_OBJECT
         Q_DECLARE_PRIVATE(ActionRegistry)
@@ -110,11 +108,13 @@ namespace QAK {
         inline QList<QKeySequence> actionShortcuts(const QString &id) const;
 
     public:
-        /// Registers a context with the registry.
+        /// Registers \a ctx with the registry, and removes it from the registry it was registered
+        /// with before. A destroyed context is removed from its registry.
         void addContext(ActionContext *ctx);
-        /// Unregisters a context from the registry.
+        /// Unregisters \a ctx from the registry.
         void removeContext(ActionContext *ctx);
-        /// Updates the context of all contexts that are registered with the registry.
+        /// Rebuilds \a element of every registered context from the current state of the
+        /// registry.
         void updateContext(ActionElement element);
 
     protected:

@@ -13,9 +13,9 @@ namespace QAK {
 
     class ActionFamilyPrivate;
 
-    /// \class ActionFamily
-    /// \brief The ActionFamily class represents a group of actions which are normally functioning
-    /// in a window.
+    /// The icons and shortcuts of a set of actions: those shipped with the application and those
+    /// that the user has overridden. \c ActionRegistry derives from this class, and an application
+    /// normally accesses them through the registry.
     class QAK_CORE_EXPORT ActionFamily : public QObject {
         Q_OBJECT
         Q_DECLARE_PRIVATE(ActionFamily)
@@ -33,9 +33,9 @@ namespace QAK {
         /// \c ActionFamily.
         void addIcon(const QString &theme, const QString &id, const ActionIcon &icon);
 
-        /// \brief Adds the icon manifest file.
-        /// \param fileName The path to the icon manifest file.
-        /// \example
+        /// Adds every icon declared by the manifest \a fileName . A relative icon path is resolved
+        /// against \c baseDir or \c baseUrl if the manifest specifies one, and against the
+        /// directory of the manifest otherwise.
         ///
         /// \code
         /// {
