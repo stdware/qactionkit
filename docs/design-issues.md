@@ -6,45 +6,38 @@
 
 ## 17. 条目的声明类型与布局中的形态
 
-**现状。** 条目有两级类型：声明类型（`ActionItemInfo::Type`）是条目的**身份**，即 registry 认定的条目种类；布局条目的类型（`ActionLayoutEntry::Type`）是条目在某一位置的**形态**。两级类型是有意的设计。例如一个 menu 可以在某处以 action 的形态出现，子项由外部逻辑维护（如最近打开的文件），对 registry 而言它相当于一个 action。约束因此是非对称的：形态可以比身份窄（menu 作为 action 使用），不能比身份宽（action 不能作为 menu 使用）。
+**现状。** 条目有两级类型：声明类型（`ActionItemInfo::Type`）是条目的**身份**，即 registry 认定的条目种类；布局条目的类型（`ActionLayoutEntry::Type`）是条目在某一位置的**形态**。Menu 与 Group 可以互换形态：声明为 menu 的条目可以在布局中写作 `<group>`，作为组展开；声明为 group 的条目可以写作 `<menu>`，显示为子菜单。设置页也可以在运行时修改形态（`ActionLayoutsModel::setData()`）。Action 的形态固定为 Action，AEC 拒绝以其他标签引用 action。
 
-**已经成立的部分。** 由 action 到 menu 的方向已被编译器禁止：`findOrInsertItemInfo()` 对 Action 条目只接受 `action` 与 `item` 标签，`<menu id="某个 action">` 报告 inconsistent tag 并退出；`parseLayoutRecursively()` 对 Action 条目无条件产生 Action 形态。条目先于布局解析，重复的标识报错，不存在借助顺序绕过检查的途径。插入使用同一套检查。
+**问题。**
 
-**问题。** 反方向无法表达。Menu 与 Group 条目接受的标签为 `group`、`menu`、`menuBar`、`toolBar`、`item`，不含 `action`：
+1. 标签到形态的映射有隐式的塌缩。引用 Menu 或 Group 条目时，只有 `menu` 标签产生 Menu 形态，其余标签一律产生 Group 形态。声明为 menu 的条目在布局中写作 `<item>`，结果被当作组展开，而 `item` 应当表示条目声明的类型。
+2. `menuBar` 与 `toolBar` 编译后与 `<menu topLevel="true">` 没有区别（第 46 条），在引用处却被当作 group。
+3. 内容由应用程序维护的菜单无法表达。例如「打开最近的文件」子菜单的内容由应用程序生成，应用程序以 `addAction()` 登记该 `QMenu` 的 `menuAction()`。对 QActionKit 而言它是一个 action，但它不是命令：执行它没有意义，因此不应进入命令面板，也不应绑定快捷键。现有的 action 无法表达这一区别。
 
-```xml
-<items><menu id="r.recentFiles" text="Recent Files" /></items>
-<layouts><menu id="r.file"><action id="r.recentFiles" /></menu></layouts>
-```
+**决定。**
 
-```
-qak_aec: r.xml: layout element "r.recentFiles" has inconsistent tag "action" with the item element "menu"
-```
+1. 删除 `menuBar` 与 `toolBar` 标签。顶层容器一律写作 `<menu topLevel="true">`，菜单栏与工具栏的区别由应用程序登记时决定（`addMenuBar()`、`addToolBar()`）。
+2. 布局中的标签决定 Menu 与 Group 条目的形态：`menu` 为 Menu，`group` 为 Group，`item` 为声明的类型。以 `action` 引用 Menu 或 Group 条目仍为错误。
+3. `<action>` 新增属性 `external`。`external="true"` 的 action 是一个内容由应用程序维护的菜单：
+   - 应用程序以 `addAction()` 登记该菜单的 `menuAction()`。它不经 `addMenu()` 登记，后端不清空也不生成其内容。
+   - 身份与形态都是 Action，因此不能以 Menu 或 Group 形态出现，也不能在布局中带有子项，这两条由 action 的现有规则保证。
+   - 不能带有 `shortcut` 或 `shortcuts` 属性，AEC 报错。`external` 用于 action 以外的标签也是错误。
+   - `ActionItemInfo` 提供查询该属性的访问函数。
+4. 身份为 Action 且不是 external 的条目是命令：进入命令面板，可以绑定快捷键。external action、Menu、Group 与 Phony 都不是命令。
 
-即使放行该标签，Menu 与 Group 的分支也只在标签为 `menu` 时产生 Menu 形态，其余一律产生 Group 形态，Action 形态不可达。Quick 后端在运行时支持这种用法（`createAction()` 同时处理 `QQuickAction` 与 `QQuickMenu`，登记为 Menu 组件的标识只设置标题与图标，不递归），但编译器不允许写出。
+身份、标签与形态的合法组合：
 
-标签到形态的映射不是一一对应的，塌缩规则是隐含的 else 分支：
+| 身份 | 标签 | 形态 |
+| --- | --- | --- |
+| Action（含 external） | `action` / `item` | Action |
+| Action（含 external） | 其他 | 错误 |
+| Menu | `menu` / `item` | Menu |
+| Menu | `group` | Group |
+| Group | `group` / `item` | Group |
+| Group | `menu` | Menu |
+| Menu / Group | `action` | 错误 |
 
-| 身份 | 标签 | 形态 | 评价 |
-| --- | --- | --- | --- |
-| Action | `action` / `item` | Action | 正确 |
-| Action | 其他 | 编译错误 | 正确 |
-| Menu | `menu` | Menu | 正确 |
-| Menu | `item` | Group | 与直觉相反，`item` 应表示条目本来的形态 |
-| Menu | `menuBar` / `toolBar` | Group | 这两个标签不表示内联 |
-| Menu | `action` | 编译错误 | 缺失的用法 |
-| Group | `menu` | Menu | 合法且有意义（将一组条目显示为子菜单），但未写入规范 |
-| Group | `group` / `item` / `menuBar` / `toolBar` | Group | 正确 |
-
-**可选的方向。** 倾向第一种。
-
-1. **增加显式的形态属性。** 标签只表示身份，形态由 `as` 属性指定：`<menu id="r.recentFiles" as="action" />`。检查分为两条相互独立的规则：标签须与身份相容，`as` 须属于身份所允许的形态（Action 允许 action，Menu 与 Group 允许 action、group、menu）。省略 `as` 时取身份的自然形态。三种塌缩全部消失，`item` 的含义明确，错误信息可以区分身份不符与形态不允许。
-2. **修正标签到形态的映射**，使每个标签只对应一种形态：`menu` 对应 Menu，`group` 对应 Group，`action` 对应 Action，`item` 对应自然形态，`menuBar` 与 `toolBar` 出现在嵌套位置时报错。省去一个属性，但 menu 作为 action 使用时写作 `<action id="r.recentFiles" />`，读者容易误以为引用的是一个 action。
-3. **维持现状**，只允许 Menu 与 Group 以 Action 形态出现，并将 `item` 改为自然形态。改动最小，但 `menuBar` 与 `toolBar` 被静默当作 Group 的问题仍然存在。
-
-无论采用哪一种，都须同时完成三件事：错误信息区分身份不符与形态不允许；规范中补充身份与形态的合法组合表；编译器测试覆盖表中每一种组合。第 43、44、46 条是该模型在编译器之外尚未保证的部分。
-
-另见第 45 条：以 Action 形态出现的 menu，其内容不再由应用程序自行维护，最近打开的文件这一类用法须另行设计。
+实现时须同时完成三件事：AEC 的错误信息区分身份不符与形态不允许；规范中补充上表；AEC 测试覆盖表中每一种组合。第 43、44 条是该模型在 AEC 之外尚未保证的部分。
 
 ## 18. 目录（catalog）的声明语义与实际语义不一致
 
@@ -81,7 +74,7 @@ qak_aec: r.xml: layout element "r.recentFiles" has inconsistent tag "action" wit
 
 ## 23. 表示层的概念进入共享数据，Quick 后端显示字面的 `&`
 
-标识语法中的 `&`（助记符）与 `^`（省略号）是 QtWidgets 的约定，被编入 `text()`：`m.&openFile^` 的文本为 `&Open File...`。`ActionItemInfo` 没有返回去除标记后文本的接口，Quick 后端原样传递，而 QML 不解释 `&`。`parser.cpp` 中的 `simplifyActionText()` 实现了去除标记的功能，但它是死代码，且位于编译器中，运行时无法使用。应当增加返回去除标记后文本的访问函数，或者将这两个标记移出标识语法。
+标识语法中的 `&`（助记符）与 `^`（省略号）是 QtWidgets 的约定，被编入 `text()`：`m.&openFile^` 的文本为 `&Open File...`。`ActionItemInfo` 没有返回去除标记后文本的接口，Quick 后端原样传递，而 QML 不解释 `&`。`parser.cpp` 中的 `simplifyActionText()` 实现了去除标记的功能，但它是死代码，且位于 AEC 中，运行时无法使用。应当增加返回去除标记后文本的访问函数，或者将这两个标记移出标识语法。
 
 ## 24. 翻译的回退被自身抵消
 
@@ -117,11 +110,11 @@ qak_aec: r.xml: layout element "r.recentFiles" has inconsistent tag "action" wit
 
 ## 43. 身份与形态的不变量在持久化边界失效
 
-编译器保证 action 不能作为 menu 出现，但 `ActionLayouts::fromJsonObject()` 接受任意的类型字符串，`correctLayouts()` 也不做任何类型检查。用户保存的布局文件被手工修改、被旧版本写坏，或者扩展升级后某个标识的身份改变，都可能产生 `{"id": "core.openFile", "type": "Menu"}` 这样的条目。
+AEC 保证 action 不能作为 menu 出现，但 `ActionLayouts::fromJsonObject()` 接受任意的类型字符串，`correctLayouts()` 也不做任何类型检查。用户保存的布局文件被手工修改、被旧版本写坏，或者扩展升级后某个标识的身份改变，都可能产生 `{"id": "core.openFile", "type": "Menu"}` 这样的条目。
 
 结果不是报错，而是静默的降级：Widgets 后端调用 `menuForId()`，在 `items` 与 `autoItems` 中都找不到该标识，于是 `createSubMenu()` 创建一个标题为 Open File 的空子菜单，原来的 action 消失。Quick 后端的 `createMenu()` 同理。
 
-registry 同时持有条目表与布局，是唯一能够进行这一检查的地方，应当在 `correctLayouts()` 中丢弃身份与形态不相容的条目并输出警告。本条须在第 17 条选定方案后同时完成，否则编译器的检查只在形式上成立。
+registry 同时持有条目表与布局，是唯一能够进行这一检查的地方，应当在 `correctLayouts()` 中按第 17 条的组合表丢弃身份与形态不相容的条目并输出警告。本条须与第 17 条同时完成，否则 AEC 的检查只在形式上成立。
 
 ## 44. `ActionLayoutsModel` 无法检查身份与形态是否相容
 
@@ -131,9 +124,11 @@ registry 同时持有条目表与布局，是唯一能够进行这一检查的�
 
 `WidgetActionContextPrivate::updateLayouts()` 对每个登记的容器（菜单、菜单栏、工具栏）先移除全部动作，再按布局重新填充。应用程序自行加入容器的动作因此在每次更新布局时被清除。
 
-**决定：维持现状。** 登记给 context 的容器，其内容一律由 QActionKit 管理，应用程序不得自行向其中加入动作。`WidgetActionContext` 的接口文档写明这一约定。第 17 条所述「menu 以 Action 形态出现、子项由外部维护」的用法因此不成立，最近打开的文件这一类动态内容须另行设计。
+**决定：维持现状。** 登记给 context 的容器，其内容一律由 QActionKit 管理，应用程序不得自行向其中加入动作。`WidgetActionContext` 的接口文档写明这一约定。内容由应用程序维护的菜单（如最近打开的文件）声明为 external action，以 `addAction()` 登记其 `menuAction()`，不经 `addMenu()` 登记，因此不受本条影响，见第 17 条。
 
-## 46. `menuBar` 与 `toolBar` 编译后没有区别
+## 46. `menuBar` 与 `toolBar` 编译后没有区别（已定）
+
+**决定：** 随第 17 条删除 `menuBar` 与 `toolBar` 标签。顶层容器一律写作 `<menu topLevel="true">`，菜单栏与工具栏的区别由应用程序登记时决定。以下为原问题。
 
 `parseItemAttrs()` 对这两个标签都设置 `type = Menu; topLevel = true;`。`info.tag` 只存在于解析器的中间结构中，`generator.cpp` 不输出它，因此 `ActionItemInfo` 无法区分弹出菜单、菜单栏与工具栏，应用程序只能硬编码哪个标识是工具栏。mainwindow 示例即是如此（`addMenuBar("core.mainMenu")`、`addToolBar("core.mainToolBar")`），而清单中两者都写作 `<menu topLevel="true">`。按照「声明类型决定身份」的原则，此处身份定义不足：标签提供了三个词，编译结果只有一种。应当为 `ActionItemInfo` 增加顶层种类（弹出菜单、菜单栏、工具栏），或者规定三个标签为同义词并写入规范。
 
@@ -144,3 +139,36 @@ registry 同时持有条目表与布局，是唯一能够进行这一检查的�
 例如声明为 `<action id="c.debugDump" text="Dump State" category="Debug" shortcut="Ctrl+D" description="dumps" if="ENABLE_DEBUG" />`，布局中只写 `<action id="c.debugDump" />`。关闭开关后，编译结果的文本为 Debug Dump，类别、描述与快捷键为空。条目没有消失，只是全部元数据被降级，而且身份改由引用处的标签决定，违反了「声明类型决定身份」的原则。
 
 应当在 `if` 跳过声明时记录该标识，此后的引用一律报错（提示引用处也须加上 `if`）；或者规定 `if` 只从布局中移除条目，保留其声明。
+
+## 48. 获取扩展依赖宏与隐式的命名（已定）
+
+**现状。** AEC 在生成的源文件中定义 `qakGetStaticActionExtension_<标识符>()`，但不生成它的声明。`QAK_STATIC_ACTION_EXTENSION(name)` 展开为立即调用的 lambda，在块作用域中声明该函数。块作用域中的 `extern` 声明属于外围的命名空间，因此该宏只能在全局命名空间中使用，调用方须在全局命名空间中另写一个包装函数。标识符默认取清单的文件名，C++ 代码与 CMake 中的文件名之间因此存在隐式的约定，名称写错时报告的是链接错误而不是编译错误。生成代码中的 `QT_MANGLE_NAMESPACE` 用于 Qt 自身编译在命名空间中的情形，不适用于应用程序的生成代码。
+
+**决定。** AEC 同时生成一个头文件，声明获取扩展的函数。选项的命名参照 `qt_add_qml_module()` 中 qmltc 的 `QMLTC_EXPORT_DIRECTIVE` 与 `QMLTC_EXPORT_FILE_NAME`：
+
+```cmake
+qak_add_action_extension(_src core_actions.xml
+    NAMESPACE hello::daw
+    FUNCTION coreActions
+    EXPORT_DIRECTIVE HELLOUTAU_WIDGETS_EXPORT
+    EXPORT_FILE_NAME helloutau/Widgets/HelloUtauWidgetsGlobal.h
+)
+```
+
+生成的头文件：
+
+```cpp
+#include <QAKCore/actionextension.h>
+
+#include <helloutau/Widgets/HelloUtauWidgetsGlobal.h>
+
+namespace hello::daw {
+    HELLOUTAU_WIDGETS_EXPORT const QAK::ActionExtension *coreActions();
+}
+```
+
+- `FUNCTION` 必需，`NAMESPACE` 可选。函数返回 `const QAK::ActionExtension *`，与 `ActionRegistry::addExtension()` 的参数一致。
+- `EXPORT_DIRECTIVE` 是插入在函数声明之前的宏名，用于从动态库中导出或隐藏该函数。宏在构建与使用时分别展开为什么，由定义它的头文件决定。`EXPORT_FILE_NAME` 是定义该宏的头文件。只给出 `EXPORT_FILE_NAME` 而没有 `EXPORT_DIRECTIVE` 时报错，两者都省略时不加宏。
+- 头文件名为 `<清单文件名>.qak.h`，位于生成目录中，该目录加入调用方的包含路径。生成的源文件包含该头文件，使定义处可以看到带有宏的声明。
+- 删除 `QAK_STATIC_ACTION_EXTENSION` 宏，以及生成代码中的 `QT_MANGLE_NAMESPACE`。
+- 删除 `IDENTIFIER` 选项与 AEC 的 `-i` 选项。标识符原本用于区分同名清单的获取函数，该作用由 `FUNCTION` 与 `NAMESPACE` 承担。生成代码内部的命名空间改为匿名命名空间，只供 lupdate 扫描的翻译声明函数使用固定的名字。
