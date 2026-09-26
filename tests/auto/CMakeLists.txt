@@ -1,11 +1,22 @@
+set(QAK_AEC_EXECUTABLE "$<TARGET_FILE:qak_aec>")
+include("${CMAKE_CURRENT_LIST_DIR}/../../src/QActionKitMacros.cmake")
+
+#[[
+    Add an automatic test target.
+
+    qak_add_auto_test([SOURCES <sources>...] [LINKS <targets>...] [QT_LINKS <modules>...])
+]]
 function(qak_add_auto_test)
+    set(multiValueArgs SOURCES LINKS QT_LINKS)
+    cmake_parse_arguments(FUNC "" "" "${multiValueArgs}" ${ARGN})
+
     set(CMAKE_AUTOMOC ON)
     set(CMAKE_AUTOUIC ON)
     set(CMAKE_AUTORCC ON)
-    add_executable(${PROJECT_NAME} main.cpp)
+    add_executable(${PROJECT_NAME} main.cpp ${FUNC_SOURCES})
     qm_configure_target(${PROJECT_NAME}
-        LINKS QAKCore
-        QT_LINKS Test
+        LINKS QAKCore ${FUNC_LINKS}
+        QT_LINKS Test ${FUNC_QT_LINKS}
     )
     add_test(NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME})
 endfunction()
@@ -13,3 +24,7 @@ endfunction()
 add_subdirectory(core)
 
 add_subdirectory(tools)
+
+if(QACTIONKIT_BUILD_WIDGETS)
+    add_subdirectory(widgets)
+endif()

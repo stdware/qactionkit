@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<actionExtension>
+
+    <version>1.0</version>
+    <id>org.qactionkit.test.widgets</id>
+
+    <items>
+        <action id="test.openFile" text="Open File" shortcut="Ctrl+O" />
+        <action id="test.saveFile" text="Save File" shortcut="Ctrl+S" />
+        <action id="test.exit" text="Exit" />
+        <action id="test.about" text="About" />
+        <action id="test.checkUpdate" text="Check Update" />
+
+        <menu id="test.mainMenu" topLevel="true" />
+        <toolBar id="test.mainToolBar" />
+        <menu id="test.file" text="File" />
+        <menu id="test.help" text="Help" />
+    </items>
+
+    <layouts>
+        <menu id="test.mainMenu">
+            <menu id="test.file">
+                <!-- A group contributes a separator on each side -->
+                <group id="test.fileActions">
+                    <action id="test.openFile" />
+                    <action id="test.saveFile" />
+                </group>
+                <!-- Redundant next to the separator of the group above -->
+                <separator />
+                <action id="test.exit" />
+            </menu>
+            <menu id="test.help">
+                <action id="test.about" />
+            </menu>
+        </menu>
+
+        <toolBar id="test.mainToolBar">
+            <action id="test.openFile" />
+            <stretch />
+            <action id="test.about" />
+        </toolBar>
+    </layouts>
+
+    <insertions>
+        <!-- No anchor, which means "last" -->
+        <insertion target="test.help">
+            <action id="test.checkUpdate" />
+        </insertion>
+    </insertions>
+
+</actionExtension>

@@ -36,6 +36,13 @@ namespace QAK {
         QList<QWidget *> widgets(const QString &id) const;
         void addWidgetFactory(const QString &id, std::function<QWidget *(QWidget *)> fac);
 
+        /// \name Containers
+        ///
+        /// A menu, a menu bar or a tool bar registered for an id is filled from the layout of that
+        /// id. The context manages every action of a registered container: each layout update
+        /// removes all its actions and inserts those of the layout, so an action that the
+        /// application adds to the container by other means is removed.
+        /// @{
         QMenu *menu(const QString &id) const;
         void addMenu(const QString &id, QMenu *menu);
 
@@ -44,6 +51,7 @@ namespace QAK {
 
         QToolBar *toolBar(const QString &id) const;
         void addToolBar(const QString &id, QToolBar *toolBar);
+        /// @}
 
         void remove(const QString &id);
 
