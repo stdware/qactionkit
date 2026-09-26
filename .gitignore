@@ -96,3 +96,7 @@ CMakeSettings.json
 *.sublime-*
 setup-vcpkg.json
 setup-vcpkg-temp*
+
+# AI
+CLAUDE.md
+AGENTS.md
