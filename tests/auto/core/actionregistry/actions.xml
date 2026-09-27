@@ -1,11 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<actionExtension>
+<actionExtension xmlns:x="urn:qactionkit:test">
 
     <version>1.0</version>
     <id>org.qactionkit.test.registry</id>
 
     <configuration>
         <translationContext text="Test::Text" description="Test::Description" />
+        <vars>
+            <var key="ENABLED" value="true" />
+        </vars>
     </configuration>
 
     <items>
@@ -13,6 +16,7 @@
         <action id="test.file.saveFile" text="Save File" />
         <action id="test.file.revert" text="Revert" category="File" description="Revert the file"
                 textTr="Test::RevertText" categoryTr="Test::RevertCategory" />
+        <action id="test.file.close" if="ENABLED" x:tag="close" />
         <menu id="test.file" text="File" />
     </items>
 

@@ -366,6 +366,7 @@ struct ParserPrivate {
                 {QMXmlAdaptorAttributeKey(QStringLiteral("textTr")),        {}},
                 {QMXmlAdaptorAttributeKey(QStringLiteral("categoryTr")),    {}},
                 {QMXmlAdaptorAttributeKey(QStringLiteral("descriptionTr")), {}},
+                {QMXmlAdaptorAttributeKey(QStringLiteral("if")),            {}},
             };
             const auto &key = it.key();
             if (reservedKeys.contains(key)) {

@@ -102,6 +102,20 @@ private Q_SLOTS:
         QVERIFY(saveFile->category().source.isEmpty());
     }
 
+    void testAttributes() {
+        ActionRegistry registry;
+        registry.addExtension(qak::test::testActions());
+
+        // A custom attribute is kept with its namespace, and the condition is not an attribute
+        const auto close = registry.actionInfo(QStringLiteral("test.file.close"));
+        QVERIFY(close);
+        const auto attributes = close->attributes();
+        QCOMPARE(attributes.size(), 1);
+        QCOMPARE(attributes.value(ActionAttributeKey(QStringLiteral("tag"),
+                                                     QStringLiteral("urn:qactionkit:test"))),
+                 QStringLiteral("close"));
+    }
+
     void testUntranslatedText() {
         ActionRegistry registry;
         registry.addExtension(qak::test::testActions());
