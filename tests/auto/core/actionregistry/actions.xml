@@ -19,9 +19,13 @@
         <action id="test.file.close" if="ENABLED" x:tag="close" />
         <action id="test.file.recentFiles" external="true" />
         <menu id="test.file" text="File" />
+        <menu id="test.mainMenu" topLevel="true" />
     </items>
 
     <layouts>
+        <menu id="test.mainMenu">
+            <menu id="test.file" />
+        </menu>
         <menu id="test.file">
             <action id="test.file.openFile" />
             <action id="test.file.saveFile" />

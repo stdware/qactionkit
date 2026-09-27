@@ -147,31 +147,38 @@ private Q_SLOTS:
         QCOMPARE(contents(toolBar), toolBarBefore);
     }
 
-    void testLayoutsChangeIsReflected() {
-        // The help menu is removed from the menu bar.
-        auto layouts = registry->layouts();
-        auto adjacencyMap = layouts.adjacencyMap();
-        adjacencyMap[QStringLiteral("test.mainMenu")] = {
-            QAK::ActionLayoutEntry(QStringLiteral("test.file"), QAK::ActionLayoutEntry::Menu),
-        };
-        registry->setLayouts(QAK::ActionLayouts(adjacencyMap, layouts.hashList()));
+    // Returns the change that removes the help menu from the menu bar
+    static QAK::ActionLayoutChange removeHelpMenu() {
+        QAK::ActionLayoutChange change;
+        change.kind = QAK::ActionLayoutChange::Remove;
+        change.container = QStringLiteral("test.mainMenu");
+        change.entry =
+            QAK::ActionLayoutEntry(QStringLiteral("test.help"), QAK::ActionLayoutEntry::Menu);
+        return change;
+    }
+
+    void testLayoutChangeIsReflected() {
+        registry->addLayoutChange(removeHelpMenu());
         registry->updateContext(QAK::AE_Layouts);
 
         QCOMPARE(contents(menuBar), QStringList({"File"}));
         // The menu is no longer referenced and must have been destroyed.
         QVERIFY(!context->menu(QStringLiteral("test.help")));
+
+        // Without changes, the default layouts are restored
+        registry->setLayoutChanges({});
+        registry->updateContext(QAK::AE_Layouts);
+        QCOMPARE(contents(menuBar), QStringList({"File", "Help"}));
     }
 
-    void testLayoutsSurviveJsonRoundTrip() {
+    void testLayoutChangesSurviveJsonRoundTrip() {
         const auto restored =
-            QAK::ActionLayouts::fromJsonObject(registry->layouts().toJsonObject());
-        registry->setLayouts(restored);
+            QAK::ActionLayoutChange::fromJsonObject(removeHelpMenu().toJsonObject());
+        QVERIFY(restored);
+        registry->setLayoutChanges({*restored});
         registry->updateContext(QAK::AE_Layouts);
 
-        QCOMPARE(contents(menuBar), QStringList({"File", "Help"}));
-        QCOMPARE(contents(subMenu(QStringLiteral("test.file"))),
-                 QStringList({"Open File", "Save File", "|", "Exit"}));
-        QCOMPARE(contents(toolBar), QStringList({"Open File", "...", "About"}));
+        QCOMPARE(contents(menuBar), QStringList({"File"}));
     }
 };
 

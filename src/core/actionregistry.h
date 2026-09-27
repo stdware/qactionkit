@@ -149,9 +149,22 @@ namespace QAK {
         ActionCatalog catalog() const;
 
     public:
+        /// Returns the layouts computed from the registered extensions, which the changes of the
+        /// user do not affect.
+        ActionLayouts defaultLayouts() const;
+        /// Returns the layouts in effect: the default layouts with the changes of the user
+        /// replayed on them.
         ActionLayouts layouts() const;
-        void setLayouts(const ActionLayouts &layouts);
-        void resetLayouts();
+
+        /// Returns the changes that the user has made to the default layouts, which are what an
+        /// application saves. Setting an empty list restores the default layouts.
+        QVector<ActionLayoutChange> layoutChanges() const;
+        /// Sets the changes of the user, which are replayed in order on the default layouts. A
+        /// change that cannot apply, for example because an extension no longer declares its
+        /// entry, is skipped with a warning.
+        void setLayoutChanges(const QVector<ActionLayoutChange> &changes);
+        /// Appends \a change to the changes of the user and replays it.
+        void addLayoutChange(const ActionLayoutChange &change);
 
         inline QList<QKeySequence> actionShortcuts(const QString &id) const;
 

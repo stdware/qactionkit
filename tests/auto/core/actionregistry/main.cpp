@@ -46,6 +46,40 @@ public:
     }
 
 private:
+    static ActionLayoutChange layoutChange(ActionLayoutChange::Kind kind, const char *container,
+                                           const ActionLayoutEntry &entry,
+                                           ActionInsertion::Anchor anchor = ActionInsertion::Last,
+                                           const char *relativeTo = "", int offset = 0,
+                                           bool moved = false) {
+        ActionLayoutChange change;
+        change.kind = kind;
+        change.container = QString::fromUtf8(container);
+        change.entry = entry;
+        change.anchor = anchor;
+        change.relativeTo = QString::fromUtf8(relativeTo);
+        change.offset = offset;
+        change.moved = moved;
+        return change;
+    }
+
+    static ActionLayoutEntry action(const char *id) {
+        return ActionLayoutEntry(QString::fromUtf8(id), ActionLayoutEntry::Action);
+    }
+
+    static ActionLayoutEntry separator() {
+        return ActionLayoutEntry({}, ActionLayoutEntry::Separator);
+    }
+
+    // Returns the ids of the children of the container, with separators shown as a bar
+    static QStringList childrenOf(const ActionLayouts &layouts, const char *container) {
+        QStringList result;
+        for (const auto &entry : layouts.adjacencyMap().value(QString::fromUtf8(container))) {
+            result.append(entry.type() == ActionLayoutEntry::Separator ? QStringLiteral("|")
+                                                                       : entry.id());
+        }
+        return result;
+    }
+
     static ActionLayouts sampleLayouts() {
         QMap<QString, QVector<ActionLayoutEntry>> map;
         map[QStringLiteral("root")] = {
@@ -364,6 +398,112 @@ private Q_SLOTS:
 
         QCOMPARE(restored.hashList(), layouts.hashList());
         QVERIFY(restored.adjacencyMap() == layouts.adjacencyMap());
+    }
+
+    void testReplayLayoutChanges() {
+        using Change = ActionLayoutChange;
+        ActionRegistry registry;
+        registry.addExtension(qak::test::testActions());
+
+        // Each step shows the file menu after it
+        registry.setLayoutChanges({
+            // openFile, revert
+            layoutChange(Change::Remove, "test.file", action("test.file.saveFile")),
+            // openFile, |, revert
+            layoutChange(Change::Add, "test.file", separator(), ActionInsertion::After,
+                         "test.file.openFile"),
+            // openFile, |, close, revert
+            layoutChange(Change::Add, "test.file", action("test.file.close"),
+                         ActionInsertion::After, "test.file.openFile", 1),
+            // openFile, |, close; and revert moves to the main menu
+            layoutChange(Change::Remove, "test.file", action("test.file.revert"),
+                         ActionInsertion::Last, "", 0, true),
+            layoutChange(Change::Add, "test.mainMenu", action("test.file.revert"),
+                         ActionInsertion::First, "", 0, true),
+            // openFile, |, close, |
+            layoutChange(Change::Add, "test.file", separator()),
+            // openFile, |, close
+            layoutChange(Change::Remove, "test.file", separator()),
+            // openFile, |, |, close
+            layoutChange(Change::Add, "test.file", separator(), ActionInsertion::Before,
+                         "test.file.close"),
+            // openFile, |, close
+            layoutChange(Change::Remove, "test.file", separator(), ActionInsertion::Before,
+                         "test.file.close", 1),
+            // openFile, close
+            layoutChange(Change::Remove, "test.file", separator(), ActionInsertion::After,
+                         "test.file.openFile"),
+        });
+
+        const auto layouts = registry.layouts();
+        QCOMPARE(childrenOf(layouts, "test.file"),
+                 QStringList({"test.file.openFile", "test.file.close"}));
+        QCOMPARE(childrenOf(layouts, "test.mainMenu"),
+                 QStringList({"test.file.revert", "test.file"}));
+
+        // The default layouts are unaffected
+        QCOMPARE(childrenOf(registry.defaultLayouts(), "test.file"),
+                 QStringList({"test.file.openFile", "test.file.saveFile", "test.file.revert"}));
+    }
+
+    void testMissingAnchorAppends() {
+        ActionRegistry registry;
+        registry.addExtension(qak::test::testActions());
+        registry.addLayoutChange(layoutChange(ActionLayoutChange::Add, "test.file",
+                                              action("test.file.close"), ActionInsertion::After,
+                                              "test.missing"));
+        QCOMPARE(childrenOf(registry.layouts(), "test.file"),
+                 QStringList({"test.file.openFile", "test.file.saveFile", "test.file.revert",
+                              "test.file.close"}));
+    }
+
+    void testSkippedLayoutChanges_data() {
+        using Change = ActionLayoutChange;
+        QTest::addColumn<ActionLayoutChange>("change");
+        QTest::addColumn<QString>("reason");
+
+        QTest::newRow("undeclared container")
+            << layoutChange(Change::Add, "test.missing", action("test.file.close"))
+            << "the container is not declared";
+        QTest::newRow("action as container")
+            << layoutChange(Change::Add, "test.file.openFile", action("test.file.close"))
+            << "the container is not a menu or a group";
+        QTest::newRow("undeclared entry")
+            << layoutChange(Change::Add, "test.file", action("test.missing"))
+            << "the entry is not declared";
+        QTest::newRow("action as menu")
+            << layoutChange(Change::Add, "test.file",
+                            ActionLayoutEntry("test.file.close", ActionLayoutEntry::Menu))
+            << "the declared type of the entry does not allow its form";
+        QTest::newRow("menu as action")
+            << layoutChange(Change::Add, "test.mainMenu", action("test.file"))
+            << "the declared type of the entry does not allow its form";
+        QTest::newRow("removed entry not in the container")
+            << layoutChange(Change::Remove, "test.file", action("test.file.close"))
+            << "the entry is not in the container";
+        QTest::newRow("removed separator not at the position")
+            << layoutChange(Change::Remove, "test.file", separator(), ActionInsertion::After,
+                            "test.file.openFile")
+            << "the entry is not in the container";
+        QTest::newRow("moved entry never removed")
+            << layoutChange(Change::Add, "test.file", action("test.file.close"),
+                            ActionInsertion::Last, "", 0, true)
+            << "no removal of the move has applied before it";
+    }
+
+    void testSkippedLayoutChanges() {
+        QFETCH(ActionLayoutChange, change);
+        QFETCH(QString, reason);
+
+        ActionRegistry registry;
+        registry.addExtension(qak::test::testActions());
+        const auto defaults = registry.defaultLayouts();
+
+        QTest::ignoreMessage(QtWarningMsg,
+                             QRegularExpression(QStringLiteral("is skipped, because ") +
+                                                QRegularExpression::escape(reason) + "$"));
+        registry.addLayoutChange(change);
+        QVERIFY(registry.layouts().adjacencyMap() == defaults.adjacencyMap());
     }
 
     void testLayoutChangeJsonRoundTrip() {

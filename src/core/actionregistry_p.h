@@ -11,6 +11,7 @@
 //
 
 #include <QtCore/QPointer>
+#include <QtCore/QHash>
 #include <QtCore/QVarLengthArray>
 
 #include <stdcorelib/linked_map.h>
@@ -33,16 +34,25 @@ namespace QAK {
         mutable bool extensionsDirty = false;
 
         mutable ActionCatalog catalog;
+        mutable ActionLayouts defaultLayouts;
         mutable ActionLayouts layouts;
+
+        QVector<ActionLayoutChange> layoutChanges;
+        // The default layouts with the changes replayed so far, before the graph is built, and the
+        // ids that removals of moves have taken out of it, for the additions of those moves
+        mutable QMap<QString, QVector<ActionLayoutEntry>> changedAdjacencyMap;
+        mutable QHash<QString, int> movedIds;
 
         QVector<QPointer<ActionContext>> contexts;
 
         void flushActionItems() const;
 
-        ActionCatalog defaultCatalog() const;
-        ActionLayouts defaultLayouts() const;
+        ActionCatalog computeDefaultCatalog() const;
+        ActionLayouts computeDefaultLayouts() const;
 
-        ActionLayouts correctLayouts(const ActionLayouts &layouts) const;
+        void replayLayoutChanges() const;
+        void replayLayoutChange(const ActionLayoutChange &change) const;
+        void buildLayouts() const;
     };
 
 }

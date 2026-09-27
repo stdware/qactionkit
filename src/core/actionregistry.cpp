@@ -8,6 +8,7 @@
 #include <QtCore/QStack>
 #include <QtCore/QQueue>
 #include <QtCore/QJsonArray>
+#include <QtCore/QJsonDocument>
 
 #include "qakglobal_p.h"
 #include "actioncontext_p.h"
@@ -366,11 +367,12 @@ namespace QAK {
                     << "\", and the first declaration is kept";
             }
         }
-        catalog = defaultCatalog();
-        layouts = defaultLayouts();
+        catalog = computeDefaultCatalog();
+        defaultLayouts = computeDefaultLayouts();
+        replayLayoutChanges();
     }
 
-    ActionCatalog ActionRegistryPrivate::defaultCatalog() const {
+    ActionCatalog ActionRegistryPrivate::computeDefaultCatalog() const {
         QVector<QPair<QString, QString>> nodeParentLinks;
         for (auto it = actionItems.begin(); it != actionItems.end(); ++it) {
             nodeParentLinks.emplace_back(it->first, it->second.catalog());
@@ -474,9 +476,9 @@ namespace QAK {
         return result;
     }
 
-    // Equivalent to:
-    //     correctLayouts(ActionLayouts());
-    ActionLayouts ActionRegistryPrivate::defaultLayouts() const {
+    // Computes the layouts of the registered extensions, which the changes of the user are then
+    // replayed on
+    ActionLayouts ActionRegistryPrivate::computeDefaultLayouts() const {
         QMap<QString, QVector<ActionLayoutEntry>> oldAdjacencyMap;
         for (auto it = actionItems.begin(); it != actionItems.end(); ++it) {
             oldAdjacencyMap.insert(it->first, it->second.children());
@@ -490,8 +492,7 @@ namespace QAK {
             hashList.append(pair.second->hash());
         }
 
-        // Apply insertions. A skipped insertion is reported here only: in a layout customized by
-        // the user, a missing target or sibling may have been removed on purpose.
+        // Apply insertions
         for (const auto &[e, insertion] : orderInsertions(extensionList)) {
             switch (applyInsertion(insertion, oldAdjacencyMap)) {
                 case InsertionResult::Applied:
@@ -518,48 +519,166 @@ namespace QAK {
         return ActionLayouts(adjacencyMap, hashList);
     }
 
-    ActionLayouts ActionRegistryPrivate::correctLayouts(const ActionLayouts &layouts) const {
-        QMap<QString, QVector<ActionLayoutEntry>> oldAdjacencyMap = layouts.adjacencyMap();
-        const auto &oldHashList = layouts.hashList();
+    static bool isAnonymous(const ActionLayoutEntry &entry) {
+        return entry.type() == ActionLayoutEntry::Separator ||
+               entry.type() == ActionLayoutEntry::Stretch;
+    }
 
-        std::set<QString> existingExtensionHashSet(oldHashList.begin(), oldHashList.end());
-        QVector<const ActionExtension *> newExtensions;
-        for (const auto &pair : extensions) {
-            const auto &e = pair.second;
-            if (existingExtensionHashSet.count(e->hash())) {
-                continue;
-            }
-            newExtensions.append(e);
+    // A position within the children of a container, and the direction in which its offset passes
+    // the separators and stretches
+    struct LayoutPosition {
+        int index;
+        bool forward;
 
-            // Add items
-            for (int i = 0; i < e->itemCount(); ++i) {
-                const auto &item = e->item(i);
-                QString id = item.id();
-                if (oldAdjacencyMap.contains(id)) {
-                    continue;
+        // Returns the index of the entry at the position, which a removal removes: the one after
+        // it when counting forward from the anchor, and the one before it otherwise
+        int entryIndex() const {
+            return forward ? index : index - 1;
+        }
+    };
+
+    // Returns the position that the change describes within children, or std::nullopt if the id
+    // that it refers to is missing. With fewer separators and stretches than the offset, the
+    // position stops at the last of them.
+    static std::optional<LayoutPosition> positionOf(const ActionLayoutChange &change,
+                                                    const QVector<ActionLayoutEntry> &children) {
+        LayoutPosition position{0, true};
+        switch (change.anchor) {
+            case ActionInsertion::First:
+                break;
+            case ActionInsertion::Last:
+                position = {int(children.size()), false};
+                break;
+            case ActionInsertion::After:
+            case ActionInsertion::Before: {
+                const auto it = std::find_if(
+                    children.begin(), children.end(), [&change](const ActionLayoutEntry &entry) {
+                        return !isAnonymous(entry) && entry.id() == change.relativeTo;
+                    });
+                if (it == children.end()) {
+                    return std::nullopt;
                 }
-                oldAdjacencyMap.insert(id, item.children());
+                const int index = int(it - children.begin());
+                position = change.anchor == ActionInsertion::After ? LayoutPosition{index + 1, true}
+                                                                   : LayoutPosition{index, false};
+                break;
+            }
+        }
+        for (int passed = 0; passed < change.offset; ++passed) {
+            const int next = position.entryIndex();
+            if (next < 0 || next >= children.size() || !isAnonymous(children[next])) {
+                break;
+            }
+            position.index += position.forward ? 1 : -1;
+        }
+        return position;
+    }
+
+    // Replays one change on the changed adjacency map. A change that cannot apply is skipped with
+    // a warning, and the others still apply, so that the menus are always valid and the worst
+    // outcome is that one customization of the user is lost.
+    void ActionRegistryPrivate::replayLayoutChange(const ActionLayoutChange &change) const {
+        const auto skip = [&change](const char *reason) {
+            qCWarning(qActionKitLog).noquote().nospace()
+                << "Layout change "
+                << QJsonDocument(change.toJsonObject()).toJson(QJsonDocument::Compact)
+                << " is skipped, because " << reason;
+        };
+
+        const auto container = actionItems.find(change.container);
+        if (container == actionItems.end()) {
+            skip("the container is not declared");
+            return;
+        }
+        const auto containerType = container->second.type();
+        if (containerType != ActionItemInfo::Menu && containerType != ActionItemInfo::Group) {
+            skip("the container is not a menu or a group");
+            return;
+        }
+
+        // The declared type of the entry must allow its form, as in a manifest
+        const auto &entry = change.entry;
+        if (!isAnonymous(entry)) {
+            const auto item = actionItems.find(entry.id());
+            if (item == actionItems.end()) {
+                skip("the entry is not declared");
+                return;
+            }
+            bool allowed = false;
+            switch (item->second.type()) {
+                case ActionItemInfo::Action:
+                    allowed = entry.type() == ActionLayoutEntry::Action;
+                    break;
+                case ActionItemInfo::Menu:
+                case ActionItemInfo::Group:
+                    allowed = entry.type() == ActionLayoutEntry::Menu ||
+                              entry.type() == ActionLayoutEntry::Group;
+                    break;
+                case ActionItemInfo::Phony:
+                    break;
+            }
+            if (!allowed) {
+                skip("the declared type of the entry does not allow its form");
+                return;
             }
         }
 
-        // Apply the insertions of the new extensions, once all their items are added
-        for (const auto &pending : orderInsertions(newExtensions)) {
-            applyInsertion(pending.insertion, oldAdjacencyMap);
+        auto &children = changedAdjacencyMap[change.container];
+        if (change.kind == ActionLayoutChange::Remove) {
+            int index = -1;
+            if (isAnonymous(entry)) {
+                if (const auto position = positionOf(change, children)) {
+                    const int i = position->entryIndex();
+                    if (i >= 0 && i < children.size() && children[i].type() == entry.type()) {
+                        index = i;
+                    }
+                }
+            } else {
+                index = int(children.indexOf(entry));
+            }
+            if (index < 0) {
+                skip("the entry is not in the container");
+                return;
+            }
+            children.remove(index);
+            if (change.moved && !isAnonymous(entry)) {
+                movedIds[entry.id()]++;
+            }
+            return;
         }
 
+        if (change.moved && !isAnonymous(entry)) {
+            auto it = movedIds.find(entry.id());
+            if (it == movedIds.end() || it.value() == 0) {
+                skip("no removal of the move has applied before it");
+                return;
+            }
+            --it.value();
+        }
+        // A missing anchor puts the entry at the end, as for an insertion
+        const auto position = positionOf(change, children);
+        children.insert(position ? position->index : children.size(), entry);
+    }
+
+    void ActionRegistryPrivate::replayLayoutChanges() const {
+        changedAdjacencyMap = defaultLayouts.adjacencyMap();
+        movedIds.clear();
+        for (const auto &change : layoutChanges) {
+            replayLayoutChange(change);
+        }
+        buildLayouts();
+    }
+
+    // Builds the layouts in effect from the changed adjacency map, dropping cycles that the
+    // changes have made
+    void ActionRegistryPrivate::buildLayouts() const {
         QMap<QString, QVector<ActionLayoutEntry>> adjacencyMap;
-        for (auto it = oldAdjacencyMap.begin(); it != oldAdjacencyMap.end(); ++it) {
+        for (auto it = changedAdjacencyMap.begin(); it != changedAdjacencyMap.end(); ++it) {
             std::set<QString> visiting;
-            buildGraph<LayoutsTrait>(it.key(), it.value(), oldAdjacencyMap, adjacencyMap, visiting);
+            buildGraph<LayoutsTrait>(it.key(), it.value(), changedAdjacencyMap, adjacencyMap,
+                                     visiting);
         }
-
-        QStringList hashList;
-        hashList.reserve(extensions.size());
-        for (const auto &pair : extensions) {
-            const auto &e = pair.second;
-            hashList.append(e->hash());
-        }
-        return ActionLayouts(adjacencyMap, hashList);
+        layouts = ActionLayouts(adjacencyMap, defaultLayouts.hashList());
     }
 
     ActionRegistry::ActionRegistry(QObject *parent)
@@ -629,22 +748,43 @@ namespace QAK {
         return d->catalog;
     }
 
+    ActionLayouts ActionRegistry::defaultLayouts() const {
+        Q_D(const ActionRegistry);
+        d->flushActionItems();
+        return d->defaultLayouts;
+    }
+
     ActionLayouts ActionRegistry::layouts() const {
         Q_D(const ActionRegistry);
         d->flushActionItems();
         return d->layouts;
     }
 
-    void ActionRegistry::setLayouts(const ActionLayouts &layouts) {
-        Q_D(ActionRegistry);
-        d->flushActionItems();
-        d->layouts = d->correctLayouts(layouts);
+    QVector<ActionLayoutChange> ActionRegistry::layoutChanges() const {
+        Q_D(const ActionRegistry);
+        return d->layoutChanges;
     }
 
-    void ActionRegistry::resetLayouts() {
+    // Pending extensions are flushed after the changes are stored, since flushing replays them
+    void ActionRegistry::setLayoutChanges(const QVector<ActionLayoutChange> &changes) {
         Q_D(ActionRegistry);
-        d->flushActionItems();
-        d->layouts = d->defaultLayouts();
+        d->layoutChanges = changes;
+        if (d->extensionsDirty) {
+            d->flushActionItems();
+        } else {
+            d->replayLayoutChanges();
+        }
+    }
+
+    void ActionRegistry::addLayoutChange(const ActionLayoutChange &change) {
+        Q_D(ActionRegistry);
+        d->layoutChanges.append(change);
+        if (d->extensionsDirty) {
+            d->flushActionItems();
+        } else {
+            d->replayLayoutChange(change);
+            d->buildLayouts();
+        }
     }
 
     ActionRegistry::ActionRegistry(ActionRegistryPrivate &d, QObject *parent)
