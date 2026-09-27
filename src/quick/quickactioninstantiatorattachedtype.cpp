@@ -21,19 +21,12 @@ namespace QAK {
     void QuickActionInstantiatorAttachedType::init(const ActionItemInfo &info, QuickActionContext *context, int property) {
         setId(info.id());
         if (property & QuickActionInstantiatorPrivate::Text) {
-            auto text = info.text(true);
-            if (text.isEmpty()) {
-                text = info.text();
-            }
+            auto text = info.text().toString();
             if (text.isEmpty()) {
                 text = info.id();
             }
             setText(text);
-            auto description = info.description(true);
-            if (description.isEmpty()) {
-                description = info.description();
-            }
-            setDescription(description);
+            setDescription(info.description().toString());
         }
         if (property & QuickActionInstantiatorPrivate::Icon) {
             // TODO: theme

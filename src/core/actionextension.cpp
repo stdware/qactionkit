@@ -29,18 +29,21 @@ namespace QAK {
 
     // Translates the string in the first nonempty context among that of the item, that of the
     // extension and the built-in default.
-    static inline QString translateString(const QString &s, const QString &itemContext,
-                                          const QString &extensionContext,
-                                          const char *defaultContext) {
+    static inline ActionText translateString(const QString &s, const QString &itemContext,
+                                             const QString &extensionContext,
+                                             const char *defaultContext) {
+        if (s.isEmpty()) {
+            return {s, std::nullopt};
+        }
         const QByteArray context = !itemContext.isEmpty()        ? itemContext.toUtf8()
                                    : !extensionContext.isEmpty() ? extensionContext.toUtf8()
                                                                  : QByteArray(defaultContext);
         bool ok;
         QString res = tryTranslate(context.constData(), s.toUtf8().constData(), nullptr, -1, &ok);
         if (!ok) {
-            return {};
+            return {s, std::nullopt};
         }
-        return res;
+        return {s, res};
     }
 
     ActionItemInfo::ActionItemInfo() : e(&sharedNullExtensionData), i(0) {
@@ -54,24 +57,18 @@ namespace QAK {
     ActionItemInfo::Type ActionItemInfo::type() const {
         return e->items[i].type;
     }
-    QString ActionItemInfo::text(bool translated) const {
+    ActionText ActionItemInfo::text() const {
         auto &d = e->items[i];
-        if (!translated)
-            return d.text;
         return translateString(d.text, d.textContext, e->textContext,
                                ActionExtensionData::defaultTextContext);
     }
-    QString ActionItemInfo::category(bool translated) const {
+    ActionText ActionItemInfo::category() const {
         auto &d = e->items[i];
-        if (!translated)
-            return d.category;
         return translateString(d.category, d.categoryContext, e->categoryContext,
                                ActionExtensionData::defaultCategoryContext);
     }
-    QString ActionItemInfo::description(bool translated) const {
+    ActionText ActionItemInfo::description() const {
         auto &d = e->items[i];
-        if (!translated)
-            return d.description;
         return translateString(d.description, d.descriptionContext, e->descriptionContext,
                                ActionExtensionData::defaultDescriptionContext);
     }

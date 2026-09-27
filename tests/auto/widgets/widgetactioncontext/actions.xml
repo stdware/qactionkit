@@ -7,7 +7,7 @@
     <items>
         <action id="test.openFile" text="Open File" shortcut="Ctrl+O" />
         <action id="test.saveFile" text="Save File" shortcut="Ctrl+S" />
-        <action id="test.exit" text="Exit" />
+        <action id="test.exit" text="Exit" description="Exit the application" />
         <action id="test.about" text="About" />
         <action id="test.checkUpdate" text="Check Update" />
 

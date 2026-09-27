@@ -174,10 +174,7 @@ namespace QAK {
         if (element == AE_Layouts || element == AE_Texts) {
             QString text;
             if (info) {
-                text = info->text(true);
-                if (text.isEmpty()) {
-                    text = info->text();
-                }
+                text = info->text().toString();
             }
             if (text.isEmpty()) {
                 text = id;
@@ -185,10 +182,7 @@ namespace QAK {
             action->setText(text);
 
             if (info && (attrs & WidgetActionContext::UpdateToolTipWithDescription)) {
-                QString description = info->description(true);
-                if (description.isEmpty()) {
-                    description = info->description();
-                }
+                const QString description = info->description().toString();
                 if (!description.isEmpty()) {
                     action->setToolTip(description);
                 }

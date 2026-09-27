@@ -94,12 +94,34 @@ private Q_SLOTS:
 
         const auto openFile = registry.actionInfo(QStringLiteral("test.file.openFile"));
         QVERIFY(openFile);
-        QCOMPARE(openFile->category(), QStringLiteral("File"));
+        QCOMPARE(openFile->category().source, QStringLiteral("File"));
 
         // The category is empty if the manifest does not specify one, whatever the id
         const auto saveFile = registry.actionInfo(QStringLiteral("test.file.saveFile"));
         QVERIFY(saveFile);
-        QVERIFY(saveFile->category().isEmpty());
+        QVERIFY(saveFile->category().source.isEmpty());
+    }
+
+    void testUntranslatedText() {
+        ActionRegistry registry;
+        registry.addExtension(qak::test::testActions());
+
+        // Without a translation, the text is displayed as written
+        const auto openFile = registry.actionInfo(QStringLiteral("test.file.openFile"));
+        QVERIFY(openFile);
+        const auto text = openFile->text();
+        QCOMPARE(text.source, QStringLiteral("Open File"));
+        QVERIFY(!text.translation);
+        QCOMPARE(text.toString(), QStringLiteral("Open File"));
+
+        // An empty string is never translated, even by a translator that translates every string
+        ContextTranslator translator;
+        QCoreApplication::installTranslator(&translator);
+        const auto guard = qScopeGuard([&] { QCoreApplication::removeTranslator(&translator); });
+        const auto saveFile = registry.actionInfo(QStringLiteral("test.file.saveFile"));
+        QVERIFY(saveFile);
+        QVERIFY(!saveFile->category().translation);
+        QVERIFY(saveFile->category().toString().isEmpty());
     }
 
     void testTranslationContexts() {
@@ -114,15 +136,21 @@ private Q_SLOTS:
         // configuration specifies none
         const auto openFile = registry.actionInfo(QStringLiteral("test.file.openFile"));
         QVERIFY(openFile);
-        QCOMPARE(openFile->text(true), QStringLiteral("Test::Text|Open File"));
-        QCOMPARE(openFile->category(true), QStringLiteral("QActionKit::ActionCategory|File"));
+        QCOMPARE(openFile->text().toString(), QStringLiteral("Test::Text|Open File"));
+        QCOMPARE(openFile->category().toString(),
+                 QStringLiteral("QActionKit::ActionCategory|File"));
 
         // The contexts of the item take precedence
         const auto revert = registry.actionInfo(QStringLiteral("test.file.revert"));
         QVERIFY(revert);
-        QCOMPARE(revert->text(true), QStringLiteral("Test::RevertText|Revert"));
-        QCOMPARE(revert->category(true), QStringLiteral("Test::RevertCategory|File"));
-        QCOMPARE(revert->description(true), QStringLiteral("Test::Description|Revert the file"));
+        QCOMPARE(revert->text().toString(), QStringLiteral("Test::RevertText|Revert"));
+        QCOMPARE(revert->category().toString(), QStringLiteral("Test::RevertCategory|File"));
+        QCOMPARE(revert->description().toString(),
+                 QStringLiteral("Test::Description|Revert the file"));
+
+        // The source text is kept beside the translation
+        QVERIFY(revert->text().translation);
+        QCOMPARE(revert->text().source, QStringLiteral("Revert"));
 
         // The contexts are not attributes
         QVERIFY(openFile->attributes().isEmpty());

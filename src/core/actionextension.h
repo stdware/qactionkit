@@ -1,6 +1,8 @@
 #ifndef ACTIONEXTENSION_H
 #define ACTIONEXTENSION_H
 
+#include <optional>
+
 #include <QtCore/QMap>
 #include <QtCore/QVector>
 #include <QtCore/QStringList>
@@ -86,6 +88,17 @@ namespace QAK {
         Type m_type;
     };
 
+    /// A translatable string of an item: the text written in the manifest and its translation.
+    struct ActionText {
+        QString source;                     ///< The text written in the manifest
+        std::optional<QString> translation; ///< The installed translation, or std::nullopt if none
+
+        /// Returns the translation if one exists, and the source text otherwise.
+        inline QString toString() const {
+            return translation.value_or(source);
+        }
+    };
+
     /// The metadata of a single item declared by an \c ActionExtension.
     ///
     /// A view on the static data of the extension, which is inexpensive to copy and must not
@@ -106,24 +119,21 @@ namespace QAK {
         QString id() const;
         Type type() const;
 
-        /// Returns the text of the item, translated if \a translated is \c true. The translation
-        /// context is the first specified among the \c textTr attribute of the item, the \c text
-        /// attribute of \c translationContext in the configuration of the manifest, and
-        /// \c QActionKit::ActionText.
-        ///
-        /// \note The translated text is empty if no translation is installed.
-        QString text(bool translated = false) const;
+        /// Returns the text of the item and its translation. The translation context is the first
+        /// specified among the \c textTr attribute of the item, the \c text attribute of
+        /// \c translationContext in the configuration of the manifest, and
+        /// \c QActionKit::ActionText. An empty text has no translation.
+        ActionText text() const;
         /// Returns the category of the action, a label that a command palette shows before the
-        /// text, such as File in File: Open, translated if \a translated is \c true, in a context
-        /// chosen as that of \c text() is, from \c categoryTr, \c category and
-        /// \c QActionKit::ActionCategory. Only actions carry a category, and the category of other
-        /// items is empty. The category is unrelated to the catalog, which places the item in the
-        /// hierarchy of a settings page.
-        QString category(bool translated = false) const;
-        /// Returns the description of the item, translated if \a translated is \c true, in a
-        /// context chosen as that of \c text() is, from \c descriptionTr, \c description and
+        /// text, such as File in File: Open, and its translation, in a context chosen as that of
+        /// \c text() is, from \c categoryTr, \c category and \c QActionKit::ActionCategory. Only
+        /// actions carry a category, and the category of other items is empty. The category is
+        /// unrelated to the catalog, which places the item in the hierarchy of a settings page.
+        ActionText category() const;
+        /// Returns the description of the item and its translation, in a context chosen as that of
+        /// \c text() is, from \c descriptionTr, \c description and
         /// \c QActionKit::ActionDescription.
-        QString description(bool translated = false) const;
+        ActionText description() const;
 
         /// Returns the icon id, which defaults to the item id.
         QString icon() const;

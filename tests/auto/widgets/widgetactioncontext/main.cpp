@@ -99,6 +99,15 @@ private Q_SLOTS:
         QCOMPARE(contents(toolBar), QStringList({"Open File", "...", "About"}));
     }
 
+    void testToolTipFromDescription() {
+        context->setAttribute(QAK::WidgetActionContext::UpdateToolTipWithDescription);
+        registry->updateContext(QAK::AE_Texts);
+
+        auto action = context->action(QStringLiteral("test.exit"));
+        QVERIFY(action);
+        QCOMPARE(action->toolTip(), QStringLiteral("Exit the application"));
+    }
+
     void testShortcutsFromManifest() {
         auto action = context->action(QStringLiteral("test.openFile"));
         QVERIFY(action);
