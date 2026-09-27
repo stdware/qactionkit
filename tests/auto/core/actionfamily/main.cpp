@@ -129,6 +129,23 @@ private Q_SLOTS:
         QCOMPARE(family.icon("icon4")->url(), QUrl(""));
     }
 
+    void testActionIcon() {
+        // Two actions share the icon "shared" of the theme, and the user overrides that of one
+        QAK::ActionFamily family;
+        family.addIcon("theme1", "shared", QAK::ActionIcon(QUrl("file:///path/to/shared")));
+        family.setIcon("action1", QAK::ActionIcon(QUrl("file:///path/to/override")));
+
+        const auto overridden = family.actionIcon("theme1", "action1", "shared");
+        QVERIFY(overridden);
+        QCOMPARE(overridden->url(), QUrl("file:///path/to/override"));
+
+        const auto themed = family.actionIcon("theme1", "action2", "shared");
+        QVERIFY(themed);
+        QCOMPARE(themed->url(), QUrl("file:///path/to/shared"));
+
+        QVERIFY(!family.actionIcon("theme1", "action2", "missing"));
+    }
+
     void testAddRemoveIcon() {
         QAK::ActionFamily family;
         family.addIcon("theme1", "theme1.icon2",

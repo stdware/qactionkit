@@ -195,7 +195,7 @@ namespace QAK {
 
         if ((element == AE_Layouts || element == AE_Icons) && info) {
             // TODO: theme
-            const auto icon = reg->actionIcon(QString(), info->icon());
+            const auto icon = reg->actionIcon(QString(), id, info->icon());
             action->setIcon(icon ? icon->icon() : QIcon());
         }
     }
