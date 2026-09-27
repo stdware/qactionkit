@@ -1,6 +1,6 @@
 # 动作扩展清单规范
 
-动作扩展清单声明一个组件向应用程序提供的动作、菜单与工具栏及其布局。动作扩展编译器（`qak_aec`）将清单转换为存放静态数据的 C++ 源文件，运行时不解析清单。
+动作扩展清单声明一个组件向应用程序提供的动作、菜单与工具栏及其布局。AEC（Action Extension Compiler，可执行文件为 `qak_aec`）将清单转换为存放静态数据的 C++ 源文件，运行时不解析清单。
 
 本文档描述清单格式的 `1.0` 版。
 
@@ -31,7 +31,7 @@ manifest.xml ──qak_aec──> qak_manifest.cpp ──> ActionExtension ─�
 
 | 元素 | 必需 | 含义 |
 | --- | --- | --- |
-| `version` | 是 | 清单格式的版本。高于编译器所支持的版本时编译失败。 |
+| `version` | 是 | 清单格式的版本。高于 AEC 所支持的版本时 AEC 报错。 |
 | `id` | 是 | 扩展的标识。登记两个标识相同的扩展时输出警告，保留先登记的一个。 |
 | `configuration` | 否 | 清单其余部分的默认值。至多一个。 |
 | `items` | 否 | 条目声明。 |
@@ -58,7 +58,7 @@ manifest.xml ──qak_aec──> qak_manifest.cpp ──> ActionExtension ─�
 </configuration>
 ```
 
-`defaultCatalog` 指定目录节点，未指明目录的条目都归入该节点。若没有条目声明该节点，编译器自动为它创建一个 `phony` 条目。
+`defaultCatalog` 指定目录节点，未指明目录的条目都归入该节点。若没有条目声明该节点，AEC 自动为它创建一个 `phony` 条目。
 
 `translationContext` 指定三个可翻译字段的 Qt 翻译上下文，未指定的字段分别使用内置的上下文 `QActionKit::ActionText`、`QActionKit::ActionCategory`、`QActionKit::ActionDescription`。条目可以用 `textTr`、`categoryTr`、`descriptionTr` 属性分别覆盖。这三个属性不出现在 `ActionItemInfo::attributes()` 中。
 
@@ -146,7 +146,7 @@ manifest.xml ──qak_aec──> qak_manifest.cpp ──> ActionExtension ─�
 - `&` 标记其后字符为助记符。该字符从标识中去除，保留在推导出的文本中。
 - 位于标识末尾的 `^` 表示该动作打开一个对话框。该字符从标识中去除，在推导出的文本末尾写作 `...`。
 
-`core.&openFile^` 的标识为 `core.openFile`，推导出的文本为 `&Open File...`。`&` 出现在前面的段中、连写的 `&&`、空段、非 ASCII 字符或其他标点均导致编译失败。
+`core.&openFile^` 的标识为 `core.openFile`，推导出的文本为 `&Open File...`。`&` 出现在前面的段中、连写的 `&&`、空段、非 ASCII 字符或其他标点均导致 AEC 报错。
 
 文本中的助记符标记遵循 QtWidgets 的约定。在菜单以外的场合，例如命令面板与工具提示，`ActionText::withoutMnemonic()` 返回去除标记后的文本，`...` 保留。
 
@@ -178,7 +178,7 @@ manifest.xml ──qak_aec──> qak_manifest.cpp ──> ActionExtension ─�
 - `separator` 表示分隔符。两种后端都会去除开头、结尾和连续的分隔符；`group` 在两侧各带一个分隔符，因此组与相邻条目之间总有分隔。
 - `stretch` 表示可伸展的空白。只对工具栏有效，菜单中忽略。
 
-编译器检查以下规则：
+AEC 检查以下规则：
 
 - 标签须与声明的类型相符。action 接受 `action` 与 `item`，group 与 menu 接受 `group`、`menu`、`menuBar`、`toolBar` 与 `item`。
 - `phony` 条目不得出现在布局中。
