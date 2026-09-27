@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- expect: error insertion element "test\.hello" refers to an undeclared item -->
+<actionExtension>
+    <version>1.0</version>
+    <id>test.undeclaredInInsertion</id>
+    <insertions>
+        <insertion target="host.help">
+            <action id="test.hello" />
+        </insertion>
+    </insertions>
+</actionExtension>

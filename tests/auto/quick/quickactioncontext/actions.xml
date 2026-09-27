@@ -10,6 +10,7 @@
         <action id="test.saveFile" text="Save File" />
         <action id="test.exit" text="Exit" />
         <menu id="test.file" text="File" />
+        <group id="test.fileActions" />
         <menu id="test.recent" text="Recent Files" />
     </items>
 

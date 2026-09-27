@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- expect: error layout element "test\.debugDump" refers to an item whose declaration is skipped by its "if" attribute -->
+<actionExtension>
+    <version>1.0</version>
+    <id>test.skippedDeclaration</id>
+    <items>
+        <action id="test.debugDump" if="ENABLE_DEBUG" />
+        <menu id="test.file" />
+    </items>
+    <layouts>
+        <menu id="test.file">
+            <action id="test.debugDump" />
+        </menu>
+    </layouts>
+</actionExtension>

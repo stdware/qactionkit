@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- expect: error layout element "test\.typoAcion" refers to an undeclared item -->
+<actionExtension>
+    <version>1.0</version>
+    <id>test.undeclaredInLayout</id>
+    <items>
+        <action id="test.typoAction" />
+        <menu id="test.file" />
+    </items>
+    <layouts>
+        <menu id="test.file">
+            <action id="test.typoAcion" />
+        </menu>
+    </layouts>
+</actionExtension>

@@ -249,6 +249,8 @@ struct ParserPrivate {
 
     // Intermediate data
     stdc::linked_map<QString, ActionItemInfoMessage> itemInfoMap;
+    // Ids of declarations skipped by their if attribute, for the message on a reference to one
+    QSet<QString> skippedIds;
 
     ParseResult result;
 
@@ -265,9 +267,8 @@ struct ParserPrivate {
         return !interpretBoolean(varValue);
     }
 
-    // Infer item type when parsing item info
-    void parseItemAttrs(const QMXmlAdaptorElement &e, ActionItemInfoMessage &info,
-                        const char *field) const {
+    // Reads the type and the attributes of an item declaration
+    void parseItemAttrs(const QMXmlAdaptorElement &e, ActionItemInfoMessage &info) const {
         const auto &readTopLevel = [&]() {
             if (resolve(e.properties.value(QStringLiteral("topLevel"))) == QStringLiteral("true")) {
                 info.topLevel = true;
@@ -297,7 +298,7 @@ struct ParserPrivate {
         } else if (name == QStringLiteral("phony") && namespaceUri.isEmpty()) {
             info.type = QAK::ActionItemInfo::Phony;
         } else {
-            error("%s: %s item \"%s\" has an unknown tag \"%s\"\n", qPrintable(q.fileName), field,
+            error("%s: item \"%s\" has an unknown tag \"%s\"\n", qPrintable(q.fileName),
                   qPrintable(info.id), qPrintable(e.name));
             std::exit(1);
         }
@@ -386,7 +387,7 @@ struct ParserPrivate {
         }
         info.rawId = id;
 
-        parseItemAttrs(e, info, "item");
+        parseItemAttrs(e, info);
 
         if (!e.children.isEmpty()) {
             error("%s: item declaration element \"%s\" shouldn't have children\n",
@@ -396,9 +397,10 @@ struct ParserPrivate {
         return info;
     }
 
-    // Create new item when encountering a new ID in layouts or insertions
-    ActionItemInfoMessage &findOrInsertItemInfo(const QMXmlAdaptorElement *e,
-                                                const QString &upperCatalog, const char *field) {
+    // Returns the declaration of the item that a layout or insertion element refers to. The element
+    // only carries the id and a condition, and its tag must agree with the declared type.
+    ActionItemInfoMessage &findItemInfo(const QMXmlAdaptorElement *e, const QString &upperCatalog,
+                                        const char *field) {
         auto id = resolve(e->properties.value(QStringLiteral("id")));
         if (id.isEmpty()) {
             error("%s: %s element \"%s\" doesn't have an \"id\" field\n", qPrintable(q.fileName),
@@ -406,75 +408,75 @@ struct ParserPrivate {
             std::exit(1);
         }
 
-        const auto &errorPhony = [this, id, field]() {
-            error("%s: %s element \"%s\" shouldn't have a phony type\n", qPrintable(q.fileName),
-                  field, qPrintable(id));
-            std::exit(1);
-        };
-
-        ActionItemInfoMessage *pInfo;
-        if (auto it = itemInfoMap.find(id); it != itemInfoMap.end()) {
-            // This layout item has been declared in the items field
-            auto &info = it->second;
-
-            // Check if the tag matches
-            bool typeMismatch = false;
-            switch (info.type) {
-                case QAK::ActionItemInfo::Phony: {
-                    errorPhony();
-                    break;
-                }
-                case QAK::ActionItemInfo::Action: {
-                    if ((e->name != QStringLiteral("action") && e->name != QStringLiteral("item")) || !e->namespaceUri.isEmpty()) {
-                        typeMismatch = true;
-                    }
-                    break;
-                }
-                case QAK::ActionItemInfo::Group:
-                case QAK::ActionItemInfo::Menu: {
-                    static const QSet<QString> allowedTags = {
-                        QStringLiteral("group"),   QStringLiteral("menu"),
-                        QStringLiteral("menuBar"), QStringLiteral("toolBar"),
-                        QStringLiteral("item"),
-                    };
-                    if (!allowedTags.contains(e->name) || !e->namespaceUri.isEmpty()) {
-                        typeMismatch = true;
-                    }
-                    break;
-                }
-                default:
-                    Q_UNREACHABLE();
-                    break;
+        for (auto it = e->properties.begin(); it != e->properties.end(); ++it) {
+            const auto &key = it.key();
+            if (key.namespaceUri.isEmpty() &&
+                (key.name == QStringLiteral("id") || key.name == QStringLiteral("if"))) {
+                continue;
             }
-            if (typeMismatch) {
-                error("%s: %s element \"%s\" has inconsistent tag \"%s\" with the "
-                      "item element \"%s\"\n",
-                      qPrintable(q.fileName), field, qPrintable(id), qPrintable(e->name),
-                      qPrintable(info.tag));
+            error("%s: %s element \"%s\" has the attribute \"%s\", which belongs to the item "
+                  "declaration\n",
+                  qPrintable(q.fileName), field, qPrintable(id), qPrintable(key.name));
+            std::exit(1);
+        }
+
+        auto it = itemInfoMap.find(id);
+        if (it == itemInfoMap.end()) {
+            if (skippedIds.contains(id)) {
+                error("%s: %s element \"%s\" refers to an item whose declaration is skipped by "
+                      "its \"if\" attribute, which the reference needs as well\n",
+                      qPrintable(q.fileName), field, qPrintable(id));
+            } else {
+                error("%s: %s element \"%s\" refers to an undeclared item\n",
+                      qPrintable(q.fileName), field, qPrintable(id));
+            }
+            std::exit(1);
+        }
+        auto &info = it->second;
+
+        // Check if the tag matches
+        bool typeMismatch = false;
+        switch (info.type) {
+            case QAK::ActionItemInfo::Phony: {
+                error("%s: %s element \"%s\" shouldn't have a phony type\n", qPrintable(q.fileName),
+                      field, qPrintable(id));
                 std::exit(1);
             }
-
-            if (info.catalog.isEmpty()) {
-                // The item doesn't have a specified category, use the current one
-                info.catalog = upperCatalog;
+            case QAK::ActionItemInfo::Action: {
+                if ((e->name != QStringLiteral("action") && e->name != QStringLiteral("item")) ||
+                    !e->namespaceUri.isEmpty()) {
+                    typeMismatch = true;
+                }
+                break;
             }
-            pInfo = &info;
-        } else {
-            // Create one
-            ActionItemInfoMessage info;
-            info.rawId = id;
-            parseItemAttrs(*e, info, field);
-            if (info.type == QAK::ActionItemInfo::Phony) {
-                errorPhony();
+            case QAK::ActionItemInfo::Group:
+            case QAK::ActionItemInfo::Menu: {
+                static const QSet<QString> allowedTags = {
+                    QStringLiteral("group"),   QStringLiteral("menu"), QStringLiteral("menuBar"),
+                    QStringLiteral("toolBar"), QStringLiteral("item"),
+                };
+                if (!allowedTags.contains(e->name) || !e->namespaceUri.isEmpty()) {
+                    typeMismatch = true;
+                }
+                break;
             }
-            if (info.catalog.isEmpty()) {
-                info.catalog = upperCatalog;
-            }
-
-            auto insertResult = itemInfoMap.append(id, info);
-            pInfo = &insertResult.first->second;
+            default:
+                Q_UNREACHABLE();
+                break;
         }
-        return *pInfo;
+        if (typeMismatch) {
+            error("%s: %s element \"%s\" has inconsistent tag \"%s\" with the "
+                  "item element \"%s\"\n",
+                  qPrintable(q.fileName), field, qPrintable(id), qPrintable(e->name),
+                  qPrintable(info.tag));
+            std::exit(1);
+        }
+
+        if (info.catalog.isEmpty()) {
+            // The item doesn't have a specified category, use the current one
+            info.catalog = upperCatalog;
+        }
+        return info;
     }
 
     ActionLayoutEntryMessage
@@ -499,7 +501,7 @@ struct ParserPrivate {
             return entry;
         }
 
-        auto &info = findOrInsertItemInfo(e, upperCatalog, "layout");
+        auto &info = findItemInfo(e, upperCatalog, "layout");
         QString id = info.id;
 
         // Recursive path chain detected?
@@ -612,7 +614,7 @@ struct ParserPrivate {
             } else if (e.name == QStringLiteral("stretch") && e.namespaceUri.isEmpty()) {
                 entry.type = QAK::ActionLayoutEntry::Stretch;
             } else {
-                auto &info = findOrInsertItemInfo(&e, {}, "insertion");
+                auto &info = findItemInfo(&e, {}, "insertion");
                 auto id = info.id;
                 if (!e.children.isEmpty()) {
                     error("%s: insertion element \"%s\" shouldn't have children\n",
@@ -751,6 +753,8 @@ struct ParserPrivate {
         // Parse items
         for (const auto &item : std::as_const(objElements)) {
             if (shouldSkipElement(*item)) {
+                skippedIds.insert(
+                    parseItemId(resolve(item->properties.value(QStringLiteral("id")))));
                 continue;
             }
             auto entity = parseItem(*item);

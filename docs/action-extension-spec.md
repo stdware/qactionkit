@@ -94,6 +94,8 @@ manifest.xml ──qak_aec──> qak_manifest.cpp ──> ActionExtension ─�
 
 变量为假时，跳过该元素及其子元素。空值、未定义以及 `false`、`no`、`0`、`n`、`off`（不区分大小写）为假，其他值均为真。因此在命令行上写 `-DENABLE_DEBUG_ACTIONS` 即可启用该元素。
 
+跳过 `items` 中的声明时，布局与插入中对它的引用也须带上 `if`，否则引用的是未声明的标识，AEC 报错。
+
 ## 条目
 
 ```xml
@@ -171,7 +173,7 @@ manifest.xml ──qak_aec──> qak_manifest.cpp ──> ActionExtension ─�
 </layouts>
 ```
 
-`layouts` 描述本扩展所拥有的菜单的组成。出现在布局中而未在 `items` 中声明的标识视为隐式声明，其类型由标签决定，属性取自布局元素，因此简短的清单可以省略 `items`。已在 `items` 中声明的条目被布局引用时，引用元素上 `id` 与 `if` 以外的属性一律忽略，再次引用隐式声明的条目时同样如此。
+`layouts` 描述本扩展所拥有的菜单的组成。布局中的元素按标识引用本扩展在 `items` 中声明的条目，只能带有 `id` 与 `if` 两个属性，条目的属性一律写在声明上。
 
 以下两个标签没有标识：
 
@@ -180,7 +182,9 @@ manifest.xml ──qak_aec──> qak_manifest.cpp ──> ActionExtension ─�
 
 AEC 检查以下规则：
 
-- 标签须与声明的类型相符。action 接受 `action` 与 `item`，group 与 menu 接受 `group`、`menu`、`menuBar`、`toolBar` 与 `item`。`item` 只能引用已声明或已隐式声明的条目，因为它不能决定条目的类型。
+- 引用的标识必须在本扩展的 `items` 中声明。
+- 引用元素不得带有 `id` 与 `if` 以外的属性，包括属于命名空间的属性。
+- 标签须与声明的类型相符。action 接受 `action` 与 `item`，group 与 menu 接受 `group`、`menu`、`menuBar`、`toolBar` 与 `item`。`item` 表示类型取自声明。
 - `phony` 条目不得出现在布局中。
 - 容器的子项只能指定一次。在两处为 `core.file` 指定子项是错误。
 - 布局不得递归。路径中再次出现已经包含的标识是错误。
@@ -209,7 +213,7 @@ AEC 检查以下规则：
 
 `target` 不存在的插入不报错，直接跳过，插件因此可以为宿主中不一定存在的菜单提供插入。`relativeTo` 不存在的 `after` 或 `before` 插入同样跳过。
 
-插入的元素不得有子元素，`phony` 条目不得插入。未声明的标识与布局中一样视为隐式声明，标签的规则也与布局相同。
+插入的元素不得有子元素，`phony` 条目不得插入。插入的元素与布局中的元素一样，只能引用本扩展声明的条目，只能带有 `id` 与 `if`，标签的规则也相同。
 
 ## 目录
 

@@ -35,6 +35,7 @@ A layout customized by the user is stored with the hash of every extension from 
     <items>
         <action id="core.openFile" text="Open File" shortcut="Ctrl+O" />
         <menu id="core.mainMenu" topLevel="true" />
+        <menu id="core.file" />
     </items>
     <layouts>
         <menu id="core.mainMenu">

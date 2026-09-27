@@ -60,6 +60,15 @@
         <!-- Example: core actions -->
         <action id="core.openFile" text="Open File" category="File" shortcut="Ctrl+O" />
         <action id="core.saveFile" text="Save File" category="File" shortcut="Ctrl+S" />
+        <action id="core.documentations" />
+        <action id="core.aboutApp" text="About ${APP_NAME}" />
+        <action id="core.aboutQt" />
+
+        <!-- Example: menus and groups, which layouts refer to -->
+        <menu id="core.file" />
+        <menu id="core.help" />
+        <group id="core.fileOpenActions" />
+        <group id="core.aboutActions" />
 
         <!-- Example: configurable top level item -->
         <menu id="core.mainMenu" topLevel="true" />
@@ -70,7 +79,7 @@
         <phony id="core.catalog.other" />
     </items>
 
-    <!-- Declaration: core layouts -->
+    <!-- Declaration: core layouts, which refer to declared items by id only -->
     <layouts>
         <menu id="core.mainMenu">
             <menu id="core.file">
@@ -83,7 +92,7 @@
                 <action id="core.documentations" />
                 <separator />
                 <group id="core.aboutActions">
-                    <action id="core.aboutApp" text="About ${APP_NAME}" />
+                    <action id="core.aboutApp" />
                     <action id="core.aboutQt" />
                 </group>
             </menu>
