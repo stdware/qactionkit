@@ -47,26 +47,15 @@
 
 目录默认镜像布局的方向不可行，原因有二。第 17 条删除 `toolBar` 标签之后，AEC 无法区分工具栏与菜单，工具栏中的引用也会参与推导。目录在编译时确定，布局却可以由用户在运行时修改，镜像只在默认布局下成立。目录服务于设置页的条目树与应用程序按逻辑分组的查询（例如取出所有面板动作），两者都要求它是条目身份层面的稳定信息。
 
-**决定。** 目录只来自声明，布局与插入都不影响目录。
+**决定。** 保留从布局推导目录，补充环的检查。
 
-- 条目的目录依次取：自身的 `catalog` 属性；在 `<items>` 中直接包含它的 `phony`；`defaultCatalog`。
-- `<items>` 中的 `phony` 可以带有子元素，子元素是普通的条目声明，可以嵌套 `phony` 以形成多层目录。action、menu 与 group 的声明仍然不能带有子元素，因此 `<items>` 中的嵌套只表示目录，不与布局的嵌套混淆。
-- 既没有 `catalog` 也不在其他 `phony` 中的 `phony` 是目录树的根。其余条目在这种情况下归入 `defaultCatalog`，`topLevel` 不再影响目录。
+- 条目的目录依次取：自身的 `catalog` 属性；本扩展的布局中第一次包含它的容器，group 与顶层容器均可；都没有时，phony 与顶层条目是目录树的根，其余条目归入 `defaultCatalog`。插入不提供目录。
+- 上文所列各点均不必改变推导方式。group 与工具栏作为目录节点没有问题。推导在 AEC 编译时按清单中的布局进行，用户在运行时修改布局不影响目录，上一段的第二个原因不成立。依赖文档顺序的情形以 `catalog` 属性显式指定即可。插件的条目归入插件自己的 `defaultCatalog`，通常正是所需。
+- 曾考虑目录只来自声明，由 `<items>` 中的嵌套表示层级。但宿主的目录结构与菜单结构大部分重合，须写两遍，因此放弃。
+- `catalog` 形成环时 AEC 报错。`defaultCatalog` 本身不归入 `defaultCatalog`，否则声明为 menu 或 group 的默认目录会以自身为目录。
 - `catalog` 指向的标识必须由本扩展声明，可以是 phony、menu 或 group，否则 AEC 报错。`defaultCatalog` 同样须由本扩展声明，AEC 不再自动补充 phony，因为补充的条目只能使用从标识推导的文本，无法指定文本与翻译上下文。
 - 插件使用宿主的目录节点时，在自己的清单中将它声明为 phony。宿主不存在时，该节点的文本与翻译取自插件。
 - 多个扩展声明同一标识时，registry 优先采用不是 phony 的声明，因为拥有节点的扩展才会将它声明为 menu 或 group；同为 phony 时采用先登记的。两个都不是 phony 的声明相冲突，registry 以 `qCWarning` 报告，保留先登记的。
-
-```xml
-<items>
-    <phony id="core.file" text="File">
-        <action id="core.openFile" text="Open File" />
-        <action id="core.saveFile" text="Save File" />
-        <phony id="core.file.export" text="Export">
-            <action id="core.exportMidi" />
-        </phony>
-    </phony>
-</items>
-```
 
 ## 19. 用户布局的合并方式（已定）
 
