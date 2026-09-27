@@ -102,7 +102,7 @@ manifest.xml ──qak_aec──> qak_manifest.cpp ──> ActionExtension ─�
 <items>
     <action id="core.openFile" text="Open File" category="File" shortcut="Ctrl+O" />
     <menu id="core.mainMenu" topLevel="true" />
-    <toolBar id="core.mainToolBar" />
+    <menu id="core.mainToolBar" topLevel="true" />
     <phony id="core.catalog.plugins" />
 </items>
 ```
@@ -113,8 +113,7 @@ manifest.xml ──qak_aec──> qak_manifest.cpp ──> ActionExtension ─�
 | --- | --- | --- |
 | `action` | Action | 用户可以触发的叶节点 |
 | `group` | Group | 具名的条目列表，其子项直接放入父节点 |
-| `menu` | Menu | 菜单，`topLevel` 表示弹出菜单或菜单栏 |
-| `menuBar`、`toolBar` | Menu | 与 `menu` 相同，但总是顶层 |
+| `menu` | Menu | 菜单，`topLevel` 表示弹出菜单、菜单栏或工具栏 |
 | `phony` | Phony | 只作为目录节点，不出现在任何视图中 |
 
 条目声明不得有子元素。嵌套关系在 `layouts` 中描述。`items` 中两个条目的标识相同时 AEC 报错。
@@ -139,7 +138,7 @@ manifest.xml ──qak_aec──> qak_manifest.cpp ──> ActionExtension ─�
 
 `category` 是命令面板显示在文本之前的类别标签，例如「File: Open」中的 `File`。它与 `catalog` 无关，后者决定条目在设置页层级中的位置。
 
-`topLevel` 只有在展开后恰为字符串 `true` 时才为真。`menuBar` 与 `toolBar` 总是顶层。
+`topLevel` 只有在展开后恰为字符串 `true` 时才为真。顶层的 menu 作为菜单栏、工具栏还是弹出菜单，由应用程序登记时决定，例如 `WidgetActionContext::addMenuBar()` 与 `addToolBar()`。
 
 属性写在不适用的类型上，例如 menu 上的 `shortcut`，AEC 报错。不属于命名空间的属性只能是上表中的属性，其他的均导致 AEC 报错，拼错的属性因此不会被当作自定义属性。
 
@@ -188,7 +187,7 @@ AEC 检查以下规则：
 
 - 引用的标识必须在本扩展的 `items` 中声明。
 - 引用元素不得带有 `id` 与 `if` 以外的属性，包括属于命名空间的属性。
-- 标签须与声明的类型相符。action 接受 `action` 与 `item`，group 与 menu 接受 `group`、`menu`、`menuBar`、`toolBar` 与 `item`。`item` 表示类型取自声明。
+- 标签须与声明的类型相符。action 接受 `action` 与 `item`，group 与 menu 接受 `group`、`menu` 与 `item`。`item` 表示类型取自声明。
 - `phony` 条目不得出现在布局中。
 - 容器的子项只能指定一次。在两处为 `core.file` 指定子项是错误。
 - 布局不得递归。路径中再次出现已经包含的标识是错误。

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- expect: error item "test\.mainToolBar" has an unknown tag "toolBar" -->
+<!-- A tool bar is a top-level menu that the application adds as a tool bar -->
+<actionExtension>
+    <version>1.0</version>
+    <id>test.toolBarTag</id>
+    <items>
+        <toolBar id="test.mainToolBar" />
+    </items>
+</actionExtension>

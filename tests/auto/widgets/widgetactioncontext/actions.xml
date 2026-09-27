@@ -12,7 +12,7 @@
         <action id="test.checkUpdate" text="Check Update" />
 
         <menu id="test.mainMenu" topLevel="true" />
-        <toolBar id="test.mainToolBar" />
+        <menu id="test.mainToolBar" topLevel="true" />
         <menu id="test.file" text="File" />
         <group id="test.fileActions" />
         <menu id="test.help" text="Help" />
@@ -35,11 +35,11 @@
             </menu>
         </menu>
 
-        <toolBar id="test.mainToolBar">
+        <menu id="test.mainToolBar">
             <action id="test.openFile" />
             <stretch />
             <action id="test.about" />
-        </toolBar>
+        </menu>
     </layouts>
 
     <insertions>

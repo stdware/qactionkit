@@ -292,9 +292,6 @@ struct ParserPrivate {
         } else if (name == QStringLiteral("menu") && namespaceUri.isEmpty()) {
             info.type = QAK::ActionItemInfo::Menu;
             readTopLevel();
-        } else if ((name == QStringLiteral("menuBar") || name == QStringLiteral("toolBar")) && namespaceUri.isEmpty()) {
-            info.type = QAK::ActionItemInfo::Menu;
-            info.topLevel = true;
         } else if (name == QStringLiteral("phony") && namespaceUri.isEmpty()) {
             info.type = QAK::ActionItemInfo::Phony;
         } else {
@@ -483,8 +480,9 @@ struct ParserPrivate {
             case QAK::ActionItemInfo::Group:
             case QAK::ActionItemInfo::Menu: {
                 static const QSet<QString> allowedTags = {
-                    QStringLiteral("group"),   QStringLiteral("menu"), QStringLiteral("menuBar"),
-                    QStringLiteral("toolBar"), QStringLiteral("item"),
+                    QStringLiteral("group"),
+                    QStringLiteral("menu"),
+                    QStringLiteral("item"),
                 };
                 if (!allowedTags.contains(e->name) || !e->namespaceUri.isEmpty()) {
                     typeMismatch = true;
