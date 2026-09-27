@@ -14,8 +14,6 @@ namespace QAK {
         {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},
     };
 
-    static int sharedNullLayoutEntryIndex = 0;
-
     static ActionInsertionData sharedNullInsertion = {
         {}, {}, {}, ActionInsertionData::defaultPriority, {},
     };

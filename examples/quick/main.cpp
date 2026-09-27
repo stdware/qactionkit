@@ -1,3 +1,5 @@
+#include <memory>
+
 #include <QtGui/QGuiApplication>
 #include <QtQml/QQmlApplicationEngine>
 #include <QtQml/QQmlComponent>
@@ -26,8 +28,11 @@ int main(int argc, char *argv[]) {
     QQmlApplicationEngine engine;
     engine.setInitialProperties({{"context", QVariant::fromValue(&context)}});
 
+    // The object registers the components of the actions with the context, and lives until exit
     QQmlComponent actionsComponent(&engine, ":/qt/qml/QActionKit/Examples/Quick/actions.qml");
-    auto o = actionsComponent.createWithInitialProperties({{"context", QVariant::fromValue(&context)}});
+    const std::unique_ptr<QObject> actions(actionsComponent.createWithInitialProperties({
+        {"context", QVariant::fromValue(&context)}
+    }));
 
     engine.load(":/qt/qml/QActionKit/Examples/Quick/main.qml");
 

@@ -24,7 +24,7 @@ namespace QAK {
         static QString getChildId(const Child &child) {
             return child;
         }
-        static constexpr bool childIsSeparator(const Child &child) {
+        static constexpr bool childIsSeparator(const Child &) {
             return false;
         }
     };

@@ -128,11 +128,11 @@ int main(int argc, char *argv[]) {
     Parser pp;
     QString filename;
     if (const QStringList files = parser.positionalArguments(); files.count() > 1) {
-        error(qPrintable(QLatin1String("Too many input files specified: '") +
-                         files.join(QLatin1String("' '")) + QLatin1Char('\'')));
+        error("too many input files are specified: '%s'\n",
+              qPrintable(files.join(QLatin1String("' '"))));
         parser.showHelp(1);
     } else if (files.isEmpty()) {
-        error(qPrintable(QLatin1String("Input file not specified.")));
+        error("the input file is not specified\n");
         parser.showHelp(1);
     } else {
         filename = files.first();

@@ -269,9 +269,10 @@ namespace QAK {
                 auto object = list[i];
                 if (getElement(object) == Separator) {
                     bool shouldDeleteSeparator =
-                        !filteredList.isEmpty() && getElement(filteredList.last()) == Separator ||
-                        filteredList.isEmpty() && (objects.isEmpty() || getElement(objects.last()) == Separator) ||
-                        i == list.size() - 1 && childIndex == children.size() - 1;
+                        (!filteredList.isEmpty() && getElement(filteredList.last()) == Separator) ||
+                        (filteredList.isEmpty() &&
+                         (objects.isEmpty() || getElement(objects.last()) == Separator)) ||
+                        (i == list.size() - 1 && childIndex == children.size() - 1);
                     if (shouldDeleteSeparator) {
                        delete object;
                         list[i] = nullptr;
