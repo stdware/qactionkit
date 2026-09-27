@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- expect: success -->
+<!-- The built-in contexts apply without a configuration -->
+<!-- source: translate\("QActionKit::ActionText", "Open"\); -->
+<!-- source: translate\("QActionKit::ActionCategory", "File"\); -->
+<!-- source: translate\("QActionKit::ActionDescription", "Open a file"\); -->
+<!-- A string is written once for each context in which it is looked up -->
+<!-- source: \A(?![\s\S]*translate\("QActionKit::ActionText", "Open"\)[\s\S]*translate\("QActionKit::ActionText", "Open"\)) -->
+<!-- source: translate\("Test::Other", "Open"\); -->
+<!-- The context is escaped as the string is -->
+<!-- source: translate\("Test::\\"Quoted\\"", "Close"\); -->
+<actionExtension>
+    <version>1.0</version>
+    <id>test.translationContexts</id>
+    <items>
+        <action id="test.open" text="Open" category="File" description="Open a file" />
+        <action id="test.openAgain" text="Open" />
+        <action id="test.openOther" text="Open" textTr="Test::Other" />
+        <action id="test.close" text="Close" textTr="Test::&quot;Quoted&quot;" />
+    </items>
+</actionExtension>

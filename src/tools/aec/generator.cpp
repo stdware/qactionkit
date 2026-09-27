@@ -2,6 +2,8 @@
 
 #include <QtCore/QSet>
 
+#include <QAKCore/private/actionextension_p.h>
+
 template <template <class> class Array, class T>
 static QString joinNumbers(const Array<T> &arr, const QString &glue) {
     QStringList list;
@@ -240,63 +242,49 @@ public:
         }
     }
 
+    // Writes one call of QCoreApplication::translate() for each distinct pair of a string and its
+    // context, which is chosen as ActionItemInfo chooses it at run time, so that lupdate extracts
+    // the strings in the contexts where they are looked up.
+    static void generateTranslationCalls(FILE *out, const char *title,
+                                         const QVector<ActionItemInfoMessage> &items,
+                                         QString ActionItemInfoMessage::*string,
+                                         QString ActionItemInfoMessage::*itemContext,
+                                         const QString &extensionContext,
+                                         const char *defaultContext) {
+        QSet<QPair<QString, QString>> written;
+        fprintf(out, STRING_4_SPACE "// %s\n", title);
+        for (const auto &item : std::as_const(items)) {
+            const QString &source = item.*string;
+            if (source.isEmpty())
+                continue;
+
+            const QString context = !(item.*itemContext).isEmpty() ? item.*itemContext
+                                    : !extensionContext.isEmpty()
+                                        ? extensionContext
+                                        : QString::fromUtf8(defaultContext);
+            if (written.contains({context, source}))
+                continue;
+            written.insert({context, source});
+
+            fprintf(out, STRING_4_SPACE "QCoreApplication::translate(\"%s\", \"%s\");\n",
+                    escPrintable(context), escPrintable(source));
+        }
+        fprintf(out, "\n");
+    }
+
     void generateTranslations(FILE *out, const QVector<ActionItemInfoMessage> &items) {
-        {
-            QSet<QString> texts{{}};
-            fprintf(out, "    // Action Text\n");
-            for (const auto &item : std::as_const(items)) {
-                if (item.text.isEmpty() || texts.contains(item.text))
-                    continue;
-                texts.insert(item.text);
-
-                QString ctx = item.textContext;
-                if (ctx.isEmpty()) {
-                    ctx = q.parseResult.textTranslationContext;
-                }
-
-                fprintf(out, STRING_4_SPACE "QCoreApplication::translate(\"%s\", \"%s\");\n",
-                        qPrintable(ctx), escPrintable(item.text));
-            }
-            fprintf(out, "\n");
-        }
-
-        {
-            QSet<QString> categories{{}};
-            fprintf(out, STRING_4_SPACE "// Action Category\n");
-            for (const auto &item : std::as_const(items)) {
-                if (item.category.isEmpty() || categories.contains(item.category))
-                    continue;
-                categories.insert(item.category);
-
-                QString ctx = item.categoryContext;
-                if (ctx.isEmpty()) {
-                    ctx = q.parseResult.categoryTranslationContext;
-                }
-
-                fprintf(out, STRING_4_SPACE "QCoreApplication::translate(\"%s\", \"%s\");\n",
-                        qPrintable(ctx), escPrintable(item.category));
-            }
-            fprintf(out, "\n");
-        }
-
-        {
-            QSet<QString> descriptions{{}};
-            fprintf(out, "    // Action Description\n");
-            for (const auto &item : std::as_const(items)) {
-                if (item.description.isEmpty() || descriptions.contains(item.description))
-                    continue;
-                descriptions.insert(item.description);
-
-                QString ctx = item.descriptionContext;
-                if (ctx.isEmpty()) {
-                    ctx = q.parseResult.descriptionTranslationContext;
-                }
-
-                fprintf(out, STRING_4_SPACE "QCoreApplication::translate(\"%s\", \"%s\");\n",
-                        qPrintable(ctx), escPrintable(item.description));
-            }
-            fprintf(out, "\n");
-        }
+        const auto &result = q.parseResult;
+        generateTranslationCalls(out, "Action Text", items, &ActionItemInfoMessage::text,
+                                 &ActionItemInfoMessage::textContext, result.textTranslationContext,
+                                 QAK::ActionExtensionData::defaultTextContext);
+        generateTranslationCalls(out, "Action Category", items, &ActionItemInfoMessage::category,
+                                 &ActionItemInfoMessage::categoryContext,
+                                 result.categoryTranslationContext,
+                                 QAK::ActionExtensionData::defaultCategoryContext);
+        generateTranslationCalls(
+            out, "Action Description", items, &ActionItemInfoMessage::description,
+            &ActionItemInfoMessage::descriptionContext, result.descriptionTranslationContext,
+            QAK::ActionExtensionData::defaultDescriptionContext);
     }
 
     void generateExtraInformation(FILE *out, const QVector<ActionItemInfoMessage> &objects) {

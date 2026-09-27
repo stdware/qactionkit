@@ -275,6 +275,6 @@ registry->addExtension(hello::daw::coreActions());
 
 ## 翻译
 
-生成文件的末尾有一个位于 `#if 0` 中的函数，对每个不同的文本、类别与描述各调用一次 `QCoreApplication::translate()`。该函数不参与编译，只供 `lupdate` 提取字符串。`lupdate` 应处理生成的源文件，而非清单。
+生成文件的末尾有一个位于 `#if 0` 中的函数，对每个不同的文本、类别与描述，在运行时查找它的每个上下文中各调用一次 `QCoreApplication::translate()`。该函数不参与编译，只供 `lupdate` 提取字符串。`lupdate` 应处理生成的源文件，而非清单。
 
 运行时 `ActionItemInfo::text(true)` 在 `textTr` 属性指定的上下文中查找译文，未指定时使用 `configuration` 中的上下文，二者都未指定时使用内置的上下文。未安装翻译时返回空字符串，调用方须回退到 `text(false)`。
