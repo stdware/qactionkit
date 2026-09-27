@@ -89,7 +89,7 @@ namespace QAK {
     };
 
     /// A translatable string of an item: the text written in the manifest and its translation.
-    struct ActionText {
+    struct QAK_CORE_EXPORT ActionText {
         QString source;                     ///< The text written in the manifest
         std::optional<QString> translation; ///< The installed translation, or std::nullopt if none
 
@@ -97,6 +97,13 @@ namespace QAK {
         inline QString toString() const {
             return translation.value_or(source);
         }
+
+        /// Returns the result of \c toString() without mnemonic markers, for display outside
+        /// menus, such as in a command palette or a tool tip. An \c & before a character is
+        /// removed and \c && becomes \c &, as \c QPlatformTheme::removeMnemonics() does. A marker
+        /// in parentheses, such as \c (&O) in a Chinese text, is removed with the spaces before it.
+        /// An ellipsis is kept.
+        QString withoutMnemonic() const;
     };
 
     /// The metadata of a single item declared by an \c ActionExtension.

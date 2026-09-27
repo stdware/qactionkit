@@ -124,6 +124,23 @@ private Q_SLOTS:
         QVERIFY(saveFile->category().toString().isEmpty());
     }
 
+    void testWithoutMnemonic() {
+        const auto strip = [](const QString &text) {
+            return ActionText{text, std::nullopt}.withoutMnemonic();
+        };
+        QCOMPARE(strip(QStringLiteral("&Open File...")), QStringLiteral("Open File..."));
+        QCOMPARE(strip(QStringLiteral("Save && Close")), QStringLiteral("Save & Close"));
+        QCOMPARE(strip(QStringLiteral("Open")), QStringLiteral("Open"));
+
+        // The translation is used if one exists, and a marker in parentheses is removed with the
+        // spaces before it
+        const ActionText text{QStringLiteral("&Open File..."),
+                              QString::fromUtf8("\xE6\x89\x93\xE5\xBC\x80\xE6\x96\x87\xE4\xBB\xB6 "
+                                                "(&O)...")};
+        QCOMPARE(text.withoutMnemonic(),
+                 QString::fromUtf8("\xE6\x89\x93\xE5\xBC\x80\xE6\x96\x87\xE4\xBB\xB6..."));
+    }
+
     void testTranslationContexts() {
         ActionRegistry registry;
         registry.addExtension(qak::test::testActions());

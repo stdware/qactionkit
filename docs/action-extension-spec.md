@@ -148,6 +148,8 @@ manifest.xml ──qak_aec──> qak_manifest.cpp ──> ActionExtension ─�
 
 `core.&openFile^` 的标识为 `core.openFile`，推导出的文本为 `&Open File...`。`&` 出现在前面的段中、连写的 `&&`、空段、非 ASCII 字符或其他标点均导致编译失败。
 
+文本中的助记符标记遵循 QtWidgets 的约定。在菜单以外的场合，例如命令面板与工具提示，`ActionText::withoutMnemonic()` 返回去除标记后的文本，`...` 保留。
+
 ### 推导文本
 
 未指定 `text` 时，由标识的最后一段推导：该段在每个大写字母之前断开，各部分转为小写，再将首字母大写，但位于首尾之外的短功能词（`a`、`the`、`of`、`to`、`with` 等）除外。例如 `core.openRecentFile` 推导为 `Open Recent File`，`core.tableOfContents` 推导为 `Table of Contents`。

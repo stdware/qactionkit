@@ -2,6 +2,7 @@
 #include "actionextension_p.h"
 
 #include <QtCore/QLoggingCategory>
+#include <QtGui/qpa/qplatformtheme.h>
 
 #include "qakglobal_p.h"
 
@@ -44,6 +45,10 @@ namespace QAK {
             return {s, std::nullopt};
         }
         return {s, res};
+    }
+
+    QString ActionText::withoutMnemonic() const {
+        return QPlatformTheme::removeMnemonics(toString());
     }
 
     ActionItemInfo::ActionItemInfo() : e(&sharedNullExtensionData), i(0) {

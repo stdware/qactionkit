@@ -153,26 +153,6 @@ static QString itemIdToText(const QString &id, int sectionIndex = -1) {
     return convertedParts.join(" ");
 }
 
-static QString simplifyActionText(const QString &s) {
-    QString res;
-
-    for (int i = 0; i < s.size(); ++i) {
-        const QChar &ch = s[i];
-        if (ch == '&') {
-            if (i + 1 < s.size()) {
-                i++;
-                res += s[i];
-            }
-            continue;
-        }
-        res += ch;
-    }
-    if (res.endsWith(QStringLiteral("..."))) {
-        res.chop(3);
-    }
-    return res;
-}
-
 static QStringList parseStringList(const QString &s) {
     QStringList parts;
     QString currentPart;
