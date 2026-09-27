@@ -10,11 +10,6 @@
 
 ## 测试覆盖
 
-- **`ActionLayoutsModel` 没有测试。** 共 715 行，提供 `setData`、`insertRows`、`removeRows`、`moveRows` 等编辑接口，以及 `wouldCreateCycle()` 中的环检测，均未经测试。
 - **`ActionCatalogModel` 没有测试。**
 - **没有持续集成。** 仓库中没有 `.github/`，推送时不运行测试，也不在 Linux 或 macOS 上构建。
 
-## 性能
-
-- **`ActionLayoutsModelPrivate::cachePathId()` 线性扫描整个路径缓存**，每次调用 `index()` 都执行一次，模型的开销因此与可见节点数的平方成正比。缓存只增不减，没有淘汰。以路径到标识的散列表代替即可同时解决两个问题。
-- **`ActionLayoutsModelPrivate::rebuildCache()` 枚举有向无环图中的全部路径。** 被多个父节点共用的菜单使路径数成倍增加，含有共用子菜单的大型布局可能使路径数急剧膨胀。树视图需要路径，但应在展开节点时按需生成。

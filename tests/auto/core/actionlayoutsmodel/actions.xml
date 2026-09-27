@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<actionExtension>
+
+    <version>1.0</version>
+    <id>org.qactionkit.test.layoutsmodel</id>
+
+    <items>
+        <menu id="t.main" topLevel="true" />
+        <menu id="t.tools" topLevel="true" />
+        <menu id="t.file" />
+        <menu id="t.edit" />
+        <menu id="t.recent" />
+        <action id="t.open" />
+        <action id="t.save" />
+        <action id="t.undo" />
+        <action id="t.clear" />
+        <action id="t.about" />
+    </items>
+
+    <layouts>
+        <menu id="t.main">
+            <menu id="t.file" />
+            <menu id="t.edit" />
+            <separator />
+            <action id="t.about" />
+        </menu>
+        <menu id="t.file">
+            <action id="t.open" />
+            <action id="t.save" />
+        </menu>
+        <menu id="t.edit">
+            <action id="t.undo" />
+            <menu id="t.recent" />
+        </menu>
+        <menu id="t.recent">
+            <action id="t.clear" />
+        </menu>
+        <!-- The file menu also appears here, so that its children are shared -->
+        <menu id="t.tools">
+            <action id="t.open" />
+            <menu id="t.file" />
+        </menu>
+    </layouts>
+
+</actionExtension>

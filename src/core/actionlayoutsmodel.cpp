@@ -1,289 +1,189 @@
 #include "actionlayoutsmodel.h"
 
-#include <QtCore/QHash>
+#include <memory>
+#include <vector>
+
+#include <QtCore/QPointer>
 #include <QtCore/QQueue>
 #include <QtCore/QSet>
 
 namespace QAK {
 
-    // Path represents a path from root to a node in the DAG tree view
-    using NodePath = QStringList;
+    // A node of the tree that shows the graph. The children of a node are built when they are
+    // first needed, so that a large graph with shared menus is not expanded as a whole.
+    struct LayoutNode {
+        LayoutNode *parent = nullptr;
+        ActionLayoutEntry entry; // Null for the root
+        bool built = false;
+        std::vector<std::unique_ptr<LayoutNode>> children;
+    };
+
+    static bool isAnonymous(const ActionLayoutEntry &entry) {
+        return entry.type() == ActionLayoutEntry::Separator ||
+               entry.type() == ActionLayoutEntry::Stretch;
+    }
+
+    static bool isContainer(const ActionLayoutEntry &entry) {
+        return entry.type() == ActionLayoutEntry::Menu || entry.type() == ActionLayoutEntry::Group;
+    }
 
     class ActionLayoutsModelPrivate {
         Q_DECLARE_PUBLIC(ActionLayoutsModel)
     public:
         ActionLayoutsModel *q_ptr;
-        
-        // Original DAG adjacency map
-        QMap<QString, QVector<ActionLayoutEntry>> adjacencyMap;
-        
-        // Explicit top-level nodes list
-        QVector<ActionLayoutEntry> topLevelNodes;
-        
-        // Cache for path-based tree view
-        mutable QHash<quintptr, NodePath> pathCache;
-        mutable quintptr nextPathId = 1;
-        
-        // Reverse mapping: nodeId -> list of paths containing this node
-        mutable QHash<QString, QList<NodePath>> nodePathsMap;
-        mutable bool cacheValid = false;
 
-        NodePath pathFromIndex(const QModelIndex &index) const;
-        QModelIndex indexFromPath(const NodePath &path) const;
-        quintptr cachePathId(const NodePath &path) const;
-        NodePath pathFromCacheId(quintptr cacheId) const;
-        void rebuildCache() const;
-        void clearCache();
-        
-        ActionLayoutEntry entryAtPath(const NodePath &path) const;
-        QVector<ActionLayoutEntry> childrenAtPath(const NodePath &path) const;
-        NodePath parentPath(const NodePath &path) const;
-        int findRowInParent(const NodePath &path) const;
-        
-        // DAG manipulation
-        bool wouldCreateCycle(const QString &sourceNodeId, const QString &targetNodeId) const;
+        QMap<QString, QVector<ActionLayoutEntry>> adjacencyMap;
+        QVector<ActionLayoutEntry> topLevelNodes;
+        QPointer<ActionRegistry> registry;
+
+        mutable LayoutNode root;
+
+        void resetTree();
+        LayoutNode *nodeOf(const QModelIndex &index) const;
+        QModelIndex indexOf(const LayoutNode *node) const;
+        int rowOf(const LayoutNode *node) const;
+        void buildChildren(LayoutNode *node) const;
+        std::unique_ptr<LayoutNode> makeNode(LayoutNode *parent,
+                                             const ActionLayoutEntry &entry) const;
+
+        bool isShared(const LayoutNode *node) const;
         bool hasPath(const QString &from, const QString &to) const;
-        void synchronizeNodeChanges(const QString &nodeId, const QVector<ActionLayoutEntry> &newChildren);
-        
-        // Validation helpers
-        bool validateActionLayoutEntry(const ActionLayoutEntry &entry) const;
-        bool validateEntryChange(const NodePath &path, const ActionLayoutEntry &oldEntry, const ActionLayoutEntry &newEntry) const;
+        bool acceptsEntry(const LayoutNode *container, const ActionLayoutEntry &entry) const;
     };
 
-    NodePath ActionLayoutsModelPrivate::pathFromIndex(const QModelIndex &index) const {
-        if (!index.isValid()) {
-            return NodePath(); // Root path (empty)
-        }
-        return pathFromCacheId(index.internalId());
+    void ActionLayoutsModelPrivate::resetTree() {
+        root.children.clear();
+        root.built = false;
     }
 
-    QModelIndex ActionLayoutsModelPrivate::indexFromPath(const NodePath &path) const {
+    LayoutNode *ActionLayoutsModelPrivate::nodeOf(const QModelIndex &index) const {
+        return index.isValid() ? static_cast<LayoutNode *>(index.internalPointer()) : &root;
+    }
+
+    QModelIndex ActionLayoutsModelPrivate::indexOf(const LayoutNode *node) const {
         Q_Q(const ActionLayoutsModel);
-        
-        if (path.isEmpty()) {
-            return QModelIndex(); // Root index
+        if (node == &root) {
+            return {};
         }
-
-        NodePath parentPath = this->parentPath(path);
-        int row = findRowInParent(path);
-        
-        if (row == -1) {
-            return QModelIndex();
-        }
-
-        quintptr cacheId = cachePathId(path);
-        return q->createIndex(row, 0, cacheId);
+        return q->createIndex(rowOf(node), 0, const_cast<LayoutNode *>(node));
     }
 
-    quintptr ActionLayoutsModelPrivate::cachePathId(const NodePath &path) const {
-        // Find existing cache entry
-        for (auto it = pathCache.begin(); it != pathCache.end(); ++it) {
-            if (it.value() == path) {
-                return it.key();
+    int ActionLayoutsModelPrivate::rowOf(const LayoutNode *node) const {
+        const auto &siblings = node->parent->children;
+        for (int row = 0; row < int(siblings.size()); ++row) {
+            if (siblings[row].get() == node) {
+                return row;
             }
         }
-        
-        // Create new cache entry
-        quintptr cacheId = nextPathId++;
-        pathCache.insert(cacheId, path);
-        return cacheId;
+        Q_UNREACHABLE_RETURN(-1);
     }
 
-    NodePath ActionLayoutsModelPrivate::pathFromCacheId(quintptr cacheId) const {
-        return pathCache.value(cacheId);
+    std::unique_ptr<LayoutNode>
+        ActionLayoutsModelPrivate::makeNode(LayoutNode *parent,
+                                            const ActionLayoutEntry &entry) const {
+        auto node = std::make_unique<LayoutNode>();
+        node->parent = parent;
+        node->entry = entry;
+        return node;
     }
 
-    void ActionLayoutsModelPrivate::rebuildCache() const {
-        if (cacheValid) {
+    // Each child of the node corresponds to the entry of the same row, so that a row is also the
+    // index into the children in the graph. A menu that already encloses the node, which only a
+    // graph with a cycle has, is shown without its children.
+    void ActionLayoutsModelPrivate::buildChildren(LayoutNode *node) const {
+        if (node->built) {
             return;
         }
-        
-        nodePathsMap.clear();
-        
-        // Build all possible paths in the DAG
-        QQueue<NodePath> queue;
-        QSet<NodePath> visited;
-        
-        // Start from top-level nodes
-        NodePath rootPath;
-        
-        for (const auto &entry : topLevelNodes) {
-            if (!entry.id().isEmpty()) {
-                NodePath childPath = rootPath;
-                childPath.append(entry.id());
-                queue.enqueue(childPath);
-                nodePathsMap[entry.id()].append(childPath);
-            }
+        node->built = true;
+        QVector<ActionLayoutEntry> entries;
+        if (node == &root) {
+            entries = topLevelNodes;
+        } else if (isContainer(node->entry)) {
+            entries = adjacencyMap.value(node->entry.id());
         }
-        
-        while (!queue.isEmpty()) {
-            NodePath currentPath = queue.dequeue();
-            if (visited.contains(currentPath)) {
-                continue; // Avoid infinite loops in case of cycles
-            }
-            visited.insert(currentPath);
-            
-            QString currentNodeId = currentPath.last();
-            auto children = adjacencyMap.value(currentNodeId);
-            
-            for (const auto &entry : children) {
-                if (!entry.id().isEmpty()) {
-                    NodePath childPath = currentPath;
-                    childPath.append(entry.id());
-                    
-                    // Check if this would create too deep nesting (cycle detection)
-                    if (childPath.count(entry.id()) <= 1) { // Allow node to appear at most once in a path
-                        queue.enqueue(childPath);
-                        nodePathsMap[entry.id()].append(childPath);
-                    }
+        for (const auto &entry : std::as_const(entries)) {
+            auto child = makeNode(node, entry);
+            for (auto ancestor = node; ancestor != &root && !isAnonymous(entry);
+                 ancestor = ancestor->parent) {
+                if (ancestor->entry.id() == entry.id()) {
+                    child->built = true;
+                    break;
                 }
             }
+            node->children.push_back(std::move(child));
         }
-        
-        cacheValid = true;
     }
 
-    void ActionLayoutsModelPrivate::clearCache() {
-        pathCache.clear();
-        nodePathsMap.clear();
-        nextPathId = 1;
-        cacheValid = false;
-    }
-
-    ActionLayoutEntry ActionLayoutsModelPrivate::entryAtPath(const NodePath &path) const {
-        if (path.isEmpty()) {
-            return ActionLayoutEntry(); // Invalid entry for root
-        }
-        
-        QString nodeId = path.last();
-        
-        // Find the entry by traversing the path
-        NodePath parentPath = this->parentPath(path);
-        auto parentChildren = childrenAtPath(parentPath);
-        
-        for (const auto &entry : parentChildren) {
-            if (entry.id() == nodeId) {
-                return entry;
+    // Returns whether the children of the container that node shows appear in another built node,
+    // which an edit of them changes as well
+    bool ActionLayoutsModelPrivate::isShared(const LayoutNode *node) const {
+        const auto id = node->entry.id();
+        int count = 0;
+        QQueue<const LayoutNode *> queue;
+        queue.enqueue(&root);
+        while (!queue.isEmpty()) {
+            const auto current = queue.dequeue();
+            if (current != &root && current->built && isContainer(current->entry) &&
+                current->entry.id() == id && ++count > 1) {
+                return true;
+            }
+            for (const auto &child : current->children) {
+                queue.enqueue(child.get());
             }
         }
-        
-        return ActionLayoutEntry(); // Not found
-    }
-
-    QVector<ActionLayoutEntry> ActionLayoutsModelPrivate::childrenAtPath(const NodePath &path) const {
-        if (path.isEmpty()) {
-            // Return top-level nodes instead of adjacency map lookup
-            return topLevelNodes;
-        }
-        
-        QString nodeId = path.last();
-        return adjacencyMap.value(nodeId);
-    }
-
-    NodePath ActionLayoutsModelPrivate::parentPath(const NodePath &path) const {
-        if (path.isEmpty()) {
-            return NodePath(); // Root has no parent
-        }
-        
-        NodePath parent = path;
-        parent.removeLast();
-        return parent;
-    }
-
-    int ActionLayoutsModelPrivate::findRowInParent(const NodePath &path) const {
-        if (path.isEmpty()) {
-            return -1; // Root has no row
-        }
-        
-        NodePath parentPath = this->parentPath(path);
-        auto siblings = childrenAtPath(parentPath);
-        QString nodeId = path.last();
-        
-        for (int i = 0; i < siblings.size(); ++i) {
-            if (siblings[i].id() == nodeId) {
-                return i;
-            }
-        }
-        
-        return -1;
-    }
-
-    bool ActionLayoutsModelPrivate::wouldCreateCycle(const QString &sourceNodeId, const QString &targetNodeId) const {
-        return hasPath(targetNodeId, sourceNodeId);
+        return false;
     }
 
     bool ActionLayoutsModelPrivate::hasPath(const QString &from, const QString &to) const {
-        if (from == to) {
-            return true;
-        }
-        
         QSet<QString> visited;
         QQueue<QString> queue;
         queue.enqueue(from);
-        
         while (!queue.isEmpty()) {
-            QString current = queue.dequeue();
+            const auto current = queue.dequeue();
+            if (current == to) {
+                return true;
+            }
             if (visited.contains(current)) {
                 continue;
             }
             visited.insert(current);
-            
-            auto children = adjacencyMap.value(current);
-            for (const auto &entry : children) {
-                QString childId = entry.id();
-                if (childId == to) {
-                    return true;
-                }
-                if (!childId.isEmpty() && !visited.contains(childId)) {
-                    queue.enqueue(childId);
+            for (const auto &entry : adjacencyMap.value(current)) {
+                if (!isAnonymous(entry)) {
+                    queue.enqueue(entry.id());
                 }
             }
         }
-        
         return false;
     }
 
-    void ActionLayoutsModelPrivate::synchronizeNodeChanges(const QString &nodeId, const QVector<ActionLayoutEntry> &newChildren) {
-        if (nodeId.isEmpty()) {
-            // Special case: updating top-level nodes
-            topLevelNodes = newChildren;
-        } else {
-            adjacencyMap[nodeId] = newChildren;
-        }
-        clearCache(); // Invalidate cache after changes
-    }
-
-    bool ActionLayoutsModelPrivate::validateActionLayoutEntry(const ActionLayoutEntry &entry) const {
-        // Check: (type == Stretch || type == Separator) == (id is empty)
-        bool isSpecialType = (entry.type() == ActionLayoutEntry::Stretch || 
-                             entry.type() == ActionLayoutEntry::Separator);
-        bool hasEmptyId = entry.id().isEmpty();
-        
-        return isSpecialType == hasEmptyId;
-    }
-
-    bool ActionLayoutsModelPrivate::validateEntryChange(const NodePath &path, const ActionLayoutEntry &oldEntry, const ActionLayoutEntry &newEntry) const {
-        // First check basic entry validity
-        if (!validateActionLayoutEntry(newEntry)) {
+    bool ActionLayoutsModelPrivate::acceptsEntry(const LayoutNode *container,
+                                                 const ActionLayoutEntry &entry) const {
+        if (container == &root || !isContainer(container->entry)) {
             return false;
         }
-        
-        // If id changed, check for cycles
-        if (oldEntry.id() != newEntry.id()) {
-            // Get the parent path to check cycle from parent to new id
-            NodePath parentPath = this->parentPath(path);
-            QString parentNodeId = parentPath.isEmpty() ? QString() : parentPath.last();
-            
-            // If new entry has non-empty id, check if it would create a cycle
-            if (!newEntry.id().isEmpty()) {
-                // Check if adding this id as child of parent would create cycle
-                if (wouldCreateCycle(newEntry.id(), parentNodeId)) {
-                    return false;
-                }
-            }
+        if (isAnonymous(entry)) {
+            return entry.id().isEmpty();
         }
-        
-        return true;
+        if (entry.id().isEmpty() || hasPath(entry.id(), container->entry.id())) {
+            return false;
+        }
+        if (!registry) {
+            return true;
+        }
+        const auto info = registry->actionInfo(entry.id());
+        if (!info) {
+            return false;
+        }
+        switch (info->type()) {
+            case ActionItemInfo::Action:
+                return entry.type() == ActionLayoutEntry::Action;
+            case ActionItemInfo::Menu:
+            case ActionItemInfo::Group:
+                return isContainer(entry);
+            case ActionItemInfo::Phony:
+                break;
+        }
+        return false;
     }
 
     ActionLayoutsModel::ActionLayoutsModel(QObject *parent)
@@ -296,17 +196,14 @@ namespace QAK {
 
     ActionLayouts ActionLayoutsModel::actionLayouts() const {
         Q_D(const ActionLayoutsModel);
-
         return ActionLayouts(d->adjacencyMap);
     }
 
     void ActionLayoutsModel::setActionLayouts(const ActionLayouts &layouts) {
         Q_D(ActionLayoutsModel);
-        
         beginResetModel();
         d->adjacencyMap = layouts.adjacencyMap();
-        
-        d->clearCache();
+        d->resetTree();
         endResetModel();
     }
 
@@ -317,61 +214,48 @@ namespace QAK {
 
     void ActionLayoutsModel::setTopLevelNodes(const QVector<ActionLayoutEntry> &nodes) {
         Q_D(ActionLayoutsModel);
-        
         beginResetModel();
         d->topLevelNodes = nodes;
-        d->clearCache();
+        d->resetTree();
         endResetModel();
+    }
+
+    ActionRegistry *ActionLayoutsModel::registry() const {
+        Q_D(const ActionLayoutsModel);
+        return d->registry;
+    }
+
+    void ActionLayoutsModel::setRegistry(ActionRegistry *registry) {
+        Q_D(ActionLayoutsModel);
+        d->registry = registry;
     }
 
     QModelIndex ActionLayoutsModel::index(int row, int column, const QModelIndex &parent) const {
         Q_D(const ActionLayoutsModel);
-        
         if (!hasIndex(row, column, parent)) {
-            return QModelIndex();
+            return {};
         }
-
-        d->rebuildCache();
-        
-        NodePath parentPath = d->pathFromIndex(parent);
-        auto children = d->childrenAtPath(parentPath);
-        
-        if (row >= children.size()) {
-            return QModelIndex();
-        }
-
-        const auto &entry = children[row];
-        NodePath childPath = parentPath;
-        
-        if (entry.id().isEmpty()) {
-            // For Separator/Stretch, use index as identifier
-            childPath.append(QString("__sep_stretch_%1").arg(row));
-        } else {
-            childPath.append(entry.id());
-        }
-        
-        quintptr cacheId = d->cachePathId(childPath);
-        return createIndex(row, column, cacheId);
+        const auto node = d->nodeOf(parent);
+        d->buildChildren(node);
+        return createIndex(row, column, node->children[row].get());
     }
 
     QModelIndex ActionLayoutsModel::parent(const QModelIndex &child) const {
         Q_D(const ActionLayoutsModel);
-        
         if (!child.isValid()) {
-            return QModelIndex();
+            return {};
         }
-
-        NodePath childPath = d->pathFromIndex(child);
-        NodePath parentPath = d->parentPath(childPath);
-        
-        return d->indexFromPath(parentPath);
+        return d->indexOf(d->nodeOf(child)->parent);
     }
 
     int ActionLayoutsModel::rowCount(const QModelIndex &parent) const {
         Q_D(const ActionLayoutsModel);
-        
-        NodePath parentPath = d->pathFromIndex(parent);
-        return d->childrenAtPath(parentPath).size();
+        if (parent.column() > 0) {
+            return 0;
+        }
+        const auto node = d->nodeOf(parent);
+        d->buildChildren(node);
+        return int(node->children.size());
     }
 
     int ActionLayoutsModel::columnCount(const QModelIndex &parent) const {
@@ -381,46 +265,19 @@ namespace QAK {
 
     QVariant ActionLayoutsModel::data(const QModelIndex &index, int role) const {
         Q_D(const ActionLayoutsModel);
-        
         if (!index.isValid()) {
-            return QVariant();
+            return {};
         }
-
-        NodePath path = d->pathFromIndex(index);
-        
-        if (path.isEmpty()) {
-            return QVariant();
-        }
-        
-        // Handle Separator/Stretch specially
-        if (path.last().startsWith("__sep_stretch_")) {
-            NodePath parentPath = d->parentPath(path);
-            auto siblings = d->childrenAtPath(parentPath);
-            int row = index.row();
-            
-            if (row < siblings.size()) {
-                const auto &entry = siblings[row];
-                
-                switch (role) {
-                case Qt::DisplayRole:
-                    return QString(); // Empty string for Separator/Stretch
-                case Qt::UserRole:
-                    return QVariant::fromValue(entry);
-                }
-            }
-            return QVariant();
-        }
-        
-        ActionLayoutEntry entry = d->entryAtPath(path);
-        
+        const auto &entry = d->nodeOf(index)->entry;
         switch (role) {
-        case Qt::DisplayRole:
-            return entry.id();
-        case Qt::UserRole:
-            return QVariant::fromValue(entry);
+            case Qt::DisplayRole:
+                return entry.id();
+            case Qt::UserRole:
+                return QVariant::fromValue(entry);
+            default:
+                break;
         }
-
-        return QVariant();
+        return {};
     }
 
     QHash<int, QByteArray> ActionLayoutsModel::roleNames() const {
@@ -431,199 +288,131 @@ namespace QAK {
 
     Qt::ItemFlags ActionLayoutsModel::flags(const QModelIndex &index) const {
         Q_D(const ActionLayoutsModel);
-        
         if (!index.isValid()) {
-            return Qt::ItemIsDropEnabled;
+            return Qt::NoItemFlags;
         }
-        
-        NodePath path = d->pathFromIndex(index);
-        NodePath parentPath = d->parentPath(path);
-        
-        // Top-level nodes are read-only
-        if (parentPath.isEmpty()) {
-            return Qt::ItemIsEnabled | Qt::ItemIsSelectable;
+        const auto node = d->nodeOf(index);
+        Qt::ItemFlags flags = Qt::ItemIsEnabled | Qt::ItemIsSelectable;
+        if (isContainer(node->entry)) {
+            flags |= Qt::ItemIsDropEnabled;
         }
-        
-        return Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemIsDragEnabled | Qt::ItemIsDropEnabled | Qt::ItemIsEditable;
+        // The top-level nodes are read-only
+        if (node->parent != &d->root) {
+            flags |= Qt::ItemIsDragEnabled | Qt::ItemIsEditable;
+        }
+        return flags;
     }
 
-    bool ActionLayoutsModel::validateSetData(const QModelIndex &index, const QVariant &value, int role) const {
+    bool ActionLayoutsModel::validateSetData(const QModelIndex &index, const QVariant &value,
+                                             int role) const {
         Q_D(const ActionLayoutsModel);
-        
-        if (!index.isValid()) {
+        if (!index.isValid() || role != Qt::UserRole || !value.canConvert<ActionLayoutEntry>()) {
             return false;
         }
-        
-        if (role != Qt::UserRole) {
-            return false;
-        }
-        
-        if (!value.canConvert<ActionLayoutEntry>()) {
-            return false;
-        }
-        
-        ActionLayoutEntry newEntry = value.value<ActionLayoutEntry>();
-        NodePath path = d->pathFromIndex(index);
-        
-        if (path.isEmpty()) {
-            return false;
-        }
-        
-        // Prevent modification of top-level nodes
-        NodePath parentPath = d->parentPath(path);
-        if (parentPath.isEmpty()) {
-            return false;
-        }
-        
-        // Get current entry
-        ActionLayoutEntry currentEntry;
-        if (path.last().startsWith("__sep_stretch_")) {
-            // Handle Separator/Stretch specially
-            auto siblings = d->childrenAtPath(parentPath);
-            int row = index.row();
-            
-            if (row >= siblings.size()) {
-                return false;
-            }
-            currentEntry = siblings[row];
-        } else {
-            currentEntry = d->entryAtPath(path);
-        }
-        
-        return d->validateEntryChange(path, currentEntry, newEntry);
+        return d->acceptsEntry(d->nodeOf(index)->parent, value.value<ActionLayoutEntry>());
     }
 
+    // The entry of the row is replaced, and so are the rows under it, which show the children of
+    // the new entry
     bool ActionLayoutsModel::setData(const QModelIndex &index, const QVariant &value, int role) {
         Q_D(ActionLayoutsModel);
-        
-        // First validate the change
         if (!validateSetData(index, value, role)) {
             return false;
         }
-        
-        ActionLayoutEntry newEntry = value.value<ActionLayoutEntry>();
-        NodePath path = d->pathFromIndex(index);
-        NodePath parentPath = d->parentPath(path);
-        
-        // Get current children list
-        auto currentChildren = d->childrenAtPath(parentPath);
-        int row = index.row();
-        
-        if (row >= currentChildren.size()) {
-            return false;
+        const auto node = d->nodeOf(index);
+        const auto container = node->parent;
+        const auto entry = value.value<ActionLayoutEntry>();
+        const int row = index.row();
+
+        if (d->isShared(container)) {
+            beginResetModel();
+            d->adjacencyMap[container->entry.id()][row] = entry;
+            d->resetTree();
+            endResetModel();
+            return true;
         }
-        
-        ActionLayoutEntry oldEntry = currentChildren[row];
-        
-        // Update the entry
-        currentChildren[row] = newEntry;
-        
-        // Update the adjacency map
-        QString parentNodeId = parentPath.isEmpty() ? QString() : parentPath.last();
-        d->adjacencyMap[parentNodeId] = currentChildren;
-        
-        // If the entry ID changed, we need to synchronize all instances of the old ID
-        if (oldEntry.id() != newEntry.id() && !oldEntry.id().isEmpty()) {
-            d->rebuildCache(); // Ensure cache is up to date
-            
-            // Find all paths that contain the old ID and update them
-            auto pathsWithOldId = d->nodePathsMap.value(oldEntry.id());
-            
-            for (const auto &pathToUpdate : pathsWithOldId) {
-                if (pathToUpdate == path) {
-                    continue; // Already updated above
-                }
-                
-                // Update this path's parent's children list
-                NodePath updateParentPath = d->parentPath(pathToUpdate);
-                auto updateParentChildren = d->childrenAtPath(updateParentPath);
-                
-                // Find the entry in the parent's children list
-                for (int i = 0; i < updateParentChildren.size(); ++i) {
-                    if (updateParentChildren[i].id() == oldEntry.id()) {
-                        updateParentChildren[i] = newEntry;
-                    }
-                }
-                
-                // Update the adjacency map for this parent
-                QString updateParentNodeId = updateParentPath.isEmpty() ? QString() : updateParentPath.last();
-                d->adjacencyMap[updateParentNodeId] = updateParentChildren;
+
+        if (!node->children.empty()) {
+            beginRemoveRows(index, 0, int(node->children.size()) - 1);
+            node->children.clear();
+            endRemoveRows();
+        }
+        d->adjacencyMap[container->entry.id()][row] = entry;
+        node->entry = entry;
+        emit dataChanged(index, index, {Qt::DisplayRole, Qt::UserRole});
+
+        // The children are built aside and then attached, as the model reports them
+        LayoutNode rebuilt;
+        rebuilt.parent = node->parent;
+        rebuilt.entry = entry;
+        d->buildChildren(&rebuilt);
+        node->built = true;
+        if (!rebuilt.children.empty()) {
+            beginInsertRows(index, 0, int(rebuilt.children.size()) - 1);
+            for (auto &child : rebuilt.children) {
+                child->parent = node;
+                node->children.push_back(std::move(child));
             }
+            endInsertRows();
         }
-        
-        // Clear cache to reflect changes
-        d->clearCache();
-        
-        // Emit data changed
-        emit dataChanged(index, index, {role});
-        
         return true;
     }
 
     bool ActionLayoutsModel::insertRows(int row, int count, const QModelIndex &parent) {
         Q_D(ActionLayoutsModel);
-        
-        if (count <= 0) {
+        const auto container = d->nodeOf(parent);
+        const ActionLayoutEntry separator({}, ActionLayoutEntry::Separator);
+        if (count <= 0 || !d->acceptsEntry(container, separator)) {
             return false;
         }
-        
-        NodePath parentPath = d->pathFromIndex(parent);
-        
-        // Prevent insertion at top level
-        if (parentPath.isEmpty()) {
+        d->buildChildren(container);
+        auto &children = d->adjacencyMap[container->entry.id()];
+        if (row < 0 || row > children.size()) {
             return false;
         }
-        
-        auto currentChildren = d->childrenAtPath(parentPath);
-        
-        if (row < 0 || row > currentChildren.size()) {
-            return false;
+
+        if (d->isShared(container)) {
+            beginResetModel();
+            children.insert(row, count, separator);
+            d->resetTree();
+            endResetModel();
+            return true;
         }
-        
+
         beginInsertRows(parent, row, row + count - 1);
-        
-        // Insert empty entries
+        children.insert(row, count, separator);
         for (int i = 0; i < count; ++i) {
-            currentChildren.insert(row + i, ActionLayoutEntry());
+            container->children.insert(container->children.begin() + row + i,
+                                       d->makeNode(container, separator));
         }
-        
-        QString parentNodeId = parentPath.isEmpty() ? QString() : parentPath.last();
-        d->synchronizeNodeChanges(parentNodeId, currentChildren);
-        
         endInsertRows();
         return true;
     }
 
     bool ActionLayoutsModel::removeRows(int row, int count, const QModelIndex &parent) {
         Q_D(ActionLayoutsModel);
-        
-        if (count <= 0) {
+        const auto container = d->nodeOf(parent);
+        if (count <= 0 || container == &d->root || !isContainer(container->entry)) {
             return false;
         }
-        
-        NodePath parentPath = d->pathFromIndex(parent);
-        
-        // Prevent removal of top-level nodes
-        if (parentPath.isEmpty()) {
+        d->buildChildren(container);
+        auto &children = d->adjacencyMap[container->entry.id()];
+        if (row < 0 || row + count > children.size()) {
             return false;
         }
-        
-        auto currentChildren = d->childrenAtPath(parentPath);
-        
-        if (row < 0 || row + count > currentChildren.size()) {
-            return false;
+
+        if (d->isShared(container)) {
+            beginResetModel();
+            children.remove(row, count);
+            d->resetTree();
+            endResetModel();
+            return true;
         }
-        
+
         beginRemoveRows(parent, row, row + count - 1);
-        
-        // Remove entries
-        for (int i = 0; i < count; ++i) {
-            currentChildren.removeAt(row);
-        }
-        
-        QString parentNodeId = parentPath.isEmpty() ? QString() : parentPath.last();
-        d->synchronizeNodeChanges(parentNodeId, currentChildren);
-        
+        children.remove(row, count);
+        container->children.erase(container->children.begin() + row,
+                                  container->children.begin() + row + count);
         endRemoveRows();
         return true;
     }
@@ -631,81 +420,68 @@ namespace QAK {
     bool ActionLayoutsModel::moveRows(const QModelIndex &sourceParent, int sourceRow, int count,
                                       const QModelIndex &destinationParent, int destinationChild) {
         Q_D(ActionLayoutsModel);
-        
-        if (count <= 0) {
+        const auto source = d->nodeOf(sourceParent);
+        const auto destination = d->nodeOf(destinationParent);
+        if (count <= 0 || source == &d->root || !isContainer(source->entry)) {
             return false;
         }
-        
-        NodePath srcParentPath = d->pathFromIndex(sourceParent);
-        NodePath dstParentPath = d->pathFromIndex(destinationParent);
-        
-        // Prevent moving top-level nodes (source)
-        if (srcParentPath.isEmpty()) {
+        d->buildChildren(source);
+        d->buildChildren(destination);
+        const auto sourceChildren = d->adjacencyMap.value(source->entry.id());
+        if (sourceRow < 0 || sourceRow + count > sourceChildren.size() || destinationChild < 0 ||
+            destinationChild > d->adjacencyMap.value(destination->entry.id()).size()) {
             return false;
         }
-        
-        // Prevent moving to top level (destination)
-        if (dstParentPath.isEmpty()) {
-            return false;
-        }
-        
-        auto srcChildren = d->childrenAtPath(srcParentPath);
-        auto dstChildren = d->childrenAtPath(dstParentPath);
-        
-        if (sourceRow < 0 || sourceRow + count > srcChildren.size()) {
-            return false;
-        }
-        
-        if (destinationChild < 0 || destinationChild > dstChildren.size()) {
-            return false;
-        }
-        
-        // Extract entries to move
-        QVector<ActionLayoutEntry> entriesToMove;
-        for (int i = 0; i < count; ++i) {
-            entriesToMove.append(srcChildren[sourceRow + i]);
-        }
-        
-        // Check for cycles when moving between different parents
-        if (srcParentPath != dstParentPath) {
-            QString dstParentNodeId = dstParentPath.isEmpty() ? QString() : dstParentPath.last();
-            
-            for (const auto &entry : entriesToMove) {
-                if (!entry.id().isEmpty() && d->wouldCreateCycle(entry.id(), dstParentNodeId)) {
-                    return false; // Would create cycle
+
+        const bool sameContainer = source->entry.id() == destination->entry.id();
+        const auto moved = sourceChildren.mid(sourceRow, count);
+        if (!sameContainer) {
+            for (const auto &entry : moved) {
+                if (!d->acceptsEntry(destination, entry)) {
+                    return false;
                 }
             }
+        } else if (destinationChild >= sourceRow && destinationChild <= sourceRow + count) {
+            // Moving rows to where they are changes nothing, and beginMoveRows() rejects it
+            return false;
         }
-        
-        beginMoveRows(sourceParent, sourceRow, sourceRow + count - 1, destinationParent, destinationChild);
-        
-        // Remove from source
-        for (int i = 0; i < count; ++i) {
-            srcChildren.removeAt(sourceRow);
-        }
-        
-        // Insert to destination
-        if (srcParentPath == dstParentPath) {
-            // Moving within same parent, adjust destination index
-            if (destinationChild > sourceRow) {
-                destinationChild -= count;
+
+        const auto applyToMap = [&] {
+            d->adjacencyMap[source->entry.id()].remove(sourceRow, count);
+            auto &destinationChildren = d->adjacencyMap[destination->entry.id()];
+            const int insertAt = sameContainer && destinationChild > sourceRow
+                                     ? destinationChild - count
+                                     : destinationChild;
+            for (int i = 0; i < count; ++i) {
+                destinationChildren.insert(insertAt + i, moved[i]);
             }
-            dstChildren = srcChildren; // Same list after removal
+            return insertAt;
+        };
+
+        if (d->isShared(source) || d->isShared(destination)) {
+            beginResetModel();
+            applyToMap();
+            d->resetTree();
+            endResetModel();
+            return true;
         }
-        
+
+        if (!beginMoveRows(sourceParent, sourceRow, sourceRow + count - 1, destinationParent,
+                           destinationChild)) {
+            return false;
+        }
+        const int insertAt = applyToMap();
+        std::vector<std::unique_ptr<LayoutNode>> nodes;
         for (int i = 0; i < count; ++i) {
-            dstChildren.insert(destinationChild + i, entriesToMove[i]);
+            nodes.push_back(std::move(source->children[sourceRow + i]));
         }
-        
-        // Update both parents
-        QString srcParentNodeId = srcParentPath.isEmpty() ? QString() : srcParentPath.last();
-        QString dstParentNodeId = dstParentPath.isEmpty() ? QString() : dstParentPath.last();
-        
-        d->synchronizeNodeChanges(srcParentNodeId, srcChildren);
-        if (srcParentPath != dstParentPath) {
-            d->synchronizeNodeChanges(dstParentNodeId, dstChildren);
+        source->children.erase(source->children.begin() + sourceRow,
+                               source->children.begin() + sourceRow + count);
+        for (int i = 0; i < count; ++i) {
+            nodes[i]->parent = destination;
+            destination->children.insert(destination->children.begin() + insertAt + i,
+                                         std::move(nodes[i]));
         }
-        
         endMoveRows();
         return true;
     }
