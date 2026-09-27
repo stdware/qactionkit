@@ -185,10 +185,6 @@ static bool interpretBoolean(const QString &s) {
     return true;
 }
 
-static inline bool isStringDigits(const QString &s) {
-    return std::all_of(s.begin(), s.end(), [](const QChar &ch) { return ch.isDigit(); });
-}
-
 struct ParserPrivate {
     Parser &q;
     ParserPrivate(Parser &q) : q(q) {
