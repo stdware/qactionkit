@@ -366,37 +366,32 @@ struct ParserPrivate {
             info.catalog = resolve(catalog);
         }
 
+        // translation contexts
+        info.textContext = resolve(e.properties.value(QStringLiteral("textTr")));
+        info.categoryContext = resolve(e.properties.value(QStringLiteral("categoryTr")));
+        info.descriptionContext = resolve(e.properties.value(QStringLiteral("descriptionTr")));
+
         // attributes
         for (auto it = e.properties.begin(); it != e.properties.end(); ++it) {
             static const QMap<QMXmlAdaptorAttributeKey, int> reservedKeys = {
-                {QMXmlAdaptorAttributeKey(QStringLiteral("id")),          {}},
-                {QMXmlAdaptorAttributeKey(QStringLiteral("text")),        {}},
-                {QMXmlAdaptorAttributeKey(QStringLiteral("category")),    {}},
-                {QMXmlAdaptorAttributeKey(QStringLiteral("description")), {}},
-                {QMXmlAdaptorAttributeKey(QStringLiteral("catalog")),     {}},
-                {QMXmlAdaptorAttributeKey(QStringLiteral("shortcuts")),   {}},
-                {QMXmlAdaptorAttributeKey(QStringLiteral("shortcut")),    {}},
-                {QMXmlAdaptorAttributeKey(QStringLiteral("topLevel")),    {}},
-                {QMXmlAdaptorAttributeKey(QStringLiteral("icon")),        {}},
+                {QMXmlAdaptorAttributeKey(QStringLiteral("id")),            {}},
+                {QMXmlAdaptorAttributeKey(QStringLiteral("text")),          {}},
+                {QMXmlAdaptorAttributeKey(QStringLiteral("category")),      {}},
+                {QMXmlAdaptorAttributeKey(QStringLiteral("description")),   {}},
+                {QMXmlAdaptorAttributeKey(QStringLiteral("catalog")),       {}},
+                {QMXmlAdaptorAttributeKey(QStringLiteral("shortcuts")),     {}},
+                {QMXmlAdaptorAttributeKey(QStringLiteral("shortcut")),      {}},
+                {QMXmlAdaptorAttributeKey(QStringLiteral("topLevel")),      {}},
+                {QMXmlAdaptorAttributeKey(QStringLiteral("icon")),          {}},
+                {QMXmlAdaptorAttributeKey(QStringLiteral("textTr")),        {}},
+                {QMXmlAdaptorAttributeKey(QStringLiteral("categoryTr")),    {}},
+                {QMXmlAdaptorAttributeKey(QStringLiteral("descriptionTr")), {}},
             };
             const auto &key = it.key();
             if (reservedKeys.contains(key)) {
                 continue;
             }
             info.attributes.insert(QAK::ActionAttributeKey(key.name, key.namespaceUri), resolve(it.value()));
-        }
-
-        // translation context fallbacks
-        if (auto it = e.properties.find({"textTr", {}}); it == e.properties.end() && !result.textTranslationContext.isEmpty()) {
-            info.attributes.insert(QAK::ActionAttributeKey("textTr", {}), result.textTranslationContext);
-        }
-        if (auto it = e.properties.find({"categoryTr", {}});
-            it == e.properties.end() && !result.categoryTranslationContext.isEmpty()) {
-            info.attributes.insert(QAK::ActionAttributeKey("categoryTr", {}),
-                                   result.categoryTranslationContext);
-        }
-        if (auto it = e.properties.find({"descriptionTr", {}}); it == e.properties.end() && !result.descriptionTranslationContext.isEmpty()) {
-            info.attributes.insert(QAK::ActionAttributeKey("descriptionTr", {}), result.descriptionTranslationContext);
         }
     }
 

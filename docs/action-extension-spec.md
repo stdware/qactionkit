@@ -60,7 +60,7 @@ manifest.xml ──qak_aec──> qak_manifest.cpp ──> ActionExtension ─�
 
 `defaultCatalog` 指定目录节点，未指明目录的条目都归入该节点。若没有条目声明该节点，编译器自动为它创建一个 `phony` 条目。
 
-`translationContext` 指定三个可翻译字段的 Qt 翻译上下文。条目可以用 `textTr`、`categoryTr`、`descriptionTr` 属性分别覆盖。
+`translationContext` 指定三个可翻译字段的 Qt 翻译上下文，未指定的字段分别使用内置的上下文 `QActionKit::ActionText`、`QActionKit::ActionCategory`、`QActionKit::ActionDescription`。条目可以用 `textTr`、`categoryTr`、`descriptionTr` 属性分别覆盖。这三个属性不出现在 `ActionItemInfo::attributes()` 中。
 
 `vars` 声明供 `${...}` 展开的变量。命令行上以 `-D` 定义的变量优先于清单中的定义，构建过程因此可以在不修改清单的情况下为其指定参数。
 
@@ -277,4 +277,4 @@ registry->addExtension(hello::daw::coreActions());
 
 生成文件的末尾有一个位于 `#if 0` 中的函数，对每个不同的文本、类别与描述各调用一次 `QCoreApplication::translate()`。该函数不参与编译，只供 `lupdate` 提取字符串。`lupdate` 应处理生成的源文件，而非清单。
 
-运行时 `ActionItemInfo::text(true)` 在 `textTr` 属性指定的上下文中查找译文，未指定时使用 `configuration` 中的上下文。未安装翻译时返回空字符串，调用方须回退到 `text(false)`。
+运行时 `ActionItemInfo::text(true)` 在 `textTr` 属性指定的上下文中查找译文，未指定时使用 `configuration` 中的上下文，二者都未指定时使用内置的上下文。未安装翻译时返回空字符串，调用方须回退到 `text(false)`。

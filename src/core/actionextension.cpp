@@ -10,7 +10,7 @@ Q_LOGGING_CATEGORY(qActionKitLog, "qactionkit")
 namespace QAK {
 
     static ActionItemInfoData sharedNullItemInfoData = {
-        {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},
+        {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},
     };
 
     static int sharedNullLayoutEntryIndex = 0;
@@ -23,26 +23,20 @@ namespace QAK {
     };
 
     static ActionExtensionData sharedNullExtensionData = {
-        ACTION_EXTENSION_VERSION, {}, {}, 0, &sharedNullItemInfoData, 0, &sharedNullInsertion,
+        ACTION_EXTENSION_VERSION, {}, {}, {}, {}, {}, 0, &sharedNullItemInfoData, 0,
+        &sharedNullInsertion,
     };
 
-    static inline QString translateString(const QString &s, const QMap<ActionAttributeKey, QString> &attrs,
-                                          const QString &key, const QString &defaultCtx) {
-        // Look for the translation context in attributes (without namespace)
-        QString contextKey;
-        for (auto it = attrs.begin(); it != attrs.end(); ++it) {
-            if (it.key().name == key && it.key().namespaceUri.isEmpty()) {
-                contextKey = it.value();
-                break;
-            }
-        }
-        if (contextKey.isEmpty()) {
-            contextKey = defaultCtx;
-        }
-        
+    // Translates the string in the first nonempty context among that of the item, that of the
+    // extension and the built-in default.
+    static inline QString translateString(const QString &s, const QString &itemContext,
+                                          const QString &extensionContext,
+                                          const char *defaultContext) {
+        const QByteArray context = !itemContext.isEmpty()        ? itemContext.toUtf8()
+                                   : !extensionContext.isEmpty() ? extensionContext.toUtf8()
+                                                                 : QByteArray(defaultContext);
         bool ok;
-        QString res = tryTranslate(contextKey.toUtf8().constData(),
-                                   s.toUtf8().constData(), nullptr, -1, &ok);
+        QString res = tryTranslate(context.constData(), s.toUtf8().constData(), nullptr, -1, &ok);
         if (!ok) {
             return {};
         }
@@ -64,22 +58,22 @@ namespace QAK {
         auto &d = e->items[i];
         if (!translated)
             return d.text;
-        return translateString(d.text, d.attributes, QStringLiteral("textTr"),
-                               QStringLiteral("QActionKit::ActionText"));
+        return translateString(d.text, d.textContext, e->textContext,
+                               ActionExtensionData::defaultTextContext);
     }
     QString ActionItemInfo::category(bool translated) const {
         auto &d = e->items[i];
         if (!translated)
             return d.category;
-        return translateString(d.category, d.attributes, QStringLiteral("categoryTr"),
-                               QStringLiteral("QActionKit::ActionCategory"));
+        return translateString(d.category, d.categoryContext, e->categoryContext,
+                               ActionExtensionData::defaultCategoryContext);
     }
     QString ActionItemInfo::description(bool translated) const {
         auto &d = e->items[i];
         if (!translated)
             return d.description;
-        return translateString(d.description, d.attributes, QStringLiteral("descriptionTr"),
-                               QStringLiteral("QActionKit::ActionDescription"));
+        return translateString(d.description, d.descriptionContext, e->descriptionContext,
+                               ActionExtensionData::defaultDescriptionContext);
     }
     QString ActionItemInfo::icon() const {
         return e->items[i].icon;

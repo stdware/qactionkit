@@ -21,6 +21,12 @@ namespace QAK {
         QString text;
         QString category;
         QString description;
+
+        // Translation contexts written on the item, each empty if that of the extension applies
+        QString textContext;
+        QString categoryContext;
+        QString descriptionContext;
+
         QString icon;
         QList<QKeySequence> shortcuts;
         QString catalog;
@@ -43,11 +49,21 @@ namespace QAK {
         QString id;
         QString hash;
 
+        // Translation contexts of the configuration, each empty if the built-in default applies
+        QString textContext;
+        QString categoryContext;
+        QString descriptionContext;
+
         int itemCount;
         ActionItemInfoData *items;
 
         int insertionCount;
         ActionInsertionData *insertions;
+
+        // Translation contexts used if neither the item nor the configuration specifies one
+        static constexpr char defaultTextContext[] = "QActionKit::ActionText";
+        static constexpr char defaultCategoryContext[] = "QActionKit::ActionCategory";
+        static constexpr char defaultDescriptionContext[] = "QActionKit::ActionDescription";
 
         static inline const ActionExtensionData *get(const ActionExtension *q) {
             Q_ASSERT(q->d.data);

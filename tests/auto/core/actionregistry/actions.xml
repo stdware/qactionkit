@@ -4,9 +4,15 @@
     <version>1.0</version>
     <id>org.qactionkit.test.registry</id>
 
+    <configuration>
+        <translationContext text="Test::Text" description="Test::Description" />
+    </configuration>
+
     <items>
         <action id="test.file.openFile" text="Open File" category="File" />
         <action id="test.file.saveFile" text="Save File" />
+        <action id="test.file.revert" text="Revert" category="File" description="Revert the file"
+                textTr="Test::RevertText" categoryTr="Test::RevertCategory" />
         <menu id="test.file" text="File" />
     </items>
 
@@ -14,6 +20,7 @@
         <menu id="test.file">
             <action id="test.file.openFile" />
             <action id="test.file.saveFile" />
+            <action id="test.file.revert" />
         </menu>
     </layouts>
 

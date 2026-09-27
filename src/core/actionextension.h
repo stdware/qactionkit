@@ -106,17 +106,23 @@ namespace QAK {
         QString id() const;
         Type type() const;
 
-        /// Returns the text of the item, translated in the context of the \c textTr attribute if
-        /// \a translated is \c true.
+        /// Returns the text of the item, translated if \a translated is \c true. The translation
+        /// context is the first specified among the \c textTr attribute of the item, the \c text
+        /// attribute of \c translationContext in the configuration of the manifest, and
+        /// \c QActionKit::ActionText.
         ///
         /// \note The translated text is empty if no translation is installed.
         QString text(bool translated = false) const;
         /// Returns the category of the action, a label that a command palette shows before the
-        /// text, such as File in File: Open, translated in the context of the \c categoryTr
-        /// attribute if \a translated is \c true. Only actions carry a category, and the category
-        /// of other items is empty. The category is unrelated to the catalog, which places the item
-        /// in the hierarchy of a settings page.
+        /// text, such as File in File: Open, translated if \a translated is \c true, in a context
+        /// chosen as that of \c text() is, from \c categoryTr, \c category and
+        /// \c QActionKit::ActionCategory. Only actions carry a category, and the category of other
+        /// items is empty. The category is unrelated to the catalog, which places the item in the
+        /// hierarchy of a settings page.
         QString category(bool translated = false) const;
+        /// Returns the description of the item, translated if \a translated is \c true, in a
+        /// context chosen as that of \c text() is, from \c descriptionTr, \c description and
+        /// \c QActionKit::ActionDescription.
         QString description(bool translated = false) const;
 
         /// Returns the icon id, which defaults to the item id.
@@ -136,11 +142,9 @@ namespace QAK {
         /// is \c false.
         bool topLevel() const;
 
-        /// Returns the attributes of the item, keyed by name and namespace URI. Three attribute
-        /// names are reserved and hold translation contexts:
-        /// \li \c textTr for \c text()
-        /// \li \c categoryTr for \c category()
-        /// \li \c descriptionTr for \c description()
+        /// Returns the attributes of the item that QActionKit does not interpret, keyed by name
+        /// and namespace URI. The attributes that other functions of this class return and the
+        /// translation contexts are excluded.
         QMap<ActionAttributeKey, QString> attributes() const;
 
         /// Returns the children that the extension declares for the item, each of which refers to

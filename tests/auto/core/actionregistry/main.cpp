@@ -19,6 +19,22 @@ public:
     QList<ActionElement> updates;
 };
 
+// Translates every string to its context and source text joined by a vertical bar, which shows the
+// context in which a string was looked up.
+class ContextTranslator : public QTranslator {
+public:
+    QString translate(const char *context, const char *sourceText, const char *disambiguation,
+                      int n) const override {
+        Q_UNUSED(disambiguation);
+        Q_UNUSED(n);
+        return QString::fromUtf8(context) + QLatin1Char('|') + QString::fromUtf8(sourceText);
+    }
+
+    bool isEmpty() const override {
+        return false;
+    }
+};
+
 class Test : public QObject {
     Q_OBJECT
 public:
@@ -84,6 +100,33 @@ private Q_SLOTS:
         const auto saveFile = registry.actionInfo(QStringLiteral("test.file.saveFile"));
         QVERIFY(saveFile);
         QVERIFY(saveFile->category().isEmpty());
+    }
+
+    void testTranslationContexts() {
+        ActionRegistry registry;
+        registry.addExtension(qak::test::testActions());
+
+        ContextTranslator translator;
+        QCoreApplication::installTranslator(&translator);
+        const auto guard = qScopeGuard([&] { QCoreApplication::removeTranslator(&translator); });
+
+        // The contexts of the configuration apply, and the built-in default where the
+        // configuration specifies none
+        const auto openFile = registry.actionInfo(QStringLiteral("test.file.openFile"));
+        QVERIFY(openFile);
+        QCOMPARE(openFile->text(true), QStringLiteral("Test::Text|Open File"));
+        QCOMPARE(openFile->category(true), QStringLiteral("QActionKit::ActionCategory|File"));
+
+        // The contexts of the item take precedence
+        const auto revert = registry.actionInfo(QStringLiteral("test.file.revert"));
+        QVERIFY(revert);
+        QCOMPARE(revert->text(true), QStringLiteral("Test::RevertText|Revert"));
+        QCOMPARE(revert->category(true), QStringLiteral("Test::RevertCategory|File"));
+        QCOMPARE(revert->description(true), QStringLiteral("Test::Description|Revert the file"));
+
+        // The contexts are not attributes
+        QVERIFY(openFile->attributes().isEmpty());
+        QVERIFY(revert->attributes().isEmpty());
     }
 
     void testLayoutEntryIsNull() {

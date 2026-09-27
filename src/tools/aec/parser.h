@@ -21,6 +21,12 @@ struct ActionItemInfoMessage {
     QString text;
     QString category;
     QString description;
+
+    // Translation contexts written on the item, each empty if that of the extension applies
+    QString textContext;
+    QString categoryContext;
+    QString descriptionContext;
+
     QString icon;
     QStringList shortcutTokens;
     QString catalog;

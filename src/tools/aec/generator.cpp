@@ -175,6 +175,9 @@ public:
             GENERATE_STRING(text, item.text);
             GENERATE_STRING(category, item.category);
             GENERATE_STRING(description, item.description);
+            GENERATE_STRING(textContext, item.textContext);
+            GENERATE_STRING(categoryContext, item.categoryContext);
+            GENERATE_STRING(descriptionContext, item.descriptionContext);
             GENERATE_STRING(icon, item.icon);
 
             // shortcuts
@@ -246,11 +249,7 @@ public:
                     continue;
                 texts.insert(item.text);
 
-                QString ctx;
-                if (auto it = item.attributes.find(QStringLiteral("textTr"));
-                    it != item.attributes.end()) {
-                    ctx = it.value();
-                }
+                QString ctx = item.textContext;
                 if (ctx.isEmpty()) {
                     ctx = q.parseResult.textTranslationContext;
                 }
@@ -269,11 +268,7 @@ public:
                     continue;
                 categories.insert(item.category);
 
-                QString ctx;
-                if (auto it = item.attributes.find(QStringLiteral("categoryTr"));
-                    it != item.attributes.end()) {
-                    ctx = it.value();
-                }
+                QString ctx = item.categoryContext;
                 if (ctx.isEmpty()) {
                     ctx = q.parseResult.categoryTranslationContext;
                 }
@@ -292,11 +287,7 @@ public:
                     continue;
                 descriptions.insert(item.description);
 
-                QString ctx;
-                if (auto it = item.attributes.find(QStringLiteral("descriptionTr"));
-                    it != item.attributes.end()) {
-                    ctx = it.value();
-                }
+                QString ctx = item.descriptionContext;
                 if (ctx.isEmpty()) {
                     ctx = q.parseResult.descriptionTranslationContext;
                 }
@@ -395,6 +386,12 @@ static ActionExtensionData *get_data() {
                 escPrintable(msg.version));
         fprintf(out, STRING_4_SPACE "data.id = QStringLiteral(\"%s\");\n", escPrintable(msg.id));
         fprintf(out, STRING_4_SPACE "data.hash = QStringLiteral(\"%s\");\n", qPrintable(msg.hash));
+        fprintf(out, STRING_4_SPACE "data.textContext = QStringLiteral(\"%s\");\n",
+                escPrintable(q.parseResult.textTranslationContext));
+        fprintf(out, STRING_4_SPACE "data.categoryContext = QStringLiteral(\"%s\");\n",
+                escPrintable(q.parseResult.categoryTranslationContext));
+        fprintf(out, STRING_4_SPACE "data.descriptionContext = QStringLiteral(\"%s\");\n",
+                escPrintable(q.parseResult.descriptionTranslationContext));
         fprintf(out, "\n");
 
         if (msg.items.isEmpty()) {
