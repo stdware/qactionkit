@@ -1,7 +1,9 @@
 qm_import(Preprocess)
 
 set(QACTIONKIT_GENERATED_INCLUDE_DIR ${QMSETUP_BUILD_DIR}/include)
-set(QACTIONKIT_BUILD_INCLUDE_DIR ${QMSETUP_BUILD_DIR}/include)
+# The configuration header is kept apart from the headers that qm_sync_include() copies, which
+# empties their directory
+set(QACTIONKIT_BUILD_INCLUDE_DIR ${QMSETUP_BUILD_DIR}/etc/include)
 
 set(QACTIONKIT_ENABLED_TARGETS)
 set(QACTIONKIT_ENABLED_SUBDIRECTORIES)
