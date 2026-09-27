@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- expect: error cycle of catalogs: test\.file -> test\.fileActions -> test\.file -->
+<!-- The group takes the menu as its catalog from the layout -->
+<actionExtension>
+    <version>1.0</version>
+    <id>test.catalogCycleWithLayout</id>
+    <items>
+        <menu id="test.file" catalog="test.fileActions" />
+        <group id="test.fileActions" />
+    </items>
+    <layouts>
+        <menu id="test.file">
+            <group id="test.fileActions" />
+        </menu>
+    </layouts>
+</actionExtension>

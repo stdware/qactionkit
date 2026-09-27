@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- expect: error cycle of catalogs: test\.a -> test\.b -> test\.a -->
+<actionExtension>
+    <version>1.0</version>
+    <id>test.catalogCycle</id>
+    <items>
+        <phony id="test.a" catalog="test.b" />
+        <phony id="test.b" catalog="test.a" />
+    </items>
+</actionExtension>

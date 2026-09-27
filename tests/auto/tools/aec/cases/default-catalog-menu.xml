@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- expect: success -->
+<!-- The default catalog does not belong to itself, even if it is not a phony -->
+<!-- source: // id\s*QStringLiteral\("test\.others"\),(?:(?!// index)[\s\S])*// catalog\s*QStringLiteral\(""\) -->
+<actionExtension>
+    <version>1.0</version>
+    <id>test.defaultCatalogMenu</id>
+    <configuration>
+        <defaultCatalog>test.others</defaultCatalog>
+    </configuration>
+    <items>
+        <menu id="test.others" />
+        <action id="test.open" />
+    </items>
+</actionExtension>

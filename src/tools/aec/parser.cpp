@@ -843,14 +843,35 @@ struct ParserPrivate {
             result.extension.insertions.append(parseInsertion(*item));
         }
 
-        // Collect items
+        // An item without a catalog belongs to the default catalog, except a phony and a top-level
+        // item, which are roots, and the default catalog itself
         for (auto &pair : itemInfoMap) {
             auto &info = pair.second;
             if (info.type != QAK::ActionItemInfo::Phony && !info.topLevel &&
-                info.catalog.isEmpty()) {
-                info.catalog = defaultCatalog; // fallback to default catalog
+                info.catalog.isEmpty() && info.id != defaultCatalog) {
+                info.catalog = defaultCatalog;
             }
-            result.extension.items.append(info);
+        }
+
+        // A catalog attribute can close a cycle, with other catalog attributes or with the
+        // catalogs taken from the layouts. Every catalog is declared, as checked above.
+        for (const auto &pair : itemInfoMap) {
+            QStringList chain{pair.first};
+            QString current = pair.second.catalog;
+            while (!current.isEmpty()) {
+                if (const auto index = chain.indexOf(current); index >= 0) {
+                    chain.append(current);
+                    error("%s: cycle of catalogs: %s\n", qPrintable(q.fileName),
+                          qPrintable(chain.mid(index).join(QStringLiteral(" -> "))));
+                    std::exit(1);
+                }
+                chain.append(current);
+                current = itemInfoMap.find(current)->second.catalog;
+            }
+        }
+
+        for (const auto &pair : itemInfoMap) {
+            result.extension.items.append(pair.second);
         }
     }
 };
