@@ -38,7 +38,7 @@ manifest.xml ──qak_aec──> qak_manifest.cpp ──> ActionExtension ─�
 | `layouts` | 否 | 本扩展所拥有的菜单的组成。 |
 | `insertions` | 否 | 向其他扩展所拥有的菜单插入的条目。 |
 
-只识别**不属于任何命名空间**的元素，属于命名空间的元素一律忽略。清单借此为其他工具携带数据。
+只识别**不属于任何命名空间**的元素。根元素与 `configuration` 的子元素中，属于命名空间的元素以及不认识的元素一律忽略，清单借此为其他工具携带数据。`items`、`layouts`、`insertions` 中只能出现下文规定的标签，其他元素，包括属于命名空间的元素，均导致 AEC 报错。属于命名空间的属性不受此限，见[属性](#属性)。
 
 ## 配置
 
@@ -58,7 +58,7 @@ manifest.xml ──qak_aec──> qak_manifest.cpp ──> ActionExtension ─�
 </configuration>
 ```
 
-`defaultCatalog` 指定目录节点，未指明目录的条目都归入该节点。若没有条目声明该节点，AEC 自动为它创建一个 `phony` 条目。
+`defaultCatalog` 指定目录节点，未写 `catalog` 且没有其他来源的条目归入该节点，见[目录](#目录)。若没有条目声明该节点，AEC 自动为它创建一个 `phony` 条目。
 
 `translationContext` 指定三个可翻译字段的 Qt 翻译上下文，未指定的字段分别使用内置的上下文 `QActionKit::ActionText`、`QActionKit::ActionCategory`、`QActionKit::ActionDescription`。条目可以用 `textTr`、`categoryTr`、`descriptionTr` 属性分别覆盖。这三个属性不出现在 `ActionItemInfo::attributes()` 中。
 
@@ -77,7 +77,7 @@ manifest.xml ──qak_aec──> qak_manifest.cpp ──> ActionExtension ─�
 
 ### 变量展开
 
-每个属性值以及 `defaultCatalog` 的文本都经过展开：
+属性值以及 `defaultCatalog` 的文本经过展开，但 `if`、`anchor` 与 `<var>` 的 `key` 除外。`<var>` 的 `value` 照常展开，可以引用在它之前定义的变量与命令行上定义的变量。`<id>` 与 `<version>` 的文本不展开。展开的规则如下：
 
 - `${NAME}` 展开为 `NAME` 的值，`NAME` 未定义时展开为空字符串。
 - 展开可以嵌套，例如 `${${WHICH}_NAME}`。
@@ -115,7 +115,7 @@ manifest.xml ──qak_aec──> qak_manifest.cpp ──> ActionExtension ─�
 | `menuBar`、`toolBar` | Menu | 与 `menu` 相同，但总是顶层 |
 | `phony` | Phony | 只作为目录节点，不出现在任何视图中 |
 
-条目声明不得有子元素。嵌套关系在 `layouts` 中描述。
+条目声明不得有子元素。嵌套关系在 `layouts` 中描述。`items` 中两个条目的标识相同时 AEC 报错。
 
 ### 属性
 
@@ -127,7 +127,7 @@ manifest.xml ──qak_aec──> qak_manifest.cpp ──> ActionExtension ─�
 | `description` | 全部 | 空 |
 | `icon` | 全部 | 条目的标识 |
 | `shortcut`、`shortcuts` | action | 无 |
-| `catalog` | 全部 | 所在的布局条目，其次为 `defaultCatalog` |
+| `catalog` | 全部 | 见[目录](#目录) |
 | `topLevel` | group、menu | `false` |
 | `textTr`、`categoryTr`、`descriptionTr` | 全部 | 取自 `configuration` |
 
@@ -171,7 +171,7 @@ manifest.xml ──qak_aec──> qak_manifest.cpp ──> ActionExtension ─�
 </layouts>
 ```
 
-`layouts` 描述本扩展所拥有的菜单的组成。出现在布局中而未在 `items` 中声明的标识视为隐式声明，其属性取自布局元素，因此简短的清单可以省略 `items`。
+`layouts` 描述本扩展所拥有的菜单的组成。出现在布局中而未在 `items` 中声明的标识视为隐式声明，其类型由标签决定，属性取自布局元素，因此简短的清单可以省略 `items`。已在 `items` 中声明的条目被布局引用时，引用元素上 `id` 与 `if` 以外的属性一律忽略，再次引用隐式声明的条目时同样如此。
 
 以下两个标签没有标识：
 
@@ -180,15 +180,13 @@ manifest.xml ──qak_aec──> qak_manifest.cpp ──> ActionExtension ─�
 
 AEC 检查以下规则：
 
-- 标签须与声明的类型相符。action 接受 `action` 与 `item`，group 与 menu 接受 `group`、`menu`、`menuBar`、`toolBar` 与 `item`。
+- 标签须与声明的类型相符。action 接受 `action` 与 `item`，group 与 menu 接受 `group`、`menu`、`menuBar`、`toolBar` 与 `item`。`item` 只能引用已声明或已隐式声明的条目，因为它不能决定条目的类型。
 - `phony` 条目不得出现在布局中。
 - 容器的子项只能指定一次。在两处为 `core.file` 指定子项是错误。
 - 布局不得递归。路径中再次出现已经包含的标识是错误。
 - `separator` 与 `stretch` 不得有子元素。
 
 条目在布局中的类型由标签决定：只有 `menu` 产生菜单条目，其他容器标签一律产生组条目。
-
-首次出现在布局中的条目以所在元素的标识作为其目录。设置页面通常据此展示该条目。
 
 ## 插入
 
@@ -211,7 +209,15 @@ AEC 检查以下规则：
 
 `target` 不存在的插入不报错，直接跳过，插件因此可以为宿主中不一定存在的菜单提供插入。`relativeTo` 不存在的 `after` 或 `before` 插入同样跳过。
 
-插入的元素不得有子元素，`phony` 条目不得插入。
+插入的元素不得有子元素，`phony` 条目不得插入。未声明的标识与布局中一样视为隐式声明，标签的规则也与布局相同。
+
+## 目录
+
+目录是设置页展示条目所用的层级，每个条目的 `catalog` 是其父节点的标识，为空表示根节点。未写 `catalog` 的条目按以下顺序取得目录：
+
+1. 条目在本扩展的布局中出现时，取第一个包含它的容器的标识。插入不提供目录。
+2. 否则，顶层条目与 `phony` 条目没有目录，作为根节点。
+3. 其余条目取 `defaultCatalog`，未配置时同样作为根节点。
 
 ## 编译
 
@@ -248,7 +254,7 @@ target_sources(MyApp PRIVATE ${_src})
 target_include_directories(MyApp PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 ```
 
-`FUNCTION` 必需，其余选项与命令行选项一一对应。输出变量包含生成的源文件与头文件。头文件名为清单去掉后缀的文件名加 `.qak.h`，位于 `CMAKE_CURRENT_BINARY_DIR`，包含它的目标须将该目录加入包含路径。
+`FUNCTION` 必需。`NAMESPACE`、`EXPORT_DIRECTIVE`、`EXPORT_FILE_NAME` 与同名的命令行选项对应，`DEFINES` 的每一项成为一个 `-D`，`OPTIONS` 原样追加到命令行，`DEPENDS` 列出清单以外、变化时须重新运行 AEC 的文件。输出变量包含生成的源文件与头文件。源文件名为 `qak_` 加清单去掉后缀的文件名与 `.cpp`。头文件名为清单去掉后缀的文件名加 `.qak.h`，位于 `CMAKE_CURRENT_BINARY_DIR`，包含它的目标须将该目录加入包含路径。
 
 ## 使用编译结果
 
