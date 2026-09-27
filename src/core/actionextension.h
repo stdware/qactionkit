@@ -72,6 +72,14 @@ namespace QAK {
             return m_type != Separator && m_type != Stretch && m_id.isEmpty();
         }
 
+        /// Returns whether both entries have the same type and the same id.
+        inline bool operator==(const ActionLayoutEntry &RHS) const {
+            return m_type == RHS.m_type && m_id == RHS.m_id;
+        }
+        inline bool operator!=(const ActionLayoutEntry &RHS) const {
+            return !(*this == RHS);
+        }
+
     protected:
         QString m_id;
         Type m_type;

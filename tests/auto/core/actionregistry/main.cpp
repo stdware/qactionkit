@@ -102,24 +102,26 @@ private Q_SLOTS:
         QVERIFY(!ActionLayoutEntry({}, ActionLayoutEntry::Stretch).isNull());
     }
 
+    void testLayoutEntryEquality() {
+        const ActionLayoutEntry menu(QStringLiteral("id"), ActionLayoutEntry::Menu);
+        QVERIFY(menu == ActionLayoutEntry(QStringLiteral("id"), ActionLayoutEntry::Menu));
+
+        // Entries with the same id differ in their type
+        QVERIFY(menu != ActionLayoutEntry(QStringLiteral("id"), ActionLayoutEntry::Group));
+        QVERIFY(menu != ActionLayoutEntry(QStringLiteral("other"), ActionLayoutEntry::Menu));
+
+        QVERIFY(ActionLayoutEntry({}, ActionLayoutEntry::Separator) ==
+                ActionLayoutEntry({}, ActionLayoutEntry::Separator));
+        QVERIFY(ActionLayoutEntry({}, ActionLayoutEntry::Separator) !=
+                ActionLayoutEntry({}, ActionLayoutEntry::Stretch));
+    }
+
     void testLayoutsJsonRoundTrip() {
         const auto layouts = sampleLayouts();
         const auto restored = ActionLayouts::fromJsonObject(layouts.toJsonObject());
 
         QCOMPARE(restored.hashList(), layouts.hashList());
-        QCOMPARE(restored.adjacencyMap().keys(), layouts.adjacencyMap().keys());
-
-        const auto expected = layouts.adjacencyMap().value(QStringLiteral("root"));
-        const auto actual = restored.adjacencyMap().value(QStringLiteral("root"));
-        QCOMPARE(actual.size(), expected.size());
-        for (int i = 0; i < expected.size(); ++i) {
-            QCOMPARE(actual[i].id(), expected[i].id());
-            QCOMPARE(int(actual[i].type()), int(expected[i].type()));
-        }
-
-        const auto children = restored.adjacencyMap().value(QStringLiteral("menu1"));
-        QCOMPARE(children.size(), 1);
-        QCOMPARE(children.first().id(), QStringLiteral("action2"));
+        QVERIFY(restored.adjacencyMap() == layouts.adjacencyMap());
     }
 
     void testContextRegistration() {
