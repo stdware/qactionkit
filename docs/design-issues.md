@@ -52,7 +52,9 @@
 - 条目的目录依次取：自身的 `catalog` 属性；在 `<items>` 中直接包含它的 `phony`；`defaultCatalog`。
 - `<items>` 中的 `phony` 可以带有子元素，子元素是普通的条目声明，可以嵌套 `phony` 以形成多层目录。action、menu 与 group 的声明仍然不能带有子元素，因此 `<items>` 中的嵌套只表示目录，不与布局的嵌套混淆。
 - 既没有 `catalog` 也不在其他 `phony` 中的 `phony` 是目录树的根。其余条目在这种情况下归入 `defaultCatalog`，`topLevel` 不再影响目录。
-- `catalog` 指向的标识必须有声明，可以是 phony、menu 或 group，否则 AEC 报错。
+- `catalog` 指向的标识必须由本扩展声明，可以是 phony、menu 或 group，否则 AEC 报错。`defaultCatalog` 同样须由本扩展声明，AEC 不再自动补充 phony，因为补充的条目只能使用从标识推导的文本，无法指定文本与翻译上下文。
+- 插件使用宿主的目录节点时，在自己的清单中将它声明为 phony。宿主不存在时，该节点的文本与翻译取自插件。
+- 多个扩展声明同一标识时，registry 优先采用不是 phony 的声明，因为拥有节点的扩展才会将它声明为 menu 或 group；同为 phony 时采用先登记的。两个都不是 phony 的声明相冲突，registry 以 `qCWarning` 报告，保留先登记的。
 
 ```xml
 <items>
@@ -107,7 +109,7 @@
 - 取消隐式声明。布局与插入中引用的标识必须在本扩展的 `<items>` 中声明，否则报错。规范规定布局与插入只引用本扩展的条目，因此 AEC 能够完整检查。
 - 布局与插入中的引用元素只能带有 `id` 与 `if`，其他属性写在声明上。
 - `shortcut`、`shortcuts` 与 `category` 只属于 action，写在其他标签上时报错。
-- `catalog` 指向未声明的标识时报错（第 18 条）。
+- `catalog` 与 `defaultCatalog` 指向本扩展未声明的标识或 action 时报错（第 18 条）。
 - 不带命名空间的未知属性报错，自定义属性必须带有命名空间，例如 `diffscope:componentType`。拼错的保留属性因此不再被当作自定义属性保留。
 - `anchor` 为 `first` 或 `last`（含省略 `anchor`）时写了 `relativeTo`，AEC 报错，因为它不起作用，多半是锚点写错了。`anchor` 为 `before` 或 `after` 时缺少 `relativeTo`，同样报错。
 - 插入的目标通常属于其他扩展，AEC 无法检查。registry 计算默认布局时，目标不存在的插入以 `qCWarning` 报告，目标中不存在 `relativeTo` 所指条目的插入也是如此。
