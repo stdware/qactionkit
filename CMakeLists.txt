@@ -18,8 +18,6 @@ option(QACTIONKIT_BUILD_TESTS "Build tests" OFF)
 option(QACTIONKIT_BUILD_DOCUMENTATIONS "Build documentations" OFF)
 option(QACTIONKIT_INSTALL "Install library" ON)
 
-option(QACTIONKIT_VCPKG_TOOLS_HINT "Install executables to tools directory" OFF)
-
 # ----------------------------------
 # CMake Settings
 # ----------------------------------
