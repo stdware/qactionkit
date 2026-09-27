@@ -320,7 +320,7 @@ registry->addExtension(hello::daw::coreActions());
 
 导出宏在构建库与使用库时分别展开为什么，由定义它的头文件决定。
 
-`ActionExtension::hash()` 是清单字节的 SHA-256 摘要。`ActionRegistry` 将其与用户保存的布局一同存储，扩展增加或修改时只合并新的条目，用户的其余自定义保持不变。
+用户对菜单的自定义以改动记录（`ActionLayoutChange`）保存，而不是保存整份布局。registry 每次由已登记的扩展重新计算默认布局，再按顺序回放改动记录，因此扩展增加或更新之后，新条目按默认布局出现，用户的自定义保持不变。设置页编辑整份布局，保存时以 `ActionRegistry::computeLayoutChanges()` 比较出改动记录。无法回放的记录，例如所引用的条目已不再有扩展声明，被跳过并以 `qCWarning` 报告。
 
 ## 翻译
 

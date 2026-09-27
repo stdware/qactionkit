@@ -379,7 +379,6 @@ static ActionExtensionData *get_data() {
         fprintf(out, STRING_4_SPACE "data.version = QStringLiteral(\"%s\");\n",
                 escPrintable(msg.version));
         fprintf(out, STRING_4_SPACE "data.id = QStringLiteral(\"%s\");\n", escPrintable(msg.id));
-        fprintf(out, STRING_4_SPACE "data.hash = QStringLiteral(\"%s\");\n", qPrintable(msg.hash));
         fprintf(out, STRING_4_SPACE "data.textContext = QStringLiteral(\"%s\");\n",
                 escPrintable(q.parseResult.textTranslationContext));
         fprintf(out, STRING_4_SPACE "data.categoryContext = QStringLiteral(\"%s\");\n",

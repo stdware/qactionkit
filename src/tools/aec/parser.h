@@ -54,7 +54,6 @@ struct ActionExtensionMessage {
     QString version;
 
     QString id;
-    QString hash;
 
     QVector<ActionItemInfoMessage> items;
     QVector<ActionInsertionMessage> insertions;

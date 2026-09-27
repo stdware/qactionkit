@@ -246,7 +246,6 @@ namespace QAK {
         QString version() const;
 
         QString id() const;
-        QString hash() const;
 
         int itemCount() const;
         /// Returns the item at \a index, which must be in the range [0, itemCount()).

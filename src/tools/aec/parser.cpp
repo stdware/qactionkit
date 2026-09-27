@@ -4,7 +4,6 @@
 #include <utility>
 
 #include <QtCore/QCoreApplication>
-#include <QtCore/QCryptographicHash>
 #include <QtCore/QRegularExpression>
 #include <QtCore/QStringView>
 #include <QtCore/QFile>
@@ -31,12 +30,6 @@ void error(const char *fmt, ...) {
     va_start(args, fmt);
     vfprintf(stderr, fmt, args);
     va_end(args);
-}
-
-static QString calculateContentSha256(const QByteArray &data) {
-    QCryptographicHash hash(QCryptographicHash::Sha256);
-    hash.addData(data);
-    return hash.result().toHex();
 }
 
 static QString parseItemId(const QString &id) {
@@ -784,7 +777,6 @@ struct ParserPrivate {
         // Build result
         result.extension.version = version;
         result.extension.id = id;
-        result.extension.hash = calculateContentSha256(data);
 
         // Parse configuration
         const QHash<QString, QString> reservedVars = {

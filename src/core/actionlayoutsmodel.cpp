@@ -16,7 +16,6 @@ namespace QAK {
         
         // Original DAG adjacency map
         QMap<QString, QVector<ActionLayoutEntry>> adjacencyMap;
-        QStringList hashList;
         
         // Explicit top-level nodes list
         QVector<ActionLayoutEntry> topLevelNodes;
@@ -297,8 +296,8 @@ namespace QAK {
 
     ActionLayouts ActionLayoutsModel::actionLayouts() const {
         Q_D(const ActionLayoutsModel);
-        
-        return ActionLayouts(d->adjacencyMap, d->hashList);
+
+        return ActionLayouts(d->adjacencyMap);
     }
 
     void ActionLayoutsModel::setActionLayouts(const ActionLayouts &layouts) {
@@ -306,7 +305,6 @@ namespace QAK {
         
         beginResetModel();
         d->adjacencyMap = layouts.adjacencyMap();
-        d->hashList = layouts.hashList();
         
         d->clearCache();
         endResetModel();

@@ -92,7 +92,7 @@ private:
         map[QStringLiteral("menu1")] = {
             ActionLayoutEntry(QStringLiteral("action2"), ActionLayoutEntry::Action),
         };
-        return ActionLayouts(map, {QStringLiteral("hash1"), QStringLiteral("hash2")});
+        return ActionLayouts(map);
     }
 
 private Q_SLOTS:
@@ -396,7 +396,6 @@ private Q_SLOTS:
         const auto layouts = sampleLayouts();
         const auto restored = ActionLayouts::fromJsonObject(layouts.toJsonObject());
 
-        QCOMPARE(restored.hashList(), layouts.hashList());
         QVERIFY(restored.adjacencyMap() == layouts.adjacencyMap());
     }
 
@@ -523,7 +522,7 @@ private Q_SLOTS:
             edited[it.key()] = it.value();
         }
 
-        const auto changes = registry.computeLayoutChanges(ActionLayouts(edited, {}));
+        const auto changes = registry.computeLayoutChanges(ActionLayouts(edited));
         QCOMPARE(changes.isEmpty(), edits.isEmpty());
         QCOMPARE(std::count_if(changes.begin(), changes.end(),
                                [](const ActionLayoutChange &change) { return change.moved; }),

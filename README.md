@@ -23,7 +23,7 @@ manifest.xml ──qak_aec──> qak_manifest.cpp (static data)
 - **`ActionRegistry`**: merges every extension into a *catalog*, the logical tree presented in a settings page, and into *layouts*, the graph from which the menus are built. It also holds the shortcut and icon overrides of the user.
 - **`ActionContext`**: builds the objects of one window. `WidgetActionContext` populates `QMenuBar`, `QMenu` and `QToolBar`, and `QuickActionContext` instantiates QML components.
 
-A layout customized by the user is stored with the hash of every extension from which it was built. When a plugin is added or updated, its new items are merged into the customized layout, which is not discarded.
+The customizations of the user are stored as changes to the default layouts, not as whole layouts. The registry computes the default layouts from the registered extensions and replays the changes on them, so that a plugin that is added or updated shows its new items, and the customizations remain.
 
 ## Example
 

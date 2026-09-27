@@ -21,7 +21,7 @@ namespace QAK {
     };
 
     static ActionExtensionData sharedNullExtensionData = {
-        ACTION_EXTENSION_VERSION, {}, {}, {}, {}, {}, 0, &sharedNullItemInfoData, 0,
+        ACTION_EXTENSION_VERSION, {}, {}, {}, {}, 0, &sharedNullItemInfoData, 0,
         &sharedNullInsertion,
     };
 
@@ -129,10 +129,6 @@ namespace QAK {
     QString ActionExtension::id() const {
         Q_ASSERT(d.data);
         return d.data->id;
-    }
-    QString ActionExtension::hash() const {
-        Q_ASSERT(d.data);
-        return d.data->hash;
     }
     int ActionExtension::itemCount() const {
         Q_ASSERT(d.data);

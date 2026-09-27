@@ -52,7 +52,6 @@ namespace QAK {
         QString version;
 
         QString id;
-        QString hash;
 
         // Translation contexts of the configuration, each empty if the built-in default applies
         QString textContext;

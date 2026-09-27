@@ -51,13 +51,11 @@ void MainWindow::initActions() {
 
     // Get core actions
     auto coreActionExtension = coreActions();
-    printf("core:\n    id=%s\n    hash=%s\n", qPrintable(coreActionExtension->id()),
-           qPrintable(coreActionExtension->hash()));
+    printf("core:\n    id=%s\n", qPrintable(coreActionExtension->id()));
 
     // Get plugin actions
     auto pluginActionExtension = pluginActions();
-    printf("plugin:\n    id=%s\n    hash=%s\n", qPrintable(pluginActionExtension->id()),
-           qPrintable(pluginActionExtension->hash()));
+    printf("plugin:\n    id=%s\n", qPrintable(pluginActionExtension->id()));
 
     // Register extensions
     m_actionRegistry->setExtensions({coreActionExtension, pluginActionExtension});

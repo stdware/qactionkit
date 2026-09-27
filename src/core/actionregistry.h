@@ -59,33 +59,27 @@ namespace QAK {
     };
 
     /// The composition of the menus, tool bars and groups of a view, stored as the adjacency map
-    /// of a directed acyclic graph, together with the hash of every \c ActionExtension from which
-    /// it was built. \c ActionRegistry compares the hashes to update a layout saved by the user
-    /// after an extension has been added or changed.
+    /// of a directed acyclic graph. What the user changes is stored as \c ActionLayoutChange
+    /// records rather than as a whole layout.
     class ActionLayouts {
         Q_GADGET
     public:
         /// Default constructor.
         inline ActionLayouts() = default;
-        /// Constructs from an adjacency map and a list of \c ActionExtension hashes.
-        inline explicit ActionLayouts(const QMap<QString, QVector<ActionLayoutEntry>> &input,
-                                      const QStringList &hashList)
-            : m_adjacencyMap(input), m_hashList(hashList) {
+        /// Constructs from an adjacency map.
+        inline explicit ActionLayouts(const QMap<QString, QVector<ActionLayoutEntry>> &input)
+            : m_adjacencyMap(input) {
         }
 
     public:
         inline QMap<QString, QVector<ActionLayoutEntry>> adjacencyMap() const {
             return m_adjacencyMap;
         }
-        inline QStringList hashList() const {
-            return m_hashList;
-        }
         QAK_CORE_EXPORT QJsonObject toJsonObject() const;
         QAK_CORE_EXPORT static ActionLayouts fromJsonObject(const QJsonObject &obj);
 
     protected:
         QMap<QString, QVector<ActionLayoutEntry>> m_adjacencyMap;
-        QStringList m_hashList; // hash of extensions
     };
 
     /// A change that the user made to the default layouts, which the registry replays on the

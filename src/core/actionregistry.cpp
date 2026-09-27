@@ -193,18 +193,11 @@ namespace QAK {
             adjacencyMapObj.insert(it.key(), entriesArray);
         }
         rootObj.insert("adjacencyMap", adjacencyMapObj);
-
-        QJsonArray hashArray;
-        for (const QString &hash : m_hashList) {
-            hashArray.append(hash);
-        }
-        rootObj.insert("hashList", hashArray);
         return rootObj;
     }
 
     ActionLayouts ActionLayouts::fromJsonObject(const QJsonObject &obj) {
         QMap<QString, QVector<ActionLayoutEntry>> adjacencyMap;
-        QStringList hashList;
         if (auto it = obj.find("adjacencyMap"); it != obj.end() && it->isObject()) {
             const QJsonObject &adjacencyMapObj = it->toObject();
             for (auto it1 = adjacencyMapObj.constBegin(); it1 != adjacencyMapObj.constEnd();
@@ -224,15 +217,7 @@ namespace QAK {
                 }
             }
         }
-        if (auto it = obj.find("hashList"); it != obj.end() && obj["hashList"].isArray()) {
-            QJsonArray hashArray = obj["hashList"].toArray();
-            for (const QJsonValue &hashValue : hashArray) {
-                if (hashValue.isString()) {
-                    hashList.append(hashValue.toString());
-                }
-            }
-        }
-        return ActionLayouts(adjacencyMap, hashList);
+        return ActionLayouts(adjacencyMap);
     }
 
     static std::optional<ActionLayoutEntry::Type> entryTypeFromString(const QString &s) {
@@ -485,12 +470,9 @@ namespace QAK {
             oldAdjacencyMap.insert(it->first, it->second.children());
         }
 
-        QStringList hashList;
-        hashList.reserve(extensions.size());
         QVector<const ActionExtension *> extensionList;
         for (const auto &pair : extensions) {
             extensionList.append(pair.second);
-            hashList.append(pair.second->hash());
         }
 
         // Apply insertions
@@ -517,7 +499,7 @@ namespace QAK {
             std::set<QString> visiting;
             buildGraph<LayoutsTrait>(it.key(), it.value(), oldAdjacencyMap, adjacencyMap, visiting);
         }
-        return ActionLayouts(adjacencyMap, hashList);
+        return ActionLayouts(adjacencyMap);
     }
 
     static bool isAnonymous(const ActionLayoutEntry &entry) {
@@ -816,7 +798,7 @@ namespace QAK {
             buildGraph<LayoutsTrait>(it.key(), it.value(), changedAdjacencyMap, adjacencyMap,
                                      visiting);
         }
-        layouts = ActionLayouts(adjacencyMap, defaultLayouts.hashList());
+        layouts = ActionLayouts(adjacencyMap);
     }
 
     ActionRegistry::ActionRegistry(QObject *parent)
