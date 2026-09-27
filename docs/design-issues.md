@@ -90,7 +90,7 @@
 
 两个函数大部分重复，应当合并为一个。本条由阅读代码得出，尚未构造用例验证，修改前须先编写复现测试。
 
-## 21. 错误一律静默，没有严格模式
+## 21. 错误一律静默，没有严格模式（已定）
 
 - 布局中拼错的标识会隐式声明一个新条目。例如 `p.typoAcion` 推导出文本 `Typo Acion`。
 - `<menu>` 上的 `shortcut` 与 `category` 被静默丢弃，由于 `reservedKeys` 的过滤，也不作为自定义属性保留。
@@ -99,17 +99,53 @@
 
 「布局中的标识隐式声明条目」本身是合理的设计，但须配套提供 `--strict` 或 `--warn-undeclared` 选项。
 
-## 22. `version` 既不校验也不使用
+**决定：AEC 默认严格，不设开关。**
+
+- 取消隐式声明。布局与插入中引用的标识必须在本扩展的 `<items>` 中声明，否则报错。规范规定布局与插入只引用本扩展的条目，因此 AEC 能够完整检查。
+- 布局与插入中的引用元素只能带有 `id` 与 `if`，其他属性写在声明上。
+- `shortcut`、`shortcuts` 与 `category` 只属于 action，写在其他标签上时报错。
+- `catalog` 指向未声明的标识时报错（第 18 条）。
+- 不带命名空间的未知属性报错，自定义属性必须带有命名空间，例如 `diffscope:componentType`。拼错的保留属性因此不再被当作自定义属性保留。
+- 插入的目标通常属于其他扩展，AEC 无法检查。registry 计算默认布局时，目标不存在的插入以 `qCWarning` 报告。
+
+## 22. `version` 既不校验也不使用（已定）
 
 `QVersionNumber::fromString("banana")` 返回空版本，`parserVersion() < 空版本` 为假，检查实际无效：`<version>banana</version>` 可以通过编译，并原样写入 `data.version`。运行时没有代码读取 `ActionExtension::version()`，`ACTION_EXTENSION_VERSION` 只用于共享的空对象。应当补充格式校验与运行时的兼容性检查，或者删除该字段。
 
-## 23. 表示层的概念进入共享数据，Quick 后端显示字面的 `&`
+**决定：** 格式版本保持 `1.0`，本轮的不兼容改动不提升版本。AEC 对不是有效版本号的字符串报错。运行时的 `ActionExtension::version()` 保留。
+
+## 23. 表示层的概念进入共享数据，Quick 后端显示字面的 `&`（已定）
 
 标识语法中的 `&`（助记符）与 `^`（省略号）是 QtWidgets 的约定，被编入 `text()`：`m.&openFile^` 的文本为 `&Open File...`。`ActionItemInfo` 没有返回去除标记后文本的接口，Quick 后端原样传递，而 QML 不解释 `&`。`parser.cpp` 中的 `simplifyActionText()` 实现了去除标记的功能，但它是死代码，且位于 AEC 中，运行时无法使用。应当增加返回去除标记后文本的访问函数，或者将这两个标记移出标识语法。
 
-## 24. 翻译的回退被自身抵消
+**更正。** 「QML 不解释 `&`」不完全成立。Qt 6.11 的 `QQuickAbstractButton::buttonChange()` 以 `QKeySequence::mnemonic()` 为按钮设置快捷键，`MenuItem` 即是 `AbstractButton`，因此 `&` 至少被解释为助记快捷键。Qt 的 dev 分支文档写明助记符标记总是从显示的文本中去除，6.11 是否同样去除尚未实测。
+
+**决定。** 标识语法中的 `&` 与 `^` 保留。第 24 条的 `ActionText` 提供 `withoutMnemonic()`，返回去除 `&` 后的文本，供命令面板、快捷键设置页与工具提示等菜单以外的场合使用，`...` 保留。`simplifyActionText()` 的逻辑移入运行时库。以一个 QML 程序实测 Qt 6.11 的显示，据此确定 Quick 后端是否需要自行去除 `&`。
+
+## 24. 翻译的回退被自身抵消（已定）
 
 `tryTranslate()` 正确地回退到原文，`translateString()` 却在 `if (!ok) return {}` 中丢弃了结果。因此未安装翻译文件时，`text(true)` 一律返回空字符串，两个后端各自重复实现三级回退。应当在内部回退，或者将 `ok` 提供给调用方。
+
+以空字符串表示「未翻译」是有意的设计，使调用方能够判断翻译是否成功，但空字符串与合法的空值冲突：`category` 与 `description` 未指定时为空，`category(true)` 返回空时无法区分「未翻译」与「没有类别」。最常见的需求「有译文用译文，否则用原文」则须由每个调用方重复实现。
+
+**决定。** `text()`、`description()` 与 `category()` 去掉 `bool` 参数，返回同一个结构体：
+
+```cpp
+struct ActionText {
+    QString source;                      ///< The text written in the manifest
+    std::optional<QString> translation;  ///< The installed translation, or std::nullopt if none
+
+    /// Returns the translation if one exists, and the source text otherwise.
+    inline QString toString() const {
+        return translation.value_or(source);
+    }
+
+    /// Returns the result of toString() with the mnemonic markers removed.
+    QString withoutMnemonic() const;
+};
+```
+
+显示时调用 `toString()`，判断是否已翻译时检查 `translation`，需要原文时读取 `source`。两个后端中重复的回退随之删除。
 
 ## 25. 翻译上下文是扩展级的配置，却按条目存储
 
@@ -163,7 +199,9 @@ registry 同时持有条目表与布局，是唯一能够进行这一检查的�
 
 `parseItemAttrs()` 对这两个标签都设置 `type = Menu; topLevel = true;`。`info.tag` 只存在于解析器的中间结构中，`generator.cpp` 不输出它，因此 `ActionItemInfo` 无法区分弹出菜单、菜单栏与工具栏，应用程序只能硬编码哪个标识是工具栏。mainwindow 示例即是如此（`addMenuBar("core.mainMenu")`、`addToolBar("core.mainToolBar")`），而清单中两者都写作 `<menu topLevel="true">`。按照「声明类型决定身份」的原则，此处身份定义不足：标签提供了三个词，编译结果只有一种。应当为 `ActionItemInfo` 增加顶层种类（弹出菜单、菜单栏、工具栏），或者规定三个标签为同义词并写入规范。
 
-## 47. `if` 跳过声明后，布局中的引用会静默重建一个降级的条目
+## 47. `if` 跳过声明后，布局中的引用会静默重建一个降级的条目（随第 21 条解决）
+
+第 21 条取消隐式声明之后，`if` 跳过了声明而引用处没有 `if` 时，引用的是一个未声明的标识，AEC 报错，提示引用处也须加上 `if`。以下为原问题。
 
 `parse()` 对被 `if` 跳过的 `<items>` 元素直接跳过，该元素不进入 `itemInfoMap`。随后布局中的引用经过 `findOrInsertItemInfo()` 的 else 分支，以引用处的标签与属性创建一个新条目。
 
@@ -202,4 +240,4 @@ namespace hello::daw {
 - `EXPORT_DIRECTIVE` 是插入在函数声明之前的宏名，用于从动态库中导出或隐藏该函数。宏在构建与使用时分别展开为什么，由定义它的头文件决定。`EXPORT_FILE_NAME` 是定义该宏的头文件。只给出 `EXPORT_FILE_NAME` 而没有 `EXPORT_DIRECTIVE` 时报错，两者都省略时不加宏。
 - 头文件名为 `<清单文件名>.qak.h`，位于生成目录中，该目录加入调用方的包含路径。生成的源文件包含该头文件，使定义处可以看到带有宏的声明。
 - 删除 `QAK_STATIC_ACTION_EXTENSION` 宏，以及生成代码中的 `QT_MANGLE_NAMESPACE`。
-- 删除 `IDENTIFIER` 选项与 AEC 的 `-i` 选项。标识符原本用于区分同名清单的获取函数，该作用由 `FUNCTION` 与 `NAMESPACE` 承担。生成代码内部的命名空间改为匿名命名空间，只供 lupdate 扫描的翻译声明函数使用固定的名字。
+- 删除 `IDENTIFIER` 选项与 AEC 的 `-i` 选项。标识符原本用于区分同名清单的获取函数，该作用由 `FUNCTION` 与 `NAMESPACE` 承担。生成代码内部的命名空间改为匿名命名空间，只供 lupdate 扫描的翻译声明函数使用固定的名字。保留变量 `_IDENTIFIER_` 一并删除。
