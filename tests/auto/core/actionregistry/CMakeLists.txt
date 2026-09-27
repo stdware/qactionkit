@@ -7,4 +7,10 @@ qak_add_action_extension(_action_src "actions.xml"
     NAMESPACE qak::test
 )
 
-qak_add_auto_test(SOURCES ${_action_src})
+# Insertions that are skipped, whose warnings would otherwise appear in every test
+qak_add_action_extension(_insertion_src "insertions.xml"
+    FUNCTION testInsertions
+    NAMESPACE qak::test
+)
+
+qak_add_auto_test(SOURCES ${_action_src} ${_insertion_src})

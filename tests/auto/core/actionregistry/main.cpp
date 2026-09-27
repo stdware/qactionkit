@@ -4,6 +4,7 @@
 #include <QAKCore/actionregistry.h>
 
 #include "actions.qak.h"
+#include "insertions.qak.h"
 
 using namespace QAK;
 
@@ -100,6 +101,22 @@ private Q_SLOTS:
         const auto saveFile = registry.actionInfo(QStringLiteral("test.file.saveFile"));
         QVERIFY(saveFile);
         QVERIFY(saveFile->category().source.isEmpty());
+    }
+
+    void testSkippedInsertionsAreReported() {
+        ActionRegistry registry;
+        registry.addExtension(qak::test::testInsertions());
+
+        QTest::ignoreMessage(QtWarningMsg,
+                             "Action extension \"org.qactionkit.test.insertions\" inserts into "
+                             "\"test.missing\", which does not exist");
+        QTest::ignoreMessage(QtWarningMsg,
+                             "Action extension \"org.qactionkit.test.insertions\" inserts relative "
+                             "to \"test.missing\", which \"test.plugin.menu\" does not contain");
+        const auto layouts = registry.layouts();
+
+        // Both insertions are skipped
+        QVERIFY(layouts.adjacencyMap().value(QStringLiteral("test.plugin.menu")).isEmpty());
     }
 
     void testAttributes() {

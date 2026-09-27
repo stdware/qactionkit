@@ -261,12 +261,19 @@ namespace QAK {
         return ActionCatalog(nodeParentLinks);
     }
 
-    static void applyInsertion(const ActionInsertion &insertion,
-                               QMap<QString, QVector<ActionLayoutEntry>> &input) {
+    enum class InsertionResult {
+        Applied,
+        MissingTarget,
+        MissingRelativeTo,
+    };
+
+    // Applies the insertion, or skips it if its target or its relative sibling does not exist
+    static InsertionResult applyInsertion(const ActionInsertion &insertion,
+                                          QMap<QString, QVector<ActionLayoutEntry>> &input) {
         const auto &target = insertion.target();
         auto it = input.find(target);
         if (it == input.end()) {
-            return;
+            return InsertionResult::MissingTarget;
         }
 
         auto &targetItems = it.value();
@@ -289,7 +296,7 @@ namespace QAK {
                                                    return entry.id() == relativeTo;
                                                });
                 if (relativeIt == targetItems.end()) {
-                    break;
+                    return InsertionResult::MissingRelativeTo;
                 }
 
                 int index = relativeIt - targetItems.begin();
@@ -302,6 +309,7 @@ namespace QAK {
                 break;
             }
         }
+        return InsertionResult::Applied;
     }
 
     // Equivalent to:
@@ -316,9 +324,25 @@ namespace QAK {
         hashList.reserve(extensions.size());
         for (const auto &pair : extensions) {
             const auto &e = pair.second;
-            // Apply insertions
+            // Apply insertions. A skipped insertion is reported here only: in a layout customized
+            // by the user, a missing target or sibling may have been removed on purpose.
             for (int i = 0; i < e->insertionCount(); ++i) {
-                applyInsertion(e->insertion(i), oldAdjacencyMap);
+                const auto insertion = e->insertion(i);
+                switch (applyInsertion(insertion, oldAdjacencyMap)) {
+                    case InsertionResult::Applied:
+                        break;
+                    case InsertionResult::MissingTarget:
+                        qCWarning(qActionKitLog).noquote().nospace()
+                            << "Action extension \"" << e->id() << "\" inserts into \""
+                            << insertion.target() << "\", which does not exist";
+                        break;
+                    case InsertionResult::MissingRelativeTo:
+                        qCWarning(qActionKitLog).noquote().nospace()
+                            << "Action extension \"" << e->id() << "\" inserts relative to \""
+                            << insertion.relativeTo() << "\", which \"" << insertion.target()
+                            << "\" does not contain";
+                        break;
+                }
             }
             hashList.append(e->hash());
         }

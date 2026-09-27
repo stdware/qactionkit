@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<actionExtension>
+
+    <version>1.0</version>
+    <id>org.qactionkit.test.insertions</id>
+
+    <items>
+        <action id="test.plugin.hello" />
+        <menu id="test.plugin.menu" />
+    </items>
+
+    <insertions>
+        <!-- The target does not exist -->
+        <insertion target="test.missing">
+            <action id="test.plugin.hello" />
+        </insertion>
+        <!-- The target exists, but the sibling does not -->
+        <insertion target="test.plugin.menu" anchor="after" relativeTo="test.missing">
+            <action id="test.plugin.hello" />
+        </insertion>
+    </insertions>
+
+</actionExtension>
