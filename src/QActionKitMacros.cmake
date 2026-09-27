@@ -106,9 +106,12 @@ function(qak_add_action_extension _outfiles _manifest)
             set(_cmd COMMAND ${_cmd})
         endif()
 
+        # The command depends on AEC as a file, so that a rebuilt AEC regenerates the output. A
+        # generator expression in COMMAND adds only a dependency on the target, which builds AEC
+        # first without running the command again.
         add_custom_command(OUTPUT ${_outfile} ${_header}
             ${_cmd}
-            DEPENDS ${_infile} ${_depends}
+            DEPENDS ${_infile} ${QAK_AEC_EXECUTABLE} ${_depends}
             ${_working_dir}
             VERBATIM
         )
