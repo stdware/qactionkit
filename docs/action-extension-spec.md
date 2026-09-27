@@ -187,13 +187,23 @@ AEC 检查以下规则：
 
 - 引用的标识必须在本扩展的 `items` 中声明。
 - 引用元素不得带有 `id` 与 `if` 以外的属性，包括属于命名空间的属性。
-- 标签须与声明的类型相符。action 接受 `action` 与 `item`，group 与 menu 接受 `group`、`menu` 与 `item`。`item` 表示类型取自声明。
+- 标签与声明的类型须符合下文的组合表。
 - `phony` 条目不得出现在布局中。
 - 容器的子项只能指定一次。在两处为 `core.file` 指定子项是错误。
 - 布局不得递归。路径中再次出现已经包含的标识是错误。
 - `separator` 与 `stretch` 不得有子元素。
 
-条目在布局中的类型由标签决定：只有 `menu` 产生菜单条目，其他容器标签一律产生组条目。
+声明的类型是条目的身份，引用处的标签决定条目在该位置的形态。menu 与 group 可以互换形态，`item` 取声明的类型：
+
+| 声明的类型 | 标签 | 形态 |
+| --- | --- | --- |
+| action | `action`、`item` | Action |
+| action | `menu`、`group` | 错误 |
+| menu | `menu`、`item` | Menu |
+| menu | `group` | Group，子项直接放入父节点 |
+| group | `group`、`item` | Group |
+| group | `menu` | Menu，显示为子菜单 |
+| menu、group | `action` | 错误 |
 
 ## 插入
 

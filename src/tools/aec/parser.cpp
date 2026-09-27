@@ -425,6 +425,30 @@ struct ParserPrivate {
         return info;
     }
 
+    // Returns the form that a declared item takes where an element refers to it. The menu and
+    // group tags give that form, and the action and item tags the declared type, which
+    // findItemInfo() has checked against the tag.
+    static QAK::ActionLayoutEntry::Type entryType(const ActionItemInfoMessage &info,
+                                                  const QString &tag) {
+        if (tag == QStringLiteral("menu")) {
+            return QAK::ActionLayoutEntry::Menu;
+        }
+        if (tag == QStringLiteral("group")) {
+            return QAK::ActionLayoutEntry::Group;
+        }
+        switch (info.type) {
+            case QAK::ActionItemInfo::Action:
+                return QAK::ActionLayoutEntry::Action;
+            case QAK::ActionItemInfo::Menu:
+                return QAK::ActionLayoutEntry::Menu;
+            case QAK::ActionItemInfo::Group:
+                return QAK::ActionLayoutEntry::Group;
+            default:
+                Q_UNREACHABLE();
+        }
+        return {};
+    }
+
     // Returns the declaration of the item that a layout or insertion element refers to. The element
     // only carries the id and a condition, and its tag must agree with the declared type.
     ActionItemInfoMessage &findItemInfo(const QMXmlAdaptorElement *e, const QString &upperCatalog,
@@ -462,8 +486,16 @@ struct ParserPrivate {
         }
         auto &info = it->second;
 
-        // Check if the tag matches
-        bool typeMismatch = false;
+        // The action tag requires an action, and the menu and group tags give the item that form,
+        // which an action cannot take. The item tag accepts any declared type.
+        const auto &tag = e->name;
+        if (!e->namespaceUri.isEmpty() ||
+            (tag != QStringLiteral("action") && tag != QStringLiteral("menu") &&
+             tag != QStringLiteral("group") && tag != QStringLiteral("item"))) {
+            error("%s: %s element \"%s\" has an unknown tag \"%s\"\n", qPrintable(q.fileName),
+                  field, qPrintable(id), qPrintable(tag));
+            std::exit(1);
+        }
         switch (info.type) {
             case QAK::ActionItemInfo::Phony: {
                 error("%s: %s element \"%s\" shouldn't have a phony type\n", qPrintable(q.fileName),
@@ -471,34 +503,26 @@ struct ParserPrivate {
                 std::exit(1);
             }
             case QAK::ActionItemInfo::Action: {
-                if ((e->name != QStringLiteral("action") && e->name != QStringLiteral("item")) ||
-                    !e->namespaceUri.isEmpty()) {
-                    typeMismatch = true;
+                if (tag == QStringLiteral("menu") || tag == QStringLiteral("group")) {
+                    error("%s: %s element \"%s\" refers to an action, which cannot take the form "
+                          "of a %s\n",
+                          qPrintable(q.fileName), field, qPrintable(id), qPrintable(tag));
+                    std::exit(1);
                 }
                 break;
             }
             case QAK::ActionItemInfo::Group:
             case QAK::ActionItemInfo::Menu: {
-                static const QSet<QString> allowedTags = {
-                    QStringLiteral("group"),
-                    QStringLiteral("menu"),
-                    QStringLiteral("item"),
-                };
-                if (!allowedTags.contains(e->name) || !e->namespaceUri.isEmpty()) {
-                    typeMismatch = true;
+                if (tag == QStringLiteral("action")) {
+                    error("%s: %s element \"%s\" refers to a %s, which is not an action\n",
+                          qPrintable(q.fileName), field, qPrintable(id), qPrintable(info.tag));
+                    std::exit(1);
                 }
                 break;
             }
             default:
                 Q_UNREACHABLE();
                 break;
-        }
-        if (typeMismatch) {
-            error("%s: %s element \"%s\" has inconsistent tag \"%s\" with the "
-                  "item element \"%s\"\n",
-                  qPrintable(q.fileName), field, qPrintable(id), qPrintable(e->name),
-                  qPrintable(info.tag));
-            std::exit(1);
         }
 
         if (info.catalog.isEmpty()) {
@@ -540,26 +564,10 @@ struct ParserPrivate {
             std::exit(1);
         }
         entry.id = id;
-
-        switch (info.type) {
-            case QAK::ActionItemInfo::Action: {
-                entry.type = QAK::ActionLayoutEntry::Action;
-                checkChildren(qPrintable(QString(R"("%1")").arg(id)));
-                return entry;
-            }
-            case QAK::ActionItemInfo::Menu:
-            case QAK::ActionItemInfo::Group: {
-                if (e->name == QStringLiteral("menu") && e->namespaceUri.isEmpty()) {
-                    entry.type = QAK::ActionLayoutEntry::Menu;
-                } else {
-                    entry.type = QAK::ActionLayoutEntry::Group;
-                }
-                break;
-            }
-            default: {
-                Q_UNREACHABLE();
-                break;
-            }
+        entry.type = entryType(info, e->name);
+        if (entry.type == QAK::ActionLayoutEntry::Action) {
+            checkChildren(qPrintable(QString(R"("%1")").arg(id)));
+            return entry;
         }
 
         if (!e->children.isEmpty()) {
@@ -657,25 +665,7 @@ struct ParserPrivate {
                     std::exit(1);
                 }
                 entry.id = id;
-
-                switch (info.type) {
-                    case QAK::ActionItemInfo::Action: {
-                        entry.type = QAK::ActionLayoutEntry::Action;
-                        break;
-                    }
-                    case QAK::ActionItemInfo::Menu:
-                    case QAK::ActionItemInfo::Group: {
-                        if (e.name == QStringLiteral("menu") && e.namespaceUri.isEmpty()) {
-                            entry.type = QAK::ActionLayoutEntry::Menu;
-                        } else {
-                            entry.type = QAK::ActionLayoutEntry::Group;
-                        }
-                        break;
-                    }
-                    default:
-                        Q_UNREACHABLE();
-                        break;
-                }
+                entry.type = entryType(info, e.name);
             }
             insertion.items.append(entry);
         }

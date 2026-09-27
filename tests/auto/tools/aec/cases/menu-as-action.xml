@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- expect: error layout element "test\.open" refers to an action, which cannot take the form of a menu -->
+<!-- expect: error layout element "test\.recent" refers to a menu, which is not an action -->
 <actionExtension>
     <version>1.0</version>
-    <id>test.actionAsMenu</id>
+    <id>test.menuAsAction</id>
     <items>
-        <action id="test.open" />
+        <menu id="test.recent" />
         <menu id="test.file" />
     </items>
     <layouts>
         <menu id="test.file">
-            <menu id="test.open" />
+            <action id="test.recent" />
         </menu>
     </layouts>
 </actionExtension>

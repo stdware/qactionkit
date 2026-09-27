@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- expect: error layout element "test\.open" refers to an action, which cannot take the form of a menu -->
+<!-- expect: error layout element "test\.open" has an unknown tag "button" -->
 <actionExtension>
     <version>1.0</version>
-    <id>test.actionAsMenu</id>
+    <id>test.unknownReferenceTag</id>
     <items>
         <action id="test.open" />
         <menu id="test.file" />
     </items>
     <layouts>
         <menu id="test.file">
-            <menu id="test.open" />
+            <button id="test.open" />
         </menu>
     </layouts>
 </actionExtension>

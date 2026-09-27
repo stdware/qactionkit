@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- expect: success -->
+<!-- Every allowed combination of the declared type and the tag, and the form it gives -->
+<!-- source: "test\.a1"\), ActionLayoutEntry::Action -->
+<!-- source: "test\.a2"\), ActionLayoutEntry::Action -->
+<!-- source: "test\.m1"\), ActionLayoutEntry::Menu -->
+<!-- source: "test\.m2"\), ActionLayoutEntry::Menu -->
+<!-- source: "test\.m3"\), ActionLayoutEntry::Group -->
+<!-- source: "test\.g1"\), ActionLayoutEntry::Group -->
+<!-- source: "test\.g2"\), ActionLayoutEntry::Group -->
+<!-- source: "test\.g3"\), ActionLayoutEntry::Menu -->
+<!-- The item tag in an insertion as well -->
+<!-- source: "test\.m4"\), ActionLayoutEntry::Menu -->
+<actionExtension>
+    <version>1.0</version>
+    <id>test.forms</id>
+    <items>
+        <menu id="test.root" topLevel="true" />
+        <action id="test.a1" />
+        <action id="test.a2" />
+        <menu id="test.m1" />
+        <menu id="test.m2" />
+        <menu id="test.m3" />
+        <menu id="test.m4" />
+        <group id="test.g1" />
+        <group id="test.g2" />
+        <group id="test.g3" />
+    </items>
+    <layouts>
+        <menu id="test.root">
+            <action id="test.a1" />
+            <item id="test.a2" />
+            <menu id="test.m1" />
+            <item id="test.m2" />
+            <group id="test.m3" />
+            <group id="test.g1" />
+            <item id="test.g2" />
+            <menu id="test.g3" />
+        </menu>
+    </layouts>
+    <insertions>
+        <insertion target="host.help">
+            <item id="test.m4" />
+        </insertion>
+    </insertions>
+</actionExtension>

@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- expect: error layout element "test\.open" refers to an action, which cannot take the form of a menu -->
+<!-- expect: error layout element "test\.open" refers to an action, which cannot take the form of a group -->
 <actionExtension>
     <version>1.0</version>
-    <id>test.actionAsMenu</id>
+    <id>test.actionAsGroup</id>
     <items>
         <action id="test.open" />
         <menu id="test.file" />
     </items>
     <layouts>
         <menu id="test.file">
-            <menu id="test.open" />
+            <group id="test.open" />
         </menu>
     </layouts>
 </actionExtension>
