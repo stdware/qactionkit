@@ -147,29 +147,51 @@ struct ActionText {
 
 显示时调用 `toString()`，判断是否已翻译时检查 `translation`，需要原文时读取 `source`。两个后端中重复的回退随之删除。
 
-## 25. 翻译上下文是扩展级的配置，却按条目存储
+## 25. 翻译上下文是扩展级的配置，却按条目存储（已定）
 
-`ActionExtensionData` 中没有翻译上下文的字段，解析器因此将 `textTr`、`categoryTr`、`descriptionTr` 复制到每个条目的属性中，N 个条目存储 3N 份重复的字符串。此外，`translateString()` 以线性扫描查找键，而 `QMap::find` 即可满足（`ActionAttributeKey` 的 `operator<` 先比较名称再比较命名空间，命名空间为空的键可以确定地查找）。
+`ActionExtensionData` 中没有翻译上下文的字段，解析器因此将 `textTr`、`categoryTr`、`descriptionTr` 复制到每个条目的属性中，N 个条目存储 3N 份重复的字符串。此外，`translateString()` 以线性扫描查找键，而 `QMap::find` 即可满足（`ActionAttributeKey` 的 `operator<` 先比较名称再比较命名空间，命名空间为空的键可以确定地查找）。复制出的键还出现在 `ActionItemInfo::attributes()` 中，应用程序无法区分清单中写出的属性与 AEC 补入的属性。
 
-## 26. `ActionExtension` 没有空对象保护，访问函数不检查边界
+**决定。** 与第 24 条一同实现，清单的写法不变。
+
+- `ActionExtensionData` 增加三个扩展级翻译上下文字段，由 AEC 写入一次。
+- 条目只在清单中写出 `textTr`、`categoryTr` 或 `descriptionTr` 时记录覆盖值，存放在专门的字段中，不进入 `attributes()`。`attributes()` 只包含自定义属性，与第 21 条「自定义属性必须带有命名空间」一致。
+- 翻译上下文依次取条目的覆盖值、扩展级上下文与内置默认值，不再扫描属性表。
+
+## 26. `ActionExtension` 没有空对象保护，访问函数不检查边界（已定）
 
 `ActionItemInfo` 与 `ActionInsertion` 都有共享的空对象，`ActionExtension{}` 的 `d.data` 却是空指针，任何访问函数都会立即解引用空指针。`item(int)` 与 `insertion(int)` 不检查边界，`item(9999)` 返回一个不为 null 的越界视图。`Data d` 是公开的成员，以便生成的代码进行聚合初始化，其不变量完全依赖代码生成器保证。
 
-## 27. 两个互相竞争的数据来源
+**决定。** 公开的 `Data d` 保留。它与 `QMetaObject` 的 `struct Data { // private data ... } d;` 相同，由生成的代码聚合初始化。第 48 条之后，应用程序只从生成的函数取得 `const ActionExtension *`，不自行构造，因此不增加空对象。访问函数以 `Q_ASSERT` 检查 `d.data` 非空，`item(int)` 与 `insertion(int)` 以 `Q_ASSERT` 检查下标范围，与 `QList::at()` 的做法相同。不增加 `items()`、`insertions()` 等遍历接口。
+
+## 27. 两个互相竞争的数据来源（已定）
 
 `ActionItemInfo::children()` 是扩展声明的默认子项，`ActionRegistry::layouts()` 才是合并插入与用户自定义之后实际生效的布局，两者的主次从名称上看不出来。`children()` 是公开接口，据此构建菜单会忽略用户的自定义与其他插件的插入。至少应当改名，或在文档中注明它只是默认值。
 
-## 28. `Q_GADGET` 不完整
+**决定：** 不改名。`children()` 的接口注释写明它是清单声明的默认子项，实际生效的布局由 `ActionRegistry::layouts()` 给出。
+
+## 28. `Q_GADGET` 不完整（已定）
 
 `ActionLayoutEntry` 声明了 `Q_PROPERTY(ActionLayoutEntry::Type type ...)`，却没有 `Q_ENUM(Type)`，元类型系统不认识该枚举，QML 与 `QVariant` 的转换无法取得其值。`ActionLayouts` 的 `Q_GADGET` 中没有任何属性。
 
-## 29. 插入不可组合
+**决定：** 为 `ActionLayoutEntry` 补上 `Q_ENUM(Type)`。`ActionLayouts` 的内容随第 19 条重新设计，其 `Q_GADGET` 届时再定。
+
+## 29. 插入不可组合（已定）
 
 多个插件插入同一位置时，顺序完全取决于扩展的登记顺序，清单中无法表达优先级，也无法表达「排在某个插件之后」。`relativeTo` 只按标识匹配，不能指向分隔符（分隔符没有标识）。
 
-## 30. `ActionLayoutEntry` 没有 `operator==`
+**决定：** `<insertion>` 增加整数属性 `priority`，省略时为 1000，做法参照 GNU C 的 `__attribute__((constructor(priority)))`。
+
+- 只在位置相同的插入之间比较，即 `target`、`anchor` 与 `relativeTo` 都相同的插入。
+- 数值小的插入在菜单中排在前面。「在前」指最终的位置而不是执行的顺序：`last` 依次追加，数值小的先执行；`first` 依次放到开头，数值小的后执行。
+- 优先级相同时按扩展的登记顺序，同一扩展内按清单中出现的顺序。
+- 不像 GNU C 那样保留一段数值。
+- 分隔符没有标识，不能作为锚点。插入某一段时，以该段的 group 为锚点，规范中补充这一说明。
+
+## 30. `ActionLayoutEntry` 没有 `operator==`（已定）
 
 `buildGraph()` 的 `if constexpr (Trait::Unique)` 分支调用了 `contains()`，需要 `operator==`。目前 `LayoutsTrait::Unique = false`，该分支没有实例化，但一旦启用即无法编译。
+
+**决定：** 增加比较类型与标识的 `operator==` 与 `operator!=`，测试可以直接以 `QCOMPARE` 比较条目。
 
 ## 31. 与类型相关的字段没有体现在模型中
 
