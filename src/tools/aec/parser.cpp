@@ -711,7 +711,16 @@ struct ParserPrivate {
             error("%s: extension version is not specified\n", qPrintable(q.fileName));
             std::exit(1);
         }
-        if (parserVersion() < QVersionNumber::fromString(version)) {
+        // Parsing stops at the first character that is not part of a version number, such as the a
+        // of 1.0a, and the whole string must be parsed
+        qsizetype suffixIndex = 0;
+        const auto versionNumber = QVersionNumber::fromString(version, &suffixIndex);
+        if (suffixIndex != version.size()) {
+            error("%s: extension version \"%s\" is not a valid version number\n",
+                  qPrintable(q.fileName), qPrintable(version));
+            std::exit(1);
+        }
+        if (parserVersion() < versionNumber) {
             error("%s: extension version \"%s\" is not supported\n", qPrintable(q.fileName),
                   qPrintable(version));
             std::exit(1);

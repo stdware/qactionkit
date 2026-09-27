@@ -31,7 +31,7 @@ manifest.xml ──qak_aec──> qak_manifest.cpp ──> ActionExtension ─�
 
 | 元素 | 必需 | 含义 |
 | --- | --- | --- |
-| `version` | 是 | 清单格式的版本。高于 AEC 所支持的版本时 AEC 报错。 |
+| `version` | 是 | 清单格式的版本，由 `.` 分隔的非负整数组成，例如 `1.0`。不是有效的版本号或高于 AEC 所支持的版本时 AEC 报错。 |
 | `id` | 是 | 扩展的标识。登记两个标识相同的扩展时输出警告，保留先登记的一个。 |
 | `configuration` | 否 | 清单其余部分的默认值。至多一个。 |
 | `items` | 否 | 条目声明。 |

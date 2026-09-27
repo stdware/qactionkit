@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- expect: error extension version "1\.0a" is not a valid version number -->
+<actionExtension>
+    <version>1.0a</version>
+    <id>test.versionWithSuffix</id>
+</actionExtension>

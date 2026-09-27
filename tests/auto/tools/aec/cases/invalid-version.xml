@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- expect: error extension version "banana" is not a valid version number -->
+<actionExtension>
+    <version>banana</version>
+    <id>test.invalidVersion</id>
+</actionExtension>
