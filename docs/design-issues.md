@@ -76,11 +76,15 @@
 **决定：只保存用户的改动。** 做法与 IntelliJ 平台的菜单自定义相同：该平台以 `ActionUrl` 记录相对默认菜单的新增、删除与移动（`ADDED`、`DELETED`、`MOVE`），`CustomActionsSchema` 只持久化这些记录，构造菜单时由 `CustomizationUtil.correctActionGroup()` 将记录应用于默认分组。
 
 - 每次均由当前登记的全部扩展重新计算默认布局，再按顺序重放用户的改动记录。计算默认布局的路径只有一条。
-- 改动记录描述某个容器中的一个条目被新增、删除或移动。位置以相邻条目表示，而不是以下标表示。锚点条目不存在时退到容器末尾，被删除或移动的条目不存在时忽略该记录。重放时按第 17 条的组合表检查身份与形态（第 43 条）。
+- 改动记录描述某个容器中的一个条目被新增、删除或移动。
+- 位置以锚点表示，不以下标表示，沿用插入的锚点：`first`、`last`、`after` 与 `before`，后两者带有相邻条目的标识。下标在扩展更新后会错位：默认布局中每多出一个排在前面的条目，用户新增的条目就相对前移一格。锚点表达的是用户的意图（「在某个条目之后」），扩展更新后仍然成立。IntelliJ 平台的 `ActionUrl` 使用下标（`getAbsolutePosition()`），此处不采用。
+- 锚点条目不存在时退到容器末尾，与插入的处理相同。被删除或移动的条目不存在时跳过该记录。
+- 分隔符没有标识，删除或移动分隔符的记录以相邻条目定位，例如「『打开』之后的分隔符」。
+- 对外的接口只读写改动记录：`ActionRegistry` 提供 `layoutChanges()`、`setLayoutChanges()` 与 `addLayoutChange()`，`layouts()` 返回重放之后的布局，只读。删除 `setLayouts()` 与 `resetLayouts()`，恢复默认即清空改动记录。IntelliJ 平台的 `CustomActionsSchema` 同样只提供 `getActions()`、`setActions()` 与 `addAction()`，没有直接设置整棵菜单树的接口。
 - 删除 `ActionExtension::hash()`、`ActionLayouts` 的 `hashList`，以及 AEC 计算摘要的代码。
 - 扩展更新后，新条目按默认布局出现，用户删除的条目保持删除，插入不会重复。
 
-**待定。** 记录的具体格式，包括分隔符（没有标识）的表示方式；记录由设置页在每次编辑时产生，还是在保存时比较默认布局与用户布局得出。
+- 改动记录在保存时比较默认布局与用户编辑后的布局得出，设置页只编辑一份完整的布局，不在每次编辑时产生记录。
 
 ## 20. `defaultLayouts()` 与 `correctLayouts({})` 并不等价（随第 19 条消失）
 
@@ -193,17 +197,29 @@ struct ActionText {
 
 **决定：** 增加比较类型与标识的 `operator==` 与 `operator!=`，测试可以直接以 `QCOMPARE` 比较条目。
 
-## 31. 与类型相关的字段没有体现在模型中
+## 31. 与类型相关的字段没有体现在模型中（已定）
 
 `shortcuts` 只对 Action 解析，`category` 只对 Action 读取，而 `ActionItemInfo` 对所有类型都提供这些访问函数，非 Action 条目返回空值。这一约束依靠约定，而不是类型。
 
-## 43. 身份与形态的不变量在持久化边界失效
+**决定：** 保持一个类。只对某些类型有意义的访问函数（`shortcuts()`、`category()`、external 的查询、`topLevel()`、`children()`）在接口注释中写明适用的类型，以及其他类型返回的空值。第 21 条之后 AEC 拒绝将这些属性写在不适用的标签上，运行时不会出现被静默忽略的值。
+
+## 43. 身份与形态的不变量在持久化边界失效（已定）
 
 AEC 保证 action 不能作为 menu 出现，但 `ActionLayouts::fromJsonObject()` 接受任意的类型字符串，`correctLayouts()` 也不做任何类型检查。用户保存的布局文件被手工修改、被旧版本写坏，或者扩展升级后某个标识的身份改变，都可能产生 `{"id": "core.openFile", "type": "Menu"}` 这样的条目。
 
 结果不是报错，而是静默的降级：Widgets 后端调用 `menuForId()`，在 `items` 与 `autoItems` 中都找不到该标识，于是 `createSubMenu()` 创建一个标题为 Open File 的空子菜单，原来的 action 消失。Quick 后端的 `createMenu()` 同理。
 
 registry 同时持有条目表与布局，是唯一能够进行这一检查的地方，应当在 `correctLayouts()` 中按第 17 条的组合表丢弃身份与形态不相容的条目并输出警告。本条须与第 17 条同时完成，否则 AEC 的检查只在形式上成立。
+
+**决定。** 第 19 条之后，默认布局完全由清单算出，AEC 已保证其中身份与形态相容。不一致只可能来自用户的改动记录：保存文件被修改或损坏，扩展更新后某个标识的身份改变，或者记录引用的条目与容器已经不存在。registry 回放改动记录时逐条检查，参照 IntelliJ 平台 `CustomizationUtil` 的宽松做法，不满足条件的记录跳过，其余记录照常回放：
+
+- 记录所在的容器不存在，或其身份不是 Menu 或 Group：跳过。
+- 记录中的条目没有任何已登记的扩展声明（分隔符与 stretch 除外）：跳过。IntelliJ 平台在 `getComponentAction()` 返回空时同样跳过。
+- 条目的形态与第 17 条的组合表不相容：跳过。IntelliJ 平台没有身份与形态的区分，本项为 QActionKit 所增加。
+- 类型字符串无法识别：跳过，不再像 `actionLayoutEntryFromJson()` 那样默认为 Action。
+- 锚点不存在：放到容器末尾（第 19 条）。
+
+每条被跳过的记录以 `qCWarning` 报告，IntelliJ 平台在此处不输出任何信息。结果是菜单总是有效的，最坏情况是用户的某项自定义失效。
 
 ## 44. `ActionLayoutsModel` 无法检查身份与形态是否相容
 
