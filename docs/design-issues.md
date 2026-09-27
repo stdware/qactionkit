@@ -115,7 +115,7 @@
 
 **更正。** 「QML 不解释 `&`」不完全成立。Qt 6.11 的 `QQuickAbstractButton::buttonChange()` 以 `QKeySequence::mnemonic()` 为按钮设置快捷键，`MenuItem` 即是 `AbstractButton`，因此 `&` 至少被解释为助记快捷键。Qt 的 dev 分支文档写明助记符标记总是从显示的文本中去除，6.11 是否同样去除尚未实测。
 
-**决定。** 标识语法中的 `&` 与 `^` 保留。第 24 条的 `ActionText` 提供 `withoutMnemonic()`，返回去除助记符标记后的文本，供命令面板、快捷键设置页与工具提示等菜单以外的场合使用，`...` 保留。实现采用 Qt 为原生菜单去除助记符的 `QPlatformTheme::removeMnemonics()`：去除 `&`，`&&` 变为 `&`，并连同前面的空格去除中文界面常见的 `(&O)` 形式，否则 `打开(&O)` 在命令面板中显示为 `打开(O)`。`simplifyActionText()` 是死代码，随之删除。以一个 QML 程序实测 Qt 6.11 的显示，据此确定 Quick 后端是否需要自行去除 `&`。
+**决定。** 标识语法中的 `&` 与 `^` 保留。第 24 条的 `ActionText` 提供 `withoutMnemonic()`，返回去除助记符标记后的文本，供命令面板、快捷键设置页与工具提示等菜单以外的场合使用，`...` 保留。实现采用 Qt 为原生菜单去除助记符的 `QPlatformTheme::removeMnemonics()`：去除 `&`，`&&` 变为 `&`，并连同前面的空格去除中文界面常见的 `(&O)` 形式，否则 `打开(&O)` 在命令面板中显示为 `打开(O)`。`simplifyActionText()` 是死代码，随之删除。Quick 后端不需要自行去除 `&`：Qt 6.11 各内置样式的 `MenuItem` 都以 `IconLabel` 显示文本，其中的 `QQuickMnemonicLabel` 按 `QPlatformTheme::removeMnemonics()` 的规则去除标记，助记符可见时改为下划线（见 qtdeclarative 的 `src/quickcontrolsimpl/qquickmnemoniclabel.cpp`）。应用程序自定义的委托若直接以 `Text` 显示文本，须自行去除。
 
 ## 24. 翻译的回退被自身抵消（已定）
 
