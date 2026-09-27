@@ -116,28 +116,40 @@ namespace QAK {
     QVector<ActionLayoutEntry> ActionInsertion::items() const {
         return e->insertions[i].items;
     }
+    // An extension is only obtained from generated code, which always sets the data, therefore a
+    // null pointer and an index out of range are errors of the caller, checked as QList::at()
+    // checks them.
     QString ActionExtension::version() const {
+        Q_ASSERT(d.data);
         return d.data->version;
     }
     QString ActionExtension::id() const {
+        Q_ASSERT(d.data);
         return d.data->id;
     }
     QString ActionExtension::hash() const {
+        Q_ASSERT(d.data);
         return d.data->hash;
     }
     int ActionExtension::itemCount() const {
+        Q_ASSERT(d.data);
         return d.data->itemCount;
     }
     ActionItemInfo ActionExtension::item(int index) const {
+        Q_ASSERT(d.data);
+        Q_ASSERT(index >= 0 && index < d.data->itemCount);
         ActionItemInfo result;
         result.e = d.data;
         result.i = index;
         return result;
     }
     int ActionExtension::insertionCount() const {
+        Q_ASSERT(d.data);
         return d.data->insertionCount;
     }
     ActionInsertion ActionExtension::insertion(int index) const {
+        Q_ASSERT(d.data);
+        Q_ASSERT(index >= 0 && index < d.data->insertionCount);
         ActionInsertion result;
         result.e = d.data;
         result.i = index;

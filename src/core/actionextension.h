@@ -201,11 +201,15 @@ namespace QAK {
         QString hash() const;
 
         int itemCount() const;
+        /// Returns the item at \a index, which must be in the range [0, itemCount()).
         ActionItemInfo item(int index) const;
 
         int insertionCount() const;
+        /// Returns the insertion at \a index, which must be in the range [0, insertionCount()).
         ActionInsertion insertion(int index) const;
 
+        /// The data of the extension, initialized by the generated code in the way moc initializes
+        /// QMetaObject::d. Applications do not access it.
         struct Data {
             const ActionExtensionData *data;
         };
