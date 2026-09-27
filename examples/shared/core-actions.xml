@@ -34,7 +34,6 @@
             <!-- reserved keys: 
                  - _ID_: id
                  - _VERSION_: version
-                 - _IDENTIFIER_: identifier
                  - _FILENAME_: file name
                  - _FILEBASENAME_: file base name
             -->
