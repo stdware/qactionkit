@@ -21,9 +21,9 @@ function(qak_add_auto_test)
     add_test(NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME})
 endfunction()
 
-add_subdirectory(core)
+add_subdirectory(3rdparty)
 
-add_subdirectory(tools)
+add_subdirectory(core)
 
 if(QACTIONKIT_BUILD_WIDGETS)
     add_subdirectory(widgets)

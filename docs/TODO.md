@@ -11,7 +11,7 @@
 ## 测试覆盖
 
 - **`ActionLayoutsModel` 没有测试。** 共 715 行，提供 `setData`、`insertRows`、`removeRows`、`moveRows` 等编辑接口，以及 `wouldCreateCycle()` 中的环检测，均未经测试。
-- **`qak_aec` 没有金样本测试。** `tests/auto/tools/aec` 测试的是随附的 `QMXmlAdaptor`，而非编译器。编译器最容易在无人察觉时退化，应以清单为输入，将生成的源文件与已提交的预期结果比较。
+- **AEC 没有测试。** 随附的 `QMXmlAdaptor` 的测试位于 `tests/auto/3rdparty/qmxmladaptor`，AEC 本身没有测试。AEC 最容易在无人察觉时退化，应当测试其报错，并以清单为输入检查编译结果。
 - **`ActionCatalogModel` 没有测试。**
 - **没有持续集成。** 仓库中没有 `.github/`，推送时不运行测试，也不在 Linux 或 macOS 上构建。
 

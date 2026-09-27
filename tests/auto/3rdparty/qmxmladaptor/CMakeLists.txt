@@ -1,4 +1,4 @@
-project(tst_aec)
+project(tst_QMXmlAdaptor)
 
 qak_add_auto_test()
 
