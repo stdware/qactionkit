@@ -233,6 +233,102 @@ namespace QAK {
         return ActionLayouts(adjacencyMap, hashList);
     }
 
+    static std::optional<ActionLayoutEntry::Type> entryTypeFromString(const QString &s) {
+        static const QHash<QString, ActionLayoutEntry::Type> types = {
+            {QStringLiteral("Action"),    ActionLayoutEntry::Action   },
+            {QStringLiteral("Group"),     ActionLayoutEntry::Group    },
+            {QStringLiteral("Menu"),      ActionLayoutEntry::Menu     },
+            {QStringLiteral("Separator"), ActionLayoutEntry::Separator},
+            {QStringLiteral("Stretch"),   ActionLayoutEntry::Stretch  },
+        };
+        if (auto it = types.find(s); it != types.end()) {
+            return it.value();
+        }
+        return std::nullopt;
+    }
+
+    // The anchors are written as in a manifest
+    static const QHash<QString, ActionInsertion::Anchor> &anchorNames() {
+        static const QHash<QString, ActionInsertion::Anchor> names = {
+            {QStringLiteral("first"),  ActionInsertion::First },
+            {QStringLiteral("last"),   ActionInsertion::Last  },
+            {QStringLiteral("after"),  ActionInsertion::After },
+            {QStringLiteral("before"), ActionInsertion::Before},
+        };
+        return names;
+    }
+
+    QJsonObject ActionLayoutChange::toJsonObject() const {
+        QJsonObject obj;
+        obj.insert(QStringLiteral("kind"),
+                   kind == Add ? QStringLiteral("add") : QStringLiteral("remove"));
+        obj.insert(QStringLiteral("container"), container);
+        obj.insert(QStringLiteral("entry"), actionLayoutEntryToJson(entry));
+        obj.insert(QStringLiteral("anchor"), anchorNames().key(anchor));
+        if (!relativeTo.isEmpty()) {
+            obj.insert(QStringLiteral("relativeTo"), relativeTo);
+        }
+        if (offset != 0) {
+            obj.insert(QStringLiteral("offset"), offset);
+        }
+        if (moved) {
+            obj.insert(QStringLiteral("moved"), true);
+        }
+        return obj;
+    }
+
+    std::optional<ActionLayoutChange> ActionLayoutChange::fromJsonObject(const QJsonObject &obj) {
+        ActionLayoutChange change;
+
+        const auto kind = obj.value(QStringLiteral("kind")).toString();
+        if (kind == QStringLiteral("add")) {
+            change.kind = Add;
+        } else if (kind == QStringLiteral("remove")) {
+            change.kind = Remove;
+        } else {
+            return std::nullopt;
+        }
+
+        change.container = obj.value(QStringLiteral("container")).toString();
+        if (change.container.isEmpty()) {
+            return std::nullopt;
+        }
+
+        // A separator or stretch has no id, and any other entry has one
+        const auto entryObj = obj.value(QStringLiteral("entry")).toObject();
+        const auto type = entryTypeFromString(entryObj.value(QStringLiteral("type")).toString());
+        if (!type) {
+            return std::nullopt;
+        }
+        const auto id = entryObj.value(QStringLiteral("id")).toString();
+        const bool hasId =
+            *type != ActionLayoutEntry::Separator && *type != ActionLayoutEntry::Stretch;
+        if (id.isEmpty() == hasId) {
+            return std::nullopt;
+        }
+        change.entry = ActionLayoutEntry(id, *type);
+
+        const auto &names = anchorNames();
+        const auto anchor = names.find(obj.value(QStringLiteral("anchor")).toString());
+        if (anchor == names.end()) {
+            return std::nullopt;
+        }
+        change.anchor = anchor.value();
+        change.relativeTo = obj.value(QStringLiteral("relativeTo")).toString();
+        if ((change.anchor == ActionInsertion::After || change.anchor == ActionInsertion::Before) &&
+            change.relativeTo.isEmpty()) {
+            return std::nullopt;
+        }
+
+        const auto offset = obj.value(QStringLiteral("offset")).toDouble(0);
+        if (offset < 0 || offset != int(offset)) {
+            return std::nullopt;
+        }
+        change.offset = int(offset);
+        change.moved = obj.value(QStringLiteral("moved")).toBool(false);
+        return change;
+    }
+
     void ActionRegistryPrivate::flushActionItems() const {
         if (!extensionsDirty)
             return;

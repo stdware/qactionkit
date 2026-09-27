@@ -88,6 +88,46 @@ namespace QAK {
         QStringList m_hashList; // hash of extensions
     };
 
+    /// A change that the user made to the default layouts, which the registry replays on the
+    /// layouts computed from the extensions. A change adds an entry to a container or removes one
+    /// from it, and a move is a removal followed by an addition, both marked as moved.
+    ///
+    /// A position is an anchor as in \c ActionInsertion, together with a number of separators and
+    /// stretches passed beyond the anchor, since those have no id to anchor to. With \c First, the
+    /// position follows that many leading ones, with \c Last it precedes that many trailing ones,
+    /// and with \c After and \c Before it lies that many further from \c relativeTo.
+    struct QAK_CORE_EXPORT ActionLayoutChange {
+        /// The kinds of change.
+        enum Kind {
+            Add,    ///< Adds the entry at the position
+            Remove, ///< Removes the entry with the id, or the separator or stretch at the position
+        };
+
+        Kind kind = Add;
+        QString container;       ///< The id of the menu or group that the change applies to
+        ActionLayoutEntry entry; ///< The entry added or removed
+        ActionInsertion::Anchor anchor = ActionInsertion::Last; ///< The anchor of the position
+        QString relativeTo; ///< The id that an \c After or \c Before anchor refers to
+        int offset = 0;     ///< The separators and stretches passed beyond the anchor
+        /// Whether the change is half of a move. An addition that is half of a move applies only if
+        /// the removal of the same id before it has applied.
+        bool moved = false;
+
+        inline bool operator==(const ActionLayoutChange &RHS) const {
+            return kind == RHS.kind && container == RHS.container && entry == RHS.entry &&
+                   anchor == RHS.anchor && relativeTo == RHS.relativeTo && offset == RHS.offset &&
+                   moved == RHS.moved;
+        }
+        inline bool operator!=(const ActionLayoutChange &RHS) const {
+            return !(*this == RHS);
+        }
+
+        QJsonObject toJsonObject() const;
+        /// Returns the change that \a obj stores, or \c std::nullopt if a field is missing or
+        /// invalid.
+        static std::optional<ActionLayoutChange> fromJsonObject(const QJsonObject &obj);
+    };
+
     /// The central repository of the action extensions of an application, holding the catalog, the
     /// layouts and the customizations made by the user. An application normally has one registry,
     /// with one \c ActionContext per window registered with it.

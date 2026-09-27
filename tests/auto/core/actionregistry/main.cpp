@@ -366,6 +366,73 @@ private Q_SLOTS:
         QVERIFY(restored.adjacencyMap() == layouts.adjacencyMap());
     }
 
+    void testLayoutChangeJsonRoundTrip() {
+        ActionLayoutChange add;
+        add.kind = ActionLayoutChange::Add;
+        add.container = QStringLiteral("menu1");
+        add.entry = ActionLayoutEntry(QStringLiteral("action1"), ActionLayoutEntry::Action);
+        add.anchor = ActionInsertion::After;
+        add.relativeTo = QStringLiteral("action2");
+        add.offset = 2;
+        add.moved = true;
+
+        ActionLayoutChange remove;
+        remove.kind = ActionLayoutChange::Remove;
+        remove.container = QStringLiteral("menu1");
+        remove.entry = ActionLayoutEntry({}, ActionLayoutEntry::Separator);
+        remove.anchor = ActionInsertion::First;
+
+        for (const auto &change : {add, remove}) {
+            const auto restored = ActionLayoutChange::fromJsonObject(change.toJsonObject());
+            QVERIFY(restored);
+            QVERIFY(*restored == change);
+        }
+    }
+
+    void testInvalidLayoutChangeJson_data() {
+        QTest::addColumn<QString>("key");
+        QTest::addColumn<QJsonValue>("value");
+
+        QTest::newRow("unknown kind") << "kind" << QJsonValue("move");
+        QTest::newRow("no container") << "container" << QJsonValue("");
+        QTest::newRow("unknown type") << "entry"
+                                      << QJsonValue(QJsonObject{
+                                             {"id",   "action1"},
+                                             {"type", "Button" }
+        });
+        QTest::newRow("item without id") << "entry"
+                                         << QJsonValue(QJsonObject{
+                                                {"id",   ""      },
+                                                {"type", "Action"}
+        });
+        QTest::newRow("separator with id") << "entry"
+                                           << QJsonValue(QJsonObject{
+                                                  {"id",   "action1"  },
+                                                  {"type", "Separator"}
+        });
+        QTest::newRow("unknown anchor") << "anchor" << QJsonValue("middle");
+        QTest::newRow("after without sibling") << "relativeTo" << QJsonValue("");
+        QTest::newRow("negative offset") << "offset" << QJsonValue(-1);
+        QTest::newRow("fractional offset") << "offset" << QJsonValue(1.5);
+    }
+
+    void testInvalidLayoutChangeJson() {
+        QFETCH(QString, key);
+        QFETCH(QJsonValue, value);
+
+        // A valid change with one field replaced
+        ActionLayoutChange change;
+        change.container = QStringLiteral("menu1");
+        change.entry = ActionLayoutEntry(QStringLiteral("action1"), ActionLayoutEntry::Action);
+        change.anchor = ActionInsertion::After;
+        change.relativeTo = QStringLiteral("action2");
+        auto obj = change.toJsonObject();
+        QVERIFY(ActionLayoutChange::fromJsonObject(obj));
+
+        obj.insert(key, value);
+        QVERIFY(!ActionLayoutChange::fromJsonObject(obj));
+    }
+
     void testContextRegistration() {
         ActionRegistry registry;
         auto context = new TestContext;
