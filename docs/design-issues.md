@@ -53,7 +53,6 @@
 - `<items>` 中的 `phony` 可以带有子元素，子元素是普通的条目声明，可以嵌套 `phony` 以形成多层目录。action、menu 与 group 的声明仍然不能带有子元素，因此 `<items>` 中的嵌套只表示目录，不与布局的嵌套混淆。
 - 既没有 `catalog` 也不在其他 `phony` 中的 `phony` 是目录树的根。其余条目在这种情况下归入 `defaultCatalog`，`topLevel` 不再影响目录。
 - `catalog` 指向的标识必须有声明，可以是 phony、menu 或 group，否则 AEC 报错。
-- 只在布局中出现的隐式声明的条目，同样按上述顺序取目录，不继承布局父节点。
 
 ```xml
 <items>
@@ -110,7 +109,8 @@
 - `shortcut`、`shortcuts` 与 `category` 只属于 action，写在其他标签上时报错。
 - `catalog` 指向未声明的标识时报错（第 18 条）。
 - 不带命名空间的未知属性报错，自定义属性必须带有命名空间，例如 `diffscope:componentType`。拼错的保留属性因此不再被当作自定义属性保留。
-- 插入的目标通常属于其他扩展，AEC 无法检查。registry 计算默认布局时，目标不存在的插入以 `qCWarning` 报告。
+- `anchor` 为 `first` 或 `last`（含省略 `anchor`）时写了 `relativeTo`，AEC 报错，因为它不起作用，多半是锚点写错了。`anchor` 为 `before` 或 `after` 时缺少 `relativeTo`，同样报错。
+- 插入的目标通常属于其他扩展，AEC 无法检查。registry 计算默认布局时，目标不存在的插入以 `qCWarning` 报告，目标中不存在 `relativeTo` 所指条目的插入也是如此。
 
 ## 22. `version` 既不校验也不使用（已定）
 
