@@ -352,28 +352,59 @@ struct ParserPrivate {
         info.categoryContext = resolve(e.properties.value(QStringLiteral("categoryTr")));
         info.descriptionContext = resolve(e.properties.value(QStringLiteral("descriptionTr")));
 
-        // attributes
+        // An attribute without a namespace must be one that the format defines for the type of the
+        // item, and a custom attribute must have a namespace
+        static const QSet<QString> commonKeys = {
+            QStringLiteral("id"),
+            QStringLiteral("text"),
+            QStringLiteral("description"),
+            QStringLiteral("icon"),
+            QStringLiteral("catalog"),
+            QStringLiteral("textTr"),
+            QStringLiteral("descriptionTr"),
+            QStringLiteral("if"),
+        };
+        static const QSet<QString> actionKeys = {
+            QStringLiteral("category"),
+            QStringLiteral("categoryTr"),
+            QStringLiteral("shortcut"),
+            QStringLiteral("shortcuts"),
+        };
+        static const QSet<QString> containerKeys = {
+            QStringLiteral("topLevel"),
+        };
         for (auto it = e.properties.begin(); it != e.properties.end(); ++it) {
-            static const QMap<QMXmlAdaptorAttributeKey, int> reservedKeys = {
-                {QMXmlAdaptorAttributeKey(QStringLiteral("id")),            {}},
-                {QMXmlAdaptorAttributeKey(QStringLiteral("text")),          {}},
-                {QMXmlAdaptorAttributeKey(QStringLiteral("category")),      {}},
-                {QMXmlAdaptorAttributeKey(QStringLiteral("description")),   {}},
-                {QMXmlAdaptorAttributeKey(QStringLiteral("catalog")),       {}},
-                {QMXmlAdaptorAttributeKey(QStringLiteral("shortcuts")),     {}},
-                {QMXmlAdaptorAttributeKey(QStringLiteral("shortcut")),      {}},
-                {QMXmlAdaptorAttributeKey(QStringLiteral("topLevel")),      {}},
-                {QMXmlAdaptorAttributeKey(QStringLiteral("icon")),          {}},
-                {QMXmlAdaptorAttributeKey(QStringLiteral("textTr")),        {}},
-                {QMXmlAdaptorAttributeKey(QStringLiteral("categoryTr")),    {}},
-                {QMXmlAdaptorAttributeKey(QStringLiteral("descriptionTr")), {}},
-                {QMXmlAdaptorAttributeKey(QStringLiteral("if")),            {}},
-            };
             const auto &key = it.key();
-            if (reservedKeys.contains(key)) {
+            if (!key.namespaceUri.isEmpty()) {
+                info.attributes.insert(QAK::ActionAttributeKey(key.name, key.namespaceUri),
+                                       resolve(it.value()));
                 continue;
             }
-            info.attributes.insert(QAK::ActionAttributeKey(key.name, key.namespaceUri), resolve(it.value()));
+            if (commonKeys.contains(key.name)) {
+                continue;
+            }
+            if (actionKeys.contains(key.name)) {
+                if (info.type == QAK::ActionItemInfo::Action) {
+                    continue;
+                }
+                error("%s: item \"%s\" has the attribute \"%s\", which only applies to actions\n",
+                      qPrintable(q.fileName), qPrintable(info.id), qPrintable(key.name));
+                std::exit(1);
+            }
+            if (containerKeys.contains(key.name)) {
+                if (info.type == QAK::ActionItemInfo::Group ||
+                    info.type == QAK::ActionItemInfo::Menu) {
+                    continue;
+                }
+                error("%s: item \"%s\" has the attribute \"%s\", which only applies to groups and "
+                      "menus\n",
+                      qPrintable(q.fileName), qPrintable(info.id), qPrintable(key.name));
+                std::exit(1);
+            }
+            error("%s: item \"%s\" has an unknown attribute \"%s\", and a custom attribute needs "
+                  "a namespace\n",
+                  qPrintable(q.fileName), qPrintable(info.id), qPrintable(key.name));
+            std::exit(1);
         }
     }
 

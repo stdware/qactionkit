@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- expect: error item "test\.open" has an unknown attribute "shortuct", and a custom attribute needs a namespace -->
+<!-- A misspelled attribute is not kept as a custom attribute -->
+<actionExtension>
+    <version>1.0</version>
+    <id>test.unknownAttribute</id>
+    <items>
+        <action id="test.open" shortuct="Ctrl+O" />
+    </items>
+</actionExtension>

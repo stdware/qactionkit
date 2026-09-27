@@ -159,9 +159,9 @@ namespace QAK {
         /// is \c false.
         bool topLevel() const;
 
-        /// Returns the attributes of the item that QActionKit does not interpret, keyed by name
-        /// and namespace URI. The attributes that other functions of this class return and the
-        /// translation contexts are excluded.
+        /// Returns the custom attributes of the item, keyed by name and namespace URI. A custom
+        /// attribute always has a namespace, since AEC rejects any other attribute without one
+        /// that the manifest format does not define.
         QMap<ActionAttributeKey, QString> attributes() const;
 
         /// Returns the children that the extension declares for the item, each of which refers to

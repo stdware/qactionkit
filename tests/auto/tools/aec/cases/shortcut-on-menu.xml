@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- expect: error item "test\.file" has the attribute "shortcut", which only applies to actions -->
+<actionExtension>
+    <version>1.0</version>
+    <id>test.shortcutOnMenu</id>
+    <items>
+        <menu id="test.file" shortcut="Alt+F" />
+    </items>
+</actionExtension>

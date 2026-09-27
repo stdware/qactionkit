@@ -131,7 +131,9 @@ manifest.xml ──qak_aec──> qak_manifest.cpp ──> ActionExtension ─�
 | `shortcut`、`shortcuts` | action | 无 |
 | `catalog` | 全部 | 见[目录](#目录) |
 | `topLevel` | group、menu | `false` |
-| `textTr`、`categoryTr`、`descriptionTr` | 全部 | 取自 `configuration` |
+| `textTr`、`descriptionTr` | 全部 | 取自 `configuration` |
+| `categoryTr` | action | 取自 `configuration` |
+| `if` | 全部 | 无，见[条件元素](#条件元素) |
 
 `shortcuts` 为以 `;` 分隔的列表，优先于 `shortcut`。`\` 转义其后的一个字符，字面的分号写作 `\;`。
 
@@ -139,7 +141,9 @@ manifest.xml ──qak_aec──> qak_manifest.cpp ──> ActionExtension ─�
 
 `topLevel` 只有在展开后恰为字符串 `true` 时才为真。`menuBar` 与 `toolBar` 总是顶层。
 
-其他属性原样保留，应用程序通过 `ActionItemInfo::attributes()` 读取，键为属性名**与命名空间 URI**。属于命名空间的属性即使本地名与保留属性相同也会保留：`x:text` 是自定义属性，`text` 则不是。
+属性写在不适用的类型上，例如 menu 上的 `shortcut`，AEC 报错。不属于命名空间的属性只能是上表中的属性，其他的均导致 AEC 报错，拼错的属性因此不会被当作自定义属性。
+
+自定义属性必须属于某个命名空间，例如 `diffscope:componentType`。它们原样保留，应用程序通过 `ActionItemInfo::attributes()` 读取，键为属性名**与命名空间 URI**。本地名与上表中的属性相同也无妨：`x:text` 是自定义属性，`text` 则不是。
 
 ### 条目标识
 

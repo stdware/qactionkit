@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- expect: success -->
+<!-- source: ActionAttributeKey\(QStringLiteral\("componentType"\), QStringLiteral\("urn:test"\)\), QStringLiteral\("panel"\) -->
+<actionExtension xmlns:t="urn:test">
+    <version>1.0</version>
+    <id>test.customAttribute</id>
+    <items>
+        <action id="test.open" t:componentType="panel" />
+    </items>
+</actionExtension>

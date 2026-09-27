@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- expect: error item "test\.open" has the attribute "topLevel", which only applies to groups and menus -->
+<actionExtension>
+    <version>1.0</version>
+    <id>test.topLevelOnAction</id>
+    <items>
+        <action id="test.open" topLevel="true" />
+    </items>
+</actionExtension>
