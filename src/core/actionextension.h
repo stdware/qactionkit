@@ -113,15 +113,17 @@ namespace QAK {
         QString text(bool translated = false) const;
         /// Returns the category of the action, a label that a command palette shows before the
         /// text, such as File in File: Open, translated in the context of the \c categoryTr
-        /// attribute if \a translated is \c true. Only actions carry a category. The category is
-        /// unrelated to the catalog, which places the item in the hierarchy of a settings page.
+        /// attribute if \a translated is \c true. Only actions carry a category, and the category
+        /// of other items is empty. The category is unrelated to the catalog, which places the item
+        /// in the hierarchy of a settings page.
         QString category(bool translated = false) const;
         QString description(bool translated = false) const;
 
         /// Returns the icon id, which defaults to the item id.
         QString icon() const;
 
-        /// Returns the shortcuts declared by the extension. Only actions carry shortcuts.
+        /// Returns the shortcuts declared by the extension. Only actions carry shortcuts, and the
+        /// list of other items is empty.
         /// \note These are the defaults. \c ActionRegistry::actionShortcuts() returns the shortcuts
         ///       with the keymap of the user applied.
         QList<QKeySequence> shortcuts() const;
@@ -130,7 +132,8 @@ namespace QAK {
         QString catalog() const;
 
         /// Returns whether the item is a top-level menu-like item, such as a pop-up menu, a menu
-        /// bar or a tool bar.
+        /// bar or a tool bar. Only menus and groups can be top-level, and the value of other items
+        /// is \c false.
         bool topLevel() const;
 
         /// Returns the attributes of the item, keyed by name and namespace URI. Three attribute
@@ -140,8 +143,13 @@ namespace QAK {
         /// \li \c descriptionTr for \c description()
         QMap<ActionAttributeKey, QString> attributes() const;
 
-        /// Returns the children of the item, each of which refers to another item of the same
-        /// extension.
+        /// Returns the children that the extension declares for the item, each of which refers to
+        /// another item of the same extension. Only menus and groups have children, and the list of
+        /// other items is empty.
+        ///
+        /// \note These are the defaults. \c ActionRegistry::layouts() returns the layout in effect,
+        ///       which includes the insertions of other extensions and the changes made by the
+        ///       user.
         QVector<ActionLayoutEntry> children() const;
 
     private:
