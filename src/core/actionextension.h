@@ -166,6 +166,10 @@ namespace QAK {
         /// value of other items is \c false.
         bool isExternal() const;
 
+        /// Returns whether the item is a command, an action that is not external. A command
+        /// appears in a command palette and can be bound to shortcuts.
+        bool isCommand() const;
+
         /// Returns the custom attributes of the item, keyed by name and namespace URI. A custom
         /// attribute always has a namespace, since AEC rejects any other attribute without one
         /// that the manifest format does not define.

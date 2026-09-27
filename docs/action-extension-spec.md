@@ -143,7 +143,7 @@ manifest.xml ──qak_aec──> qak_manifest.cpp ──> ActionExtension ─�
 
 `external` 同样只有展开后恰为 `true` 时才为真。它表示该 action 代表一个内容由应用程序维护的菜单，例如最近打开的文件。应用程序以 context 的 `addAction()` 登记该菜单的 `menuAction()`，QActionKit 不清空也不生成它的内容。external action 不得带有 `shortcut` 或 `shortcuts`，应用程序通过 `ActionItemInfo::isExternal()` 查询该属性。
 
-不是 external 的 action 是命令：它进入命令面板，可以绑定快捷键。external action、menu、group 与 phony 都不是命令。
+不是 external 的 action 是命令：它进入命令面板，可以绑定快捷键。external action、menu、group 与 phony 都不是命令。`ActionItemInfo::isCommand()` 返回条目是否为命令。
 
 属性写在不适用的类型上，例如 menu 上的 `shortcut`，AEC 报错。不属于命名空间的属性只能是上表中的属性，其他的均导致 AEC 报错，拼错的属性因此不会被当作自定义属性。
 

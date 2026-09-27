@@ -92,6 +92,10 @@ namespace QAK {
     bool ActionItemInfo::isExternal() const {
         return e->items[i].external;
     }
+    bool ActionItemInfo::isCommand() const {
+        const auto &d = e->items[i];
+        return d.type == Action && !d.external;
+    }
     QMap<ActionAttributeKey, QString> ActionItemInfo::attributes() const {
         return e->items[i].attributes;
     }

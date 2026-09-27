@@ -117,6 +117,24 @@ private Q_SLOTS:
         QVERIFY(!openFile->isExternal());
     }
 
+    void testCommand() {
+        ActionRegistry registry;
+        registry.addExtension(qak::test::testActions());
+
+        // Only an action that is not external is a command
+        const auto openFile = registry.actionInfo(QStringLiteral("test.file.openFile"));
+        QVERIFY(openFile);
+        QVERIFY(openFile->isCommand());
+
+        const auto recentFiles = registry.actionInfo(QStringLiteral("test.file.recentFiles"));
+        QVERIFY(recentFiles);
+        QVERIFY(!recentFiles->isCommand());
+
+        const auto file = registry.actionInfo(QStringLiteral("test.file"));
+        QVERIFY(file);
+        QVERIFY(!file->isCommand());
+    }
+
     void testSkippedInsertionsAreReported() {
         ActionRegistry registry;
         registry.addExtension(qak::test::testInsertions());
