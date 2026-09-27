@@ -1,6 +1,6 @@
 # 待办事项
 
-尚未解决的设计问题见 [design-issues.md](design-issues.md)。
+设计问题及其决定见 [design-issues.md](design-issues.md)。
 
 ## 缺少的功能
 
