@@ -20,6 +20,9 @@
         <action id="test.file.recentFiles" external="true" />
         <menu id="test.file" text="File" />
         <menu id="test.mainMenu" topLevel="true" />
+        <menu id="test.edit" topLevel="true" />
+        <action id="test.edit.undo" />
+        <action id="test.edit.redo" />
     </items>
 
     <layouts>
@@ -30,6 +33,11 @@
             <action id="test.file.openFile" />
             <action id="test.file.saveFile" />
             <action id="test.file.revert" />
+        </menu>
+        <menu id="test.edit">
+            <action id="test.edit.undo" />
+            <separator />
+            <action id="test.edit.redo" />
         </menu>
     </layouts>
 

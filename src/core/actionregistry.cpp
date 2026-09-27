@@ -7,6 +7,7 @@
 
 #include <QtCore/QStack>
 #include <QtCore/QQueue>
+#include <QtCore/QSet>
 #include <QtCore/QJsonArray>
 #include <QtCore/QJsonDocument>
 
@@ -660,6 +661,143 @@ namespace QAK {
         children.insert(position ? position->index : children.size(), entry);
     }
 
+    // Sets the position of the change to index within children: after the nearest entry with an id
+    // before it, past the separators and stretches in between, or from the beginning.
+    static void setPosition(ActionLayoutChange &change, const QVector<ActionLayoutEntry> &children,
+                            int index) {
+        int reference = index - 1;
+        while (reference >= 0 && isAnonymous(children[reference])) {
+            --reference;
+        }
+        change.offset = index - 1 - reference;
+        if (reference < 0) {
+            change.anchor = ActionInsertion::First;
+        } else {
+            change.anchor = ActionInsertion::After;
+            change.relativeTo = children[reference].id();
+        }
+    }
+
+    // Returns for each entry of a and of b whether it belongs to a heaviest common subsequence of
+    // the two, which stays in place while the other entries are removed and added. An entry with
+    // an id weighs more than a separator or stretch, so that the entries stay and the separators
+    // move when either could.
+    static std::pair<QVector<bool>, QVector<bool>>
+        commonEntries(const QVector<ActionLayoutEntry> &a, const QVector<ActionLayoutEntry> &b) {
+        const int n = int(a.size());
+        const int m = int(b.size());
+        // weights[i][j] is the weight of a heaviest common subsequence of a[i:] and b[j:]. Since
+        // the weight of a match depends on the entry only, a match of a[i] and b[j] belongs to one.
+        QVector<QVector<int>> weights(n + 1, QVector<int>(m + 1, 0));
+        for (int i = n - 1; i >= 0; --i) {
+            for (int j = m - 1; j >= 0; --j) {
+                weights[i][j] = a[i] == b[j] ? weights[i + 1][j + 1] + (isAnonymous(a[i]) ? 1 : 2)
+                                             : std::max(weights[i + 1][j], weights[i][j + 1]);
+            }
+        }
+        QVector<bool> keptA(n, false);
+        QVector<bool> keptB(m, false);
+        for (int i = 0, j = 0; i < n && j < m;) {
+            if (a[i] == b[j]) {
+                keptA[i++] = true;
+                keptB[j++] = true;
+            } else if (weights[i + 1][j] >= weights[i][j + 1]) {
+                ++i;
+            } else {
+                ++j;
+            }
+        }
+        return {keptA, keptB};
+    }
+
+    // Returns the changes that turn the adjacency map from into to when replayed on it. Within each
+    // container, the entries outside a longest common subsequence are removed and added, and a
+    // removal and an addition of the same id become a move. The changes are computed on a copy of
+    // from, all removals first, so that each position refers to the state it is replayed on. A
+    // container missing from to is unchanged.
+    static QVector<ActionLayoutChange>
+        diffLayouts(const QMap<QString, QVector<ActionLayoutEntry>> &from,
+                    const QMap<QString, QVector<ActionLayoutEntry>> &to) {
+        QMap<QString, QVector<bool>> keptFrom;
+        QMap<QString, QVector<bool>> keptTo;
+        for (auto it = to.begin(); it != to.end(); ++it) {
+            std::tie(keptFrom[it.key()], keptTo[it.key()]) =
+                commonEntries(from.value(it.key()), it.value());
+        }
+
+        // A removed entry with an id is paired with the first later addition of the same id
+        using Place = std::pair<QString, int>;
+        QHash<QString, QVector<Place>> removedPlaces;
+        for (auto it = to.begin(); it != to.end(); ++it) {
+            const auto &children = from.value(it.key());
+            const auto &kept = keptFrom[it.key()];
+            for (int i = 0; i < children.size(); ++i) {
+                if (!kept[i] && !isAnonymous(children[i])) {
+                    removedPlaces[children[i].id()].append({it.key(), i});
+                }
+            }
+        }
+        QSet<Place> movedFrom;
+        QSet<Place> movedTo;
+        for (auto it = to.begin(); it != to.end(); ++it) {
+            const auto &kept = keptTo[it.key()];
+            for (int i = 0; i < it.value().size(); ++i) {
+                const auto &entry = it.value()[i];
+                if (kept[i] || isAnonymous(entry)) {
+                    continue;
+                }
+                auto &places = removedPlaces[entry.id()];
+                if (!places.isEmpty()) {
+                    movedFrom.insert(places.takeFirst());
+                    movedTo.insert({it.key(), i});
+                }
+            }
+        }
+
+        QVector<ActionLayoutChange> changes;
+        auto work = from;
+        for (auto it = to.begin(); it != to.end(); ++it) {
+            auto &children = work[it.key()];
+            const auto original = from.value(it.key());
+            const auto &kept = keptFrom[it.key()];
+            // index is the place of original[i] in children, from which the removed ones are gone
+            for (int i = 0, index = 0; i < original.size(); ++i) {
+                if (kept[i]) {
+                    ++index;
+                    continue;
+                }
+                ActionLayoutChange change;
+                change.kind = ActionLayoutChange::Remove;
+                change.container = it.key();
+                change.entry = original[i];
+                change.moved = movedFrom.contains({it.key(), i});
+                if (isAnonymous(change.entry)) {
+                    setPosition(change, children, index);
+                }
+                children.remove(index);
+                changes.append(change);
+            }
+        }
+        for (auto it = to.begin(); it != to.end(); ++it) {
+            auto &children = work[it.key()];
+            const auto &kept = keptTo[it.key()];
+            for (int i = 0; i < it.value().size(); ++i) {
+                if (kept[i]) {
+                    continue;
+                }
+                ActionLayoutChange change;
+                change.kind = ActionLayoutChange::Add;
+                change.container = it.key();
+                change.entry = it.value()[i];
+                change.moved = movedTo.contains({it.key(), i});
+                setPosition(change, children, i);
+                children.insert(i, change.entry);
+                changes.append(change);
+            }
+        }
+        return changes;
+    }
+
     void ActionRegistryPrivate::replayLayoutChanges() const {
         changedAdjacencyMap = defaultLayouts.adjacencyMap();
         movedIds.clear();
@@ -763,6 +901,13 @@ namespace QAK {
     QVector<ActionLayoutChange> ActionRegistry::layoutChanges() const {
         Q_D(const ActionRegistry);
         return d->layoutChanges;
+    }
+
+    QVector<ActionLayoutChange>
+        ActionRegistry::computeLayoutChanges(const ActionLayouts &edited) const {
+        Q_D(const ActionRegistry);
+        d->flushActionItems();
+        return diffLayouts(d->defaultLayouts.adjacencyMap(), edited.adjacencyMap());
     }
 
     // Pending extensions are flushed after the changes are stored, since flushing replays them

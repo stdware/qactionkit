@@ -165,6 +165,11 @@ namespace QAK {
         void setLayoutChanges(const QVector<ActionLayoutChange> &changes);
         /// Appends \a change to the changes of the user and replays it.
         void addLayoutChange(const ActionLayoutChange &change);
+        /// Returns the changes that turn the default layouts into \a edited, for a settings page
+        /// that edits the layouts as a whole. Set as the changes of the user, they reproduce
+        /// \a edited as long as the default layouts stay the same. A container that \a edited
+        /// omits keeps its default children.
+        QVector<ActionLayoutChange> computeLayoutChanges(const ActionLayouts &edited) const;
 
         inline QList<QKeySequence> actionShortcuts(const QString &id) const;
 

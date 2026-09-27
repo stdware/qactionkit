@@ -446,6 +446,100 @@ private Q_SLOTS:
                  QStringList({"test.file.openFile", "test.file.saveFile", "test.file.revert"}));
     }
 
+    void testComputedLayoutChanges_data() {
+        using Edits = QMap<QString, QVector<ActionLayoutEntry>>;
+        const auto openFile = action("test.file.openFile");
+        const auto saveFile = action("test.file.saveFile");
+        const auto revert = action("test.file.revert");
+        const auto close = action("test.file.close");
+        const auto undo = action("test.edit.undo");
+        const auto redo = action("test.edit.redo");
+        const auto file = ActionLayoutEntry(QStringLiteral("test.file"), ActionLayoutEntry::Menu);
+        const auto sep = separator();
+
+        // The containers that the user has edited, and the number of changes that belong to moves
+        QTest::addColumn<Edits>("edits");
+        QTest::addColumn<int>("moved");
+
+        QTest::newRow("unchanged") << Edits() << 0;
+        QTest::newRow("removal") << Edits({
+                                        {"test.file", {openFile, revert}}
+        })
+                                 << 0;
+        QTest::newRow("addition") << Edits({
+                                         {"test.file", {openFile, close, saveFile, revert}}
+        })
+                                  << 0;
+        QTest::newRow("reorder") << Edits({
+                                        {"test.file", {revert, openFile, saveFile}}
+        })
+                                 << 2;
+        QTest::newRow("move to another container") << Edits({
+                                                          {"test.file",     {openFile, saveFile}},
+                                                          {"test.mainMenu", {revert, file}      },
+        })
+                                                   << 2;
+        QTest::newRow("moves across containers") << Edits({
+                                                        {"test.file", {openFile, undo, saveFile}},
+                                                        {"test.edit", {revert, sep, redo}       },
+        })
+                                                 << 4;
+        QTest::newRow("form change")
+            << Edits({
+                   {"test.mainMenu",
+                    {ActionLayoutEntry(QStringLiteral("test.file"), ActionLayoutEntry::Group)}},
+        })
+            << 2;
+        QTest::newRow("separators added")
+            << Edits({
+                   {"test.file", {sep, openFile, sep, sep, saveFile, revert, sep}}
+        })
+            << 0;
+        QTest::newRow("entry after a separator")
+            << Edits({
+                   {"test.file", {openFile, sep, close, saveFile, revert}}
+        })
+            << 0;
+        QTest::newRow("separator removed") << Edits({
+                                                  {"test.edit", {undo, redo}}
+        })
+                                           << 0;
+        QTest::newRow("separator moved") << Edits({
+                                                {"test.edit", {sep, undo, redo, sep}}
+        })
+                                         << 0;
+    }
+
+    void testComputedLayoutChanges() {
+        using Edits = QMap<QString, QVector<ActionLayoutEntry>>;
+        QFETCH(Edits, edits);
+        QFETCH(int, moved);
+
+        QTest::failOnWarning(QRegularExpression(QStringLiteral(".*")));
+        ActionRegistry registry;
+        registry.addExtension(qak::test::testActions());
+        auto edited = registry.defaultLayouts().adjacencyMap();
+        for (auto it = edits.begin(); it != edits.end(); ++it) {
+            edited[it.key()] = it.value();
+        }
+
+        const auto changes = registry.computeLayoutChanges(ActionLayouts(edited, {}));
+        QCOMPARE(changes.isEmpty(), edits.isEmpty());
+        QCOMPARE(std::count_if(changes.begin(), changes.end(),
+                               [](const ActionLayoutChange &change) { return change.moved; }),
+                 moved);
+
+        // Stored as JSON and replayed, the changes reproduce the edited layouts
+        QVector<ActionLayoutChange> restored;
+        for (const auto &change : changes) {
+            const auto restoredChange = ActionLayoutChange::fromJsonObject(change.toJsonObject());
+            QVERIFY(restoredChange);
+            restored.append(*restoredChange);
+        }
+        registry.setLayoutChanges(restored);
+        QVERIFY(registry.layouts().adjacencyMap() == edited);
+    }
+
     void testMissingAnchorAppends() {
         ActionRegistry registry;
         registry.addExtension(qak::test::testActions());
