@@ -8,7 +8,7 @@ function(qak_install_tool _target)
 
         install(TARGETS ${_target}
             EXPORT ${QACTIONKIT_INSTALL_NAME}Targets
-            RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}" OPTIONAL
+            RUNTIME DESTINATION "${_tools_dir}" OPTIONAL
         )
     endif()
 endfunction()
