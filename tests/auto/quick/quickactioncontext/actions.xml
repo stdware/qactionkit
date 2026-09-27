@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<actionExtension>
+
+    <version>1.0</version>
+    <id>org.qactionkit.test.quick</id>
+
+    <items>
+        <action id="test.openFile" text="&amp;Open File" description="Open a file"
+                shortcut="Ctrl+O" />
+        <action id="test.saveFile" text="Save File" />
+        <action id="test.exit" text="Exit" />
+        <menu id="test.file" text="File" />
+        <menu id="test.recent" text="Recent Files" />
+    </items>
+
+    <layouts>
+        <menu id="test.file">
+            <!-- A group contributes a separator on each side -->
+            <group id="test.fileActions">
+                <action id="test.openFile" />
+                <action id="test.saveFile" />
+            </group>
+            <!-- Redundant next to the separator of the group above -->
+            <separator />
+            <menu id="test.recent" />
+            <action id="test.exit" />
+        </menu>
+    </layouts>
+
+</actionExtension>

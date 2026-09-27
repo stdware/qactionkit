@@ -33,3 +33,7 @@ add_subdirectory(tools)
 if(QACTIONKIT_BUILD_WIDGETS)
     add_subdirectory(widgets)
 endif()
+
+if(QACTIONKIT_BUILD_QUICK)
+    add_subdirectory(quick)
+endif()
