@@ -39,21 +39,52 @@
 
 实现时须同时完成三件事：AEC 的错误信息区分身份不符与形态不允许；规范中补充上表；AEC 测试覆盖表中每一种组合。第 43、44 条是该模型在 AEC 之外尚未保证的部分。
 
-## 18. 目录（catalog）的声明语义与实际语义不一致
+## 18. 目录（catalog）的声明语义与实际语义不一致（已定）
 
 `findOrInsertItemInfo()` 中的 `if (info.catalog.isEmpty()) info.catalog = upperCatalog;` 使条目的目录静默继承其布局父节点，包括 group。以 `examples/shared/core-actions.xml` 为例，`core.openFile` 的目录是 `core.fileOpenActions`（一个 group），声明的 `defaultCatalog` 没有被任何条目使用，`core.catalog.others` 成为无用节点。
 
 此外还有三处不一致：布局中的条目继承布局父节点，插入中的条目则使用 `defaultCatalog`，同一个 action 由宿主排入菜单与由插件插入时归属不同；被多处引用时以第一处为准，结果依赖文档顺序；`topLevel` 兼作「不使用 `defaultCatalog`」的标记，使视图层的概念决定了逻辑树的根集合。
 
-应当二选一：目录只取显式声明与 `defaultCatalog`；或者明确规定目录默认镜像布局，并删除 `defaultCatalog`。
+目录默认镜像布局的方向不可行，原因有二。第 17 条删除 `toolBar` 标签之后，AEC 无法区分工具栏与菜单，工具栏中的引用也会参与推导。目录在编译时确定，布局却可以由用户在运行时修改，镜像只在默认布局下成立。目录服务于设置页的条目树与应用程序按逻辑分组的查询（例如取出所有面板动作），两者都要求它是条目身份层面的稳定信息。
 
-## 19. `hash` 的实现语义与使用语义不符，会产生重复的菜单项
+**决定。** 目录只来自声明，布局与插入都不影响目录。
+
+- 条目的目录依次取：自身的 `catalog` 属性；在 `<items>` 中直接包含它的 `phony`；`defaultCatalog`。
+- `<items>` 中的 `phony` 可以带有子元素，子元素是普通的条目声明，可以嵌套 `phony` 以形成多层目录。action、menu 与 group 的声明仍然不能带有子元素，因此 `<items>` 中的嵌套只表示目录，不与布局的嵌套混淆。
+- 既没有 `catalog` 也不在其他 `phony` 中的 `phony` 是目录树的根。其余条目在这种情况下归入 `defaultCatalog`，`topLevel` 不再影响目录。
+- `catalog` 指向的标识必须有声明，可以是 phony、menu 或 group，否则 AEC 报错。
+- 只在布局中出现的隐式声明的条目，同样按上述顺序取目录，不继承布局父节点。
+
+```xml
+<items>
+    <phony id="core.file" text="File">
+        <action id="core.openFile" text="Open File" />
+        <action id="core.saveFile" text="Save File" />
+        <phony id="core.file.export" text="Export">
+            <action id="core.exportMidi" />
+        </phony>
+    </phony>
+</items>
+```
+
+## 19. 用户布局的合并方式（已定）
 
 `hash` 是清单字节的 SHA-256 摘要，却被用来判断「该扩展的贡献是否已并入用户保存的布局」。修改一行注释或缩进就会改变摘要，`correctLayouts()` 因此将其视为新扩展，再次执行 `applyInsertion()`。保存的布局中已经存在这些插入的条目，而 `applyInsertion()` 不去重，`LayoutsTrait::Unique = false` 也不去重，结果是菜单项重复。
 
-修正方法二选一：对条目、布局与插入的规范化序列化结果计算摘要；或者使合并满足幂等（插入带有稳定的标识，合并前检查目标中是否已有其结果）。
+阅读 `correctLayouts()` 另外得出两个问题。其一，扩展自身菜单中新增的条目不会出现：保存的布局中已有该菜单，合并时整体跳过，新条目只有在用户重置布局后才可见。其二，用户删除的插入条目在插件更新后重新出现，因为插入被全部重新执行。三个问题的共同原因是：保存的是合并后的完整布局，而「已合并的内容」只以整份清单的摘要记录，粒度不足以区分哪些条目是新的。三个问题都尚未以测试复现。
 
-## 20. `defaultLayouts()` 与 `correctLayouts({})` 并不等价
+**决定：只保存用户的改动。** 做法与 IntelliJ 平台的菜单自定义相同：该平台以 `ActionUrl` 记录相对默认菜单的新增、删除与移动（`ADDED`、`DELETED`、`MOVE`），`CustomActionsSchema` 只持久化这些记录，构造菜单时由 `CustomizationUtil.correctActionGroup()` 将记录应用于默认分组。
+
+- 每次均由当前登记的全部扩展重新计算默认布局，再按顺序重放用户的改动记录。计算默认布局的路径只有一条。
+- 改动记录描述某个容器中的一个条目被新增、删除或移动。位置以相邻条目表示，而不是以下标表示。锚点条目不存在时退到容器末尾，被删除或移动的条目不存在时忽略该记录。重放时按第 17 条的组合表检查身份与形态（第 43 条）。
+- 删除 `ActionExtension::hash()`、`ActionLayouts` 的 `hashList`，以及 AEC 计算摘要的代码。
+- 扩展更新后，新条目按默认布局出现，用户删除的条目保持删除，插入不会重复。
+
+**待定。** 记录的具体格式，包括分隔符（没有标识）的表示方式；记录由设置页在每次编辑时产生，还是在保存时比较默认布局与用户布局得出。
+
+## 20. `defaultLayouts()` 与 `correctLayouts({})` 并不等价（随第 19 条消失）
+
+第 19 条的决定之后只剩「计算默认布局」一条路径，`correctLayouts()` 被重放记录取代，本条随之消失。以下为原问题。
 
 文档称 `defaultLayouts()` 等价于 `correctLayouts(ActionLayouts())`。实际上，`defaultLayouts()` 先将所有扩展的全部条目放入邻接表，再逐个应用插入；`correctLayouts()` 则对每个扩展依次加入其条目并应用其插入。后者中，若扩展 A 的插入目标属于登记在后的扩展 B，此时 B 的条目尚未加入，`applyInsertion()` 直接返回，插入被静默丢弃。触发条件为：用户保存过布局，一次新增两个以上的扩展，且其中一个向另一个的菜单插入条目。
 

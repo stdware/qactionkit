@@ -22,6 +22,6 @@
 
 ## 代码整理
 
-- `ActionRegistryPrivate::defaultLayouts()` 与 `correctLayouts()` 的函数体大部分重复。文档称 `defaultLayouts()` 等价于 `correctLayouts(ActionLayouts())`，实际上是另一套实现。
+- `ActionRegistryPrivate::defaultLayouts()` 与 `correctLayouts()` 的函数体大部分重复。文档称 `defaultLayouts()` 等价于 `correctLayouts(ActionLayouts())`，实际上是另一套实现。按设计问题第 19 条的决定，`correctLayouts()` 将被重放用户改动记录取代，本条随之消失。
 - `parser.cpp` 中的 `simplifyActionText()` 与 `isStringDigits()` 未被使用。
 - `ActionFamily::actionIcon(theme, id)` 以同一个字符串同时查找用户覆盖与主题图标，前者需要动作标识，后者需要图标标识。调用方传入 `info.icon()`，因此条目的图标标识与其自身标识不同时，覆盖查找的结果错误。
