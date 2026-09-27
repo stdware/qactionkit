@@ -58,7 +58,7 @@ manifest.xml ──qak_aec──> qak_manifest.cpp ──> ActionExtension ─�
 </configuration>
 ```
 
-`defaultCatalog` 指定目录节点，未写 `catalog` 且没有其他来源的条目归入该节点，见[目录](#目录)。若没有条目声明该节点，AEC 自动为它创建一个 `phony` 条目。
+`defaultCatalog` 指定目录节点，未写 `catalog` 且没有其他来源的条目归入该节点，见[目录](#目录)。该节点须由本扩展声明，否则 AEC 报错。
 
 `translationContext` 指定三个可翻译字段的 Qt 翻译上下文，未指定的字段分别使用内置的上下文 `QActionKit::ActionText`、`QActionKit::ActionCategory`、`QActionKit::ActionDescription`。条目可以用 `textTr`、`categoryTr`、`descriptionTr` 属性分别覆盖。这三个属性不出现在 `ActionItemInfo::attributes()` 中。
 
@@ -226,6 +226,16 @@ AEC 检查以下规则：
 1. 条目在本扩展的布局中出现时，取第一个包含它的容器的标识。插入不提供目录。
 2. 否则，顶层条目与 `phony` 条目没有目录，作为根节点。
 3. 其余条目取 `defaultCatalog`，未配置时同样作为根节点。
+
+`catalog` 与 `defaultCatalog` 须指向本扩展声明的 phony、menu 或 group，否则 AEC 报错。插件使用宿主的目录节点时，在自己的清单中将它再声明为 phony，宿主不存在时，该节点的文本与翻译取自插件：
+
+```xml
+<!-- 插件的清单 -->
+<items>
+    <phony id="core.file" text="File" />
+    <action id="plugin.exportAudio" catalog="core.file" />
+</items>
+```
 
 ## 编译
 

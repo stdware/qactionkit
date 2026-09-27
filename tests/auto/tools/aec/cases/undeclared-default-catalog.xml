@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- expect: error the configuration has the undeclared catalog "host\.plugins" -->
+<actionExtension>
+    <version>1.0</version>
+    <id>test.undeclaredDefaultCatalog</id>
+    <configuration>
+        <defaultCatalog>host.plugins</defaultCatalog>
+    </configuration>
+    <items>
+        <action id="test.open" />
+    </items>
+</actionExtension>

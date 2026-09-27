@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- expect: error item "test\.open" has the undeclared catalog "test\.fiel" -->
+<actionExtension>
+    <version>1.0</version>
+    <id>test.undeclaredCatalog</id>
+    <items>
+        <action id="test.open" catalog="test.fiel" />
+        <phony id="test.file" />
+    </items>
+</actionExtension>

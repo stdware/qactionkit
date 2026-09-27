@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- expect: success -->
+<!-- A catalog may be declared after the items in it, and a node of another extension is
+     declared again as a phony -->
+<actionExtension>
+    <version>1.0</version>
+    <id>test.catalogs</id>
+    <configuration>
+        <defaultCatalog>host.plugins</defaultCatalog>
+    </configuration>
+    <items>
+        <action id="test.open" catalog="test.file" />
+        <action id="test.export" catalog="host.file" />
+        <action id="test.close" />
+        <phony id="test.file" />
+        <phony id="host.file" text="File" />
+        <phony id="host.plugins" text="Plugins" />
+    </items>
+</actionExtension>

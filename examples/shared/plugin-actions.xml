@@ -26,6 +26,11 @@
     <items>
         <!-- Example: plugin actions -->
         <action id="plugin.showHello" text="Show Hello" description="Show hello text" />
+
+        <!-- Example: a catalog of the application, declared again for the default catalog. The
+             registry uses the declaration of the application, which is registered first, and
+             this one if the application does not declare the catalog. -->
+        <phony id="core.catalog.plugins" text="Plugins" />
     </items>
 
     <!-- Declaration: plugin insertions -->

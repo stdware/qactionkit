@@ -802,6 +802,32 @@ struct ParserPrivate {
             std::ignore = itemInfoMap.append(entity.id, entity);
         }
 
+        // Check the catalogs, which must be declared in this extension. A node of another extension
+        // is declared again as a phony, which supplies its text if that extension is absent. The
+        // catalogs written on the items are the only ones before the layouts are parsed.
+        const auto checkCatalog = [this](const QString &catalog, const QString &user) {
+            auto it = itemInfoMap.find(catalog);
+            if (it == itemInfoMap.end()) {
+                error("%s: %s has the undeclared catalog \"%s\"\n", qPrintable(q.fileName),
+                      qPrintable(user), qPrintable(catalog));
+                std::exit(1);
+            }
+            if (it->second.type == QAK::ActionItemInfo::Action) {
+                error("%s: %s has the catalog \"%s\", which is an action\n", qPrintable(q.fileName),
+                      qPrintable(user), qPrintable(catalog));
+                std::exit(1);
+            }
+        };
+        if (!defaultCatalog.isEmpty()) {
+            checkCatalog(defaultCatalog, QStringLiteral("the configuration"));
+        }
+        for (const auto &pair : itemInfoMap) {
+            const auto &info = pair.second;
+            if (!info.catalog.isEmpty()) {
+                checkCatalog(info.catalog, QStringLiteral("item \"%1\"").arg(info.id));
+            }
+        }
+
         // Parse layouts
         for (const auto &item : std::as_const(layoutElements)) {
             if (shouldSkipElement(*item)) {
@@ -817,15 +843,6 @@ struct ParserPrivate {
                 continue;
             }
             result.extension.insertions.append(parseInsertion(*item));
-        }
-
-        // Add default catalog as a phony item if not specified
-        if (!defaultCatalog.isEmpty() && !itemInfoMap.contains(defaultCatalog)) {
-            ActionItemInfoMessage info;
-            info.type = QAK::ActionItemInfo::Phony;
-            info.id = defaultCatalog;
-            info.text = itemIdToText(info.id);
-            itemInfoMap.prepend(info.id, info);
         }
 
         // Collect items

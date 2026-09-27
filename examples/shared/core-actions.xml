@@ -75,8 +75,8 @@
         <menu id="core.mainToolBar" topLevel="true" />
 
         <!-- Example: catalogs -->
-        <phony id="core.catalog.plugins" />
-        <phony id="core.catalog.other" />
+        <phony id="core.catalog.plugins" text="Plugins" />
+        <phony id="core.catalog.others" text="Others" />
     </items>
 
     <!-- Declaration: core layouts, which refer to declared items by id only -->

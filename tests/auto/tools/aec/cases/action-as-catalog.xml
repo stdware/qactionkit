@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- expect: error item "test\.open" has the catalog "test\.save", which is an action -->
+<actionExtension>
+    <version>1.0</version>
+    <id>test.actionAsCatalog</id>
+    <items>
+        <action id="test.open" catalog="test.save" />
+        <action id="test.save" />
+    </items>
+</actionExtension>
