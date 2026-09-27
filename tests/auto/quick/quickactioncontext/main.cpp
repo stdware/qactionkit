@@ -117,6 +117,34 @@ private Q_SLOTS:
         QCOMPARE(texts.value(0), QStringLiteral("QActionKit::ActionText|&Open File"));
         QCOMPARE(texts.value(3), QStringLiteral("QActionKit::ActionText|Recent Files"));
     }
+
+    void testTextsAreUpdated() {
+        registry->updateContext(QAK::AE_Layouts);
+
+        ContextTranslator translator;
+        QCoreApplication::installTranslator(&translator);
+        const auto guard = qScopeGuard([&] { QCoreApplication::removeTranslator(&translator); });
+
+        // Both the actions and the menus that were already created are updated
+        registry->updateContext(QAK::AE_Texts);
+        const auto texts = contents();
+        QCOMPARE(texts.value(0), QStringLiteral("QActionKit::ActionText|&Open File"));
+        QCOMPARE(texts.value(3), QStringLiteral("QActionKit::ActionText|Recent Files"));
+    }
+
+    void testKeymapOverrideIsApplied() {
+        registry->updateContext(QAK::AE_Layouts);
+        const auto openFile = objectAt(0);
+        QVERIFY(openFile);
+        QCOMPARE(openFile->property("shortcut").value<QKeySequence>(),
+                 QKeySequence(QStringLiteral("Ctrl+O")));
+
+        registry->setShortcuts(QStringLiteral("test.openFile"),
+                               QList<QKeySequence>{QKeySequence(QStringLiteral("Ctrl+Shift+O"))});
+        registry->updateContext(QAK::AE_Keymap);
+        QCOMPARE(openFile->property("shortcut").value<QKeySequence>(),
+                 QKeySequence(QStringLiteral("Ctrl+Shift+O")));
+    }
 };
 
 QTEST_MAIN(Test)

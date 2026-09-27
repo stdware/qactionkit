@@ -87,6 +87,14 @@ namespace QAK {
         auto attachedInfoObject = attachInfoObjectTo(actionId, object, All);
         if (auto action = qobject_cast<QQuickAction *>(object)) {
             action->setText(attachedInfoObject->text());
+            QObject::connect(attachedInfoObject, &QuickActionInstantiatorAttachedType::textChanged,
+                             action, [=] { action->setText(attachedInfoObject->text()); });
+            QObject::connect(attachedInfoObject,
+                             &QuickActionInstantiatorAttachedType::shortcutsChanged, action, [=] {
+                                 const auto shortcuts = attachedInfoObject->shortcuts();
+                                 action->setShortcut(shortcuts.isEmpty() ? QKeySequence()
+                                                                         : shortcuts.first());
+                             });
             auto icon = action->icon();
             icon.setSource(attachedInfoObject->icon().source());
             QObject::connect(attachedInfoObject, &QuickActionInstantiatorAttachedType::iconChanged, action, [=] {
@@ -103,6 +111,8 @@ namespace QAK {
             }
         } else if (auto menu = qobject_cast<QQuickMenu *>(object)) {
             menu->setTitle(attachedInfoObject->text());
+            QObject::connect(attachedInfoObject, &QuickActionInstantiatorAttachedType::textChanged,
+                             menu, [=] { menu->setTitle(attachedInfoObject->text()); });
             auto icon = menu->icon();
             icon.setSource(attachedInfoObject->icon().source());
             QObject::connect(attachedInfoObject, &QuickActionInstantiatorAttachedType::iconChanged, menu, [=] {
@@ -123,6 +133,8 @@ namespace QAK {
         auto attachedInfoObject = attachInfoObjectTo(menuId, menu, All);
         if (auto menuMenu = qobject_cast<QQuickMenu *>(menu)) {
             menuMenu->setTitle(attachedInfoObject->text());
+            QObject::connect(attachedInfoObject, &QuickActionInstantiatorAttachedType::textChanged,
+                             menuMenu, [=] { menuMenu->setTitle(attachedInfoObject->text()); });
             auto icon = menuMenu->icon();
             icon.setSource(attachedInfoObject->icon().source());
             if (attachedInfoObject->icon().color().isValid()) {
@@ -276,13 +288,18 @@ namespace QAK {
         }
     }
     void QuickActionInstantiatorPrivate::updateActionProperty(ActionProperty property) {
+        // The attached object is initialized again, without attachInfoObjectTo(), which would set
+        // the instantiator of a menu to this one in place of the instantiator of its contents.
         for (auto object : objects) {
-            auto action = qobject_cast<QQuickAction *>(object);
-            if (!action)
+            const auto element = getElement(object);
+            if (element == Separator || element == Stretch)
                 continue;
             auto attachedInfoObject = qobject_cast<QuickActionInstantiatorAttachedType *>(
                 qmlAttachedPropertiesObject<QuickActionInstantiator>(object));
-            attachInfoObjectTo(attachedInfoObject->id(), object, property);
+            attachedInfoObject->init(context->registry()
+                                         ->actionInfo(attachedInfoObject->id())
+                                         .value_or(ActionItemInfo()),
+                                     context, property);
         }
     }
     QuickActionInstantiatorPrivate::Element
