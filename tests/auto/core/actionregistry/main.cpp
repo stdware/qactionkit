@@ -116,6 +116,15 @@ private Q_SLOTS:
                 ActionLayoutEntry({}, ActionLayoutEntry::Stretch));
     }
 
+    void testLayoutEntryTypeIsRegistered() {
+        // The type property of the gadget is readable through the meta-object system
+        const ActionLayoutEntry entry(QStringLiteral("id"), ActionLayoutEntry::Menu);
+        const auto &metaObject = ActionLayoutEntry::staticMetaObject;
+        const auto property = metaObject.property(metaObject.indexOfProperty("type"));
+        QVERIFY(property.isEnumType());
+        QCOMPARE(property.readOnGadget(&entry).toString(), QStringLiteral("Menu"));
+    }
+
     void testLayoutsJsonRoundTrip() {
         const auto layouts = sampleLayouts();
         const auto restored = ActionLayouts::fromJsonObject(layouts.toJsonObject());

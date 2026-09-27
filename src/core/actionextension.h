@@ -46,7 +46,7 @@ namespace QAK {
     class QAK_CORE_EXPORT ActionLayoutEntry {
         Q_GADGET
         Q_PROPERTY(QString id READ id CONSTANT)
-        Q_PROPERTY(ActionLayoutEntry::Type type READ type CONSTANT)
+        Q_PROPERTY(Type type READ type CONSTANT)
     public:
         /// The kinds of entry a layout node can hold.
         enum Type {
@@ -56,6 +56,7 @@ namespace QAK {
             Separator, ///< A separator, which has no id
             Stretch,   ///< An expanding space, which has no id
         };
+        Q_ENUM(Type)
 
         inline ActionLayoutEntry(const QString &id = {}, Type type = Action)
             : m_id(id), m_type(type) {
