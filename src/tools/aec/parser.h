@@ -46,6 +46,7 @@ struct ActionInsertionMessage {
     QAK::ActionInsertion::Anchor anchor;
     QString target;
     QString relativeTo;
+    int priority;
     QVector<ActionLayoutEntryMessage> items;
 };
 

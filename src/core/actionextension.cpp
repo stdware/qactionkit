@@ -17,10 +17,7 @@ namespace QAK {
     static int sharedNullLayoutEntryIndex = 0;
 
     static ActionInsertionData sharedNullInsertion = {
-        {},
-        {},
-        {},
-        {},
+        {}, {}, {}, ActionInsertionData::defaultPriority, {},
     };
 
     static ActionExtensionData sharedNullExtensionData = {
@@ -115,6 +112,9 @@ namespace QAK {
     }
     QString ActionInsertion::relativeTo() const {
         return e->insertions[i].relativeTo;
+    }
+    int ActionInsertion::priority() const {
+        return e->insertions[i].priority;
     }
     QVector<ActionLayoutEntry> ActionInsertion::items() const {
         return e->insertions[i].items;

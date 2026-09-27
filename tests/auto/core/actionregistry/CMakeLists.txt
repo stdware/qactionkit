@@ -19,4 +19,15 @@ qak_add_action_extension(_plugin_src "plugin.xml"
     NAMESPACE qak::test
 )
 
-qak_add_auto_test(SOURCES ${_action_src} ${_insertion_src} ${_plugin_src})
+# Two plugins that insert into the same positions with priorities
+qak_add_action_extension(_priority_a_src "priority-a.xml"
+    FUNCTION testPriorityA
+    NAMESPACE qak::test
+)
+qak_add_action_extension(_priority_b_src "priority-b.xml"
+    FUNCTION testPriorityB
+    NAMESPACE qak::test
+)
+
+qak_add_auto_test(SOURCES ${_action_src} ${_insertion_src} ${_plugin_src} ${_priority_a_src}
+    ${_priority_b_src})

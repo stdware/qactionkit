@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- expect: success -->
+<!-- The priority is written as given, and 1000 if omitted -->
+<!-- source: "host\.help"\),(?:(?!// index)[\s\S])*// priority\s*-5, -->
+<!-- source: "host\.tools"\),(?:(?!// index)[\s\S])*// priority\s*1000, -->
+<actionExtension>
+    <version>1.0</version>
+    <id>test.priorities</id>
+    <items>
+        <action id="test.hello" />
+    </items>
+    <insertions>
+        <insertion target="host.help" priority="-5">
+            <action id="test.hello" />
+        </insertion>
+        <insertion target="host.tools">
+            <action id="test.hello" />
+        </insertion>
+    </insertions>
+</actionExtension>

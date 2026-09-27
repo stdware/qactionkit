@@ -41,7 +41,11 @@ namespace QAK {
         ActionInsertion::Anchor anchor;
         QString target;
         QString relativeTo;
+        int priority;
         QVector<ActionLayoutEntry> items;
+
+        // The priority of an insertion that does not specify one
+        static constexpr int defaultPriority = 1000;
     };
 
     struct ActionExtensionData {

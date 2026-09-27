@@ -1,6 +1,7 @@
 #include "actionregistry.h"
 #include "actionregistry_p.h"
 
+#include <algorithm>
 #include <set>
 #include <utility>
 
@@ -332,6 +333,51 @@ namespace QAK {
         return InsertionResult::Applied;
     }
 
+    struct PendingInsertion {
+        const ActionExtension *extension;
+        ActionInsertion insertion;
+    };
+
+    // Returns the insertions of the extensions in the order in which they are applied. Among the
+    // insertions at the same position, those with smaller priorities end up first, and those with
+    // the same priority follow the order of registration and of the manifest. An insertion at the
+    // first position or after a sibling goes before those applied earlier there, so the insertions
+    // at such a position are applied in reverse. Each position is applied where its first insertion
+    // occurs, so that an insertion still follows the one that adds its sibling.
+    static QVector<PendingInsertion>
+        orderInsertions(const QVector<const ActionExtension *> &extensions) {
+        QVector<QVector<PendingInsertion>> positions;
+        QHash<QString, int> positionIndexes;
+        for (const auto &e : extensions) {
+            for (int i = 0; i < e->insertionCount(); ++i) {
+                const auto insertion = e->insertion(i);
+                const auto key = insertion.target() + QChar(u'\0') +
+                                 QString::number(insertion.anchor()) + QChar(u'\0') +
+                                 insertion.relativeTo();
+                auto it = positionIndexes.find(key);
+                if (it == positionIndexes.end()) {
+                    it = positionIndexes.insert(key, int(positions.size()));
+                    positions.emplace_back();
+                }
+                positions[it.value()].append({e, insertion});
+            }
+        }
+
+        QVector<PendingInsertion> result;
+        for (auto &position : positions) {
+            std::stable_sort(position.begin(), position.end(),
+                             [](const PendingInsertion &a, const PendingInsertion &b) {
+                                 return a.insertion.priority() < b.insertion.priority();
+                             });
+            const auto anchor = position.first().insertion.anchor();
+            if (anchor == ActionInsertion::First || anchor == ActionInsertion::After) {
+                std::reverse(position.begin(), position.end());
+            }
+            result += position;
+        }
+        return result;
+    }
+
     // Equivalent to:
     //     correctLayouts(ActionLayouts());
     ActionLayouts ActionRegistryPrivate::defaultLayouts() const {
@@ -342,29 +388,30 @@ namespace QAK {
 
         QStringList hashList;
         hashList.reserve(extensions.size());
+        QVector<const ActionExtension *> extensionList;
         for (const auto &pair : extensions) {
-            const auto &e = pair.second;
-            // Apply insertions. A skipped insertion is reported here only: in a layout customized
-            // by the user, a missing target or sibling may have been removed on purpose.
-            for (int i = 0; i < e->insertionCount(); ++i) {
-                const auto insertion = e->insertion(i);
-                switch (applyInsertion(insertion, oldAdjacencyMap)) {
-                    case InsertionResult::Applied:
-                        break;
-                    case InsertionResult::MissingTarget:
-                        qCWarning(qActionKitLog).noquote().nospace()
-                            << "Action extension \"" << e->id() << "\" inserts into \""
-                            << insertion.target() << "\", which does not exist";
-                        break;
-                    case InsertionResult::MissingRelativeTo:
-                        qCWarning(qActionKitLog).noquote().nospace()
-                            << "Action extension \"" << e->id() << "\" inserts relative to \""
-                            << insertion.relativeTo() << "\", which \"" << insertion.target()
-                            << "\" does not contain";
-                        break;
-                }
+            extensionList.append(pair.second);
+            hashList.append(pair.second->hash());
+        }
+
+        // Apply insertions. A skipped insertion is reported here only: in a layout customized by
+        // the user, a missing target or sibling may have been removed on purpose.
+        for (const auto &[e, insertion] : orderInsertions(extensionList)) {
+            switch (applyInsertion(insertion, oldAdjacencyMap)) {
+                case InsertionResult::Applied:
+                    break;
+                case InsertionResult::MissingTarget:
+                    qCWarning(qActionKitLog).noquote().nospace()
+                        << "Action extension \"" << e->id() << "\" inserts into \""
+                        << insertion.target() << "\", which does not exist";
+                    break;
+                case InsertionResult::MissingRelativeTo:
+                    qCWarning(qActionKitLog).noquote().nospace()
+                        << "Action extension \"" << e->id() << "\" inserts relative to \""
+                        << insertion.relativeTo() << "\", which \"" << insertion.target()
+                        << "\" does not contain";
+                    break;
             }
-            hashList.append(e->hash());
         }
 
         QMap<QString, QVector<ActionLayoutEntry>> adjacencyMap;
@@ -380,11 +427,13 @@ namespace QAK {
         const auto &oldHashList = layouts.hashList();
 
         std::set<QString> existingExtensionHashSet(oldHashList.begin(), oldHashList.end());
+        QVector<const ActionExtension *> newExtensions;
         for (const auto &pair : extensions) {
             const auto &e = pair.second;
             if (existingExtensionHashSet.count(e->hash())) {
                 continue;
             }
+            newExtensions.append(e);
 
             // Add items
             for (int i = 0; i < e->itemCount(); ++i) {
@@ -395,11 +444,11 @@ namespace QAK {
                 }
                 oldAdjacencyMap.insert(id, item.children());
             }
+        }
 
-            // Apply insertions
-            for (int i = 0; i < e->insertionCount(); ++i) {
-                applyInsertion(e->insertion(i), oldAdjacencyMap);
-            }
+        // Apply the insertions of the new extensions, once all their items are added
+        for (const auto &pending : orderInsertions(newExtensions)) {
+            applyInsertion(pending.insertion, oldAdjacencyMap);
         }
 
         QMap<QString, QVector<ActionLayoutEntry>> adjacencyMap;

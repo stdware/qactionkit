@@ -120,6 +120,10 @@ static QByteArray escapeString(const QByteArray &bytes) {
     fprintf(out, STRING_12_SPACE "// " #NAME "\n");                                                \
     fprintf(out, STRING_12_SPACE "%s,\n", VALUE ? "true" : "false");
 
+#define GENERATE_INT(NAME, VALUE)                                                                  \
+    fprintf(out, STRING_12_SPACE "// " #NAME "\n");                                                \
+    fprintf(out, STRING_12_SPACE "%d,\n", VALUE);
+
 static void writeBanner(FILE *out, const QString &inputFileName) {
     fprintf(out,
             "/****************************************************************************\n"
@@ -228,6 +232,7 @@ public:
             GENERATE_ENUM(anchor, "ActionInsertion", insertionAnchorToString(item.anchor));
             GENERATE_STRING(target, item.target);
             GENERATE_STRING(relativeTo, item.relativeTo);
+            GENERATE_INT(priority, item.priority);
 
             // children
             fprintf(out, STRING_12_SPACE "// items\n");

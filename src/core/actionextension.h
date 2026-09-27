@@ -216,6 +216,13 @@ namespace QAK {
         /// by the \c After and \c Before anchors only.
         QString relativeTo() const;
 
+        /// Returns the priority among the insertions at the same position, which have the same
+        /// target, anchor and \c relativeTo(). The items of an insertion with a smaller priority
+        /// are placed before those of the others. Insertions with the same priority follow the
+        /// order in which the extensions are registered, and within an extension the order of
+        /// the manifest.
+        int priority() const;
+
         /// Returns the items to be inserted, each of which refers to an item of the same
         /// extension.
         QVector<ActionLayoutEntry> items() const;

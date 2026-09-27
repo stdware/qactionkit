@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- expect: error insertion has an invalid priority "high" -->
+<actionExtension>
+    <version>1.0</version>
+    <id>test.invalidPriority</id>
+    <items>
+        <action id="test.hello" />
+    </items>
+    <insertions>
+        <insertion target="host.help" priority="high">
+            <action id="test.hello" />
+        </insertion>
+    </insertions>
+</actionExtension>

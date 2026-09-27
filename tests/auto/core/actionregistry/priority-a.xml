@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<actionExtension>
+
+    <version>1.0</version>
+    <id>org.qactionkit.test.priorityA</id>
+
+    <items>
+        <action id="a.first" />
+        <action id="a.after" />
+        <action id="a.before" />
+        <action id="a.last1" />
+        <action id="a.last2" />
+        <action id="a.late" />
+    </items>
+
+    <!-- Inserted into the menu of actions.xml, before priority-b.xml is -->
+    <insertions>
+        <insertion target="test.file" priority="2000">
+            <action id="a.late" />
+        </insertion>
+        <insertion target="test.file">
+            <action id="a.last1" />
+        </insertion>
+        <insertion target="test.file">
+            <action id="a.last2" />
+        </insertion>
+        <insertion target="test.file" anchor="first">
+            <action id="a.first" />
+        </insertion>
+        <insertion target="test.file" anchor="after" relativeTo="test.file.openFile">
+            <action id="a.after" />
+        </insertion>
+        <insertion target="test.file" anchor="before" relativeTo="test.file.revert">
+            <action id="a.before" />
+        </insertion>
+    </insertions>
+
+</actionExtension>

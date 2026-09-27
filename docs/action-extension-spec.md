@@ -228,6 +228,11 @@ AEC 检查以下规则：
 | `target` | 是 | 插入目标条目的标识 |
 | `anchor` | 否 | `last` / `back`、`first` / `front`、`before`、`after`，默认为 `last` |
 | `relativeTo` | `before` 与 `after` 时必需，其他锚点不得带有 | `target` 中作为插入位置参照的条目 |
+| `priority` | 否 | 整数，默认为 `1000`，见下文 |
+
+`target`、`anchor` 与 `relativeTo` 都相同的插入位于同一位置。同一位置上，`priority` 数值小的插入在菜单中排在前面，数值相同时按扩展的登记顺序，同一扩展内按清单中的顺序。这里的「在前」指最终的位置，对 `first` 与 `after` 同样成立。不同位置的插入之间不比较优先级。做法参照 GNU C 的 `__attribute__((constructor(priority)))`，但不保留任何一段数值。
+
+分隔符没有标识，不能作为 `relativeTo`。要插入到某一段的前后，以该段的 group 为参照。
 
 插入的目标通常属于其他扩展，AEC 不检查。registry 计算默认布局时，跳过目标不存在的插入，以及目标中没有 `relativeTo` 所指条目的插入，并以 `qCWarning` 报告。插件因此可以为宿主中不一定存在的菜单提供插入。应用到用户改过的布局时同样跳过，但不报告，因为目标或参照条目可能是用户有意删除的。
 

@@ -6,6 +6,8 @@
 #include "actions.qak.h"
 #include "insertions.qak.h"
 #include "plugin.qak.h"
+#include "priority-a.qak.h"
+#include "priority-b.qak.h"
 
 using namespace QAK;
 
@@ -133,6 +135,37 @@ private Q_SLOTS:
         const auto file = registry.actionInfo(QStringLiteral("test.file"));
         QVERIFY(file);
         QVERIFY(!file->isCommand());
+    }
+
+    void testInsertionPriorities() {
+        ActionRegistry registry;
+        registry.setExtensions(
+            {qak::test::testActions(), qak::test::testPriorityA(), qak::test::testPriorityB()});
+
+        QStringList ids;
+        for (const auto &entry :
+             registry.layouts().adjacencyMap().value(QStringLiteral("test.file"))) {
+            ids.append(entry.id());
+        }
+
+        // At each position, a smaller priority comes first, and the same priority follows the
+        // order of registration and of the manifest, at the beginning and after a sibling as well
+        QCOMPARE(ids, QStringList({
+                          "b.first",
+                          "a.first",
+                          "test.file.openFile",
+                          "a.after",
+                          "b.after",
+                          "test.file.saveFile",
+                          "a.before",
+                          "b.before",
+                          "test.file.revert",
+                          "b.early",
+                          "a.last1",
+                          "a.last2",
+                          "b.last",
+                          "a.late",
+                      }));
     }
 
     void testSkippedInsertionsAreReported() {

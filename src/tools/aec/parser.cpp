@@ -15,6 +15,8 @@
 
 #include <stdcorelib/linked_map.h>
 
+#include <QAKCore/private/actionextension_p.h>
+
 #include <util/util.h>
 
 static const QVersionNumber &parserVersion() {
@@ -655,6 +657,17 @@ struct ParserPrivate {
         insertion.anchor = anchor;
         insertion.target = target;
         insertion.relativeTo = relative;
+        insertion.priority = QAK::ActionInsertionData::defaultPriority;
+        if (root.properties.contains(QStringLiteral("priority"))) {
+            const auto priority = resolve(root.properties.value(QStringLiteral("priority")));
+            bool ok;
+            insertion.priority = priority.toInt(&ok);
+            if (!ok) {
+                error("%s: insertion has an invalid priority \"%s\"\n", qPrintable(q.fileName),
+                      qPrintable(priority));
+                std::exit(1);
+            }
+        }
 
         for (const auto &item : root.children) {
             auto &e = *item;
