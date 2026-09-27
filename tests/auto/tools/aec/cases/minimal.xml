@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- expect: success -->
+<actionExtension>
+    <version>1.0</version>
+    <id>test.minimal</id>
+    <items>
+        <action id="test.open" />
+        <menu id="test.file" />
+    </items>
+    <layouts>
+        <menu id="test.file">
+            <action id="test.open" />
+        </menu>
+    </layouts>
+</actionExtension>

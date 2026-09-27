@@ -25,6 +25,8 @@ add_subdirectory(3rdparty)
 
 add_subdirectory(core)
 
+add_subdirectory(tools)
+
 if(QACTIONKIT_BUILD_WIDGETS)
     add_subdirectory(widgets)
 endif()

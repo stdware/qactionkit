@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- expect: error "test\.catalog" shouldn't have a phony type -->
+<actionExtension>
+    <version>1.0</version>
+    <id>test.phonyInLayout</id>
+    <items>
+        <phony id="test.catalog" />
+        <menu id="test.file" />
+    </items>
+    <layouts>
+        <menu id="test.file">
+            <item id="test.catalog" />
+        </menu>
+    </layouts>
+</actionExtension>

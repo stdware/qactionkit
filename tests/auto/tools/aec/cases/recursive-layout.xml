@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- expect: error recursive chain in layout: test\.file, test\.recent, test\.file -->
+<actionExtension>
+    <version>1.0</version>
+    <id>test.recursive</id>
+    <items>
+        <menu id="test.file" />
+        <menu id="test.recent" />
+    </items>
+    <layouts>
+        <menu id="test.file">
+            <menu id="test.recent">
+                <menu id="test.file" />
+            </menu>
+        </menu>
+    </layouts>
+</actionExtension>

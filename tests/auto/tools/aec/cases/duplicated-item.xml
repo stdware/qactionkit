@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- expect: error duplicated item id test\.open -->
+<actionExtension>
+    <version>1.0</version>
+    <id>test.duplicated</id>
+    <items>
+        <action id="test.open" />
+        <action id="test.open" />
+    </items>
+</actionExtension>

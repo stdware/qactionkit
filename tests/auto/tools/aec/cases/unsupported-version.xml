@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- expect: error extension version "2\.0" is not supported -->
+<actionExtension>
+    <version>2.0</version>
+    <id>test.unsupportedVersion</id>
+</actionExtension>

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- expect: error insertion with anchor "after" must have a relative sibling -->
+<actionExtension>
+    <version>1.0</version>
+    <id>test.insertionWithoutSibling</id>
+    <items>
+        <action id="test.hello" />
+    </items>
+    <insertions>
+        <insertion target="host.help" anchor="after">
+            <action id="test.hello" />
+        </insertion>
+    </insertions>
+</actionExtension>
