@@ -9,10 +9,7 @@
 #include <QAKCore/actionregistry.h>
 #include <QAKWidgets/widgetactioncontext.h>
 
-// Declared in the global namespace, as QAK_STATIC_ACTION_EXTENSION requires
-static auto testActionExtension() {
-    return QAK_STATIC_ACTION_EXTENSION(actions);
-}
+#include "actions.qak.h"
 
 class Test : public QObject {
     Q_OBJECT
@@ -52,7 +49,7 @@ private:
 private Q_SLOTS:
     void init() {
         registry = new QAK::ActionRegistry;
-        registry->setExtensions({testActionExtension()});
+        registry->setExtensions({testActions()});
 
         context = new QAK::WidgetActionContext;
         registry->addContext(context);

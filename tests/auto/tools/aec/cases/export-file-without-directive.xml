@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- expect: error the export file name "test/global\.h" is given without an export directive -->
+<!-- options: function=actions export-file-name=test/global.h -->
+<actionExtension>
+    <version>1.0</version>
+    <id>test.exportFileWithoutDirective</id>
+</actionExtension>

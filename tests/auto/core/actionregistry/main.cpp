@@ -3,10 +3,7 @@
 #include <QAKCore/actioncontext.h>
 #include <QAKCore/actionregistry.h>
 
-// Declared in the global namespace, as QAK_STATIC_ACTION_EXTENSION requires
-static auto testActionExtension() {
-    return QAK_STATIC_ACTION_EXTENSION(actions);
-}
+#include "actions.qak.h"
 
 using namespace QAK;
 
@@ -77,7 +74,7 @@ private Q_SLOTS:
 
     void testCategory() {
         ActionRegistry registry;
-        registry.addExtension(testActionExtension());
+        registry.addExtension(qak::test::testActions());
 
         const auto openFile = registry.actionInfo(QStringLiteral("test.file.openFile"));
         QVERIFY(openFile);

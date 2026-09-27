@@ -755,7 +755,6 @@ struct ParserPrivate {
         const QHash<QString, QString> reservedVars = {
             {QStringLiteral("_ID_"),           id                              },
             {QStringLiteral("_VERSION_"),      version                         },
-            {QStringLiteral("_IDENTIFIER_"),   q.identifier                    },
             {QStringLiteral("_FILENAME_"),     QFileInfo(q.fileName).fileName()},
             {QStringLiteral("_FILEBASENAME_"), QFileInfo(q.fileName).baseName()},
         };

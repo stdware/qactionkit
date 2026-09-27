@@ -47,16 +47,15 @@ A layout customized by the user is stored with the hash of every extension from 
 ```
 
 ```cmake
-qak_add_action_extension(_core_src "core-actions.xml")
+qak_add_action_extension(_core_src "core-actions.xml" FUNCTION coreActions)
 target_sources(MyApp PRIVATE ${_core_src})
+target_include_directories(MyApp PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 target_link_libraries(MyApp PRIVATE QActionKit::Widgets)
 ```
 
 ```cpp
-// Declared in the global namespace, as QAK_STATIC_ACTION_EXTENSION requires
-static auto coreActions() {
-    return QAK_STATIC_ACTION_EXTENSION(core_actions);
-}
+// Generated in the binary directory, declares coreActions()
+#include "core-actions.qak.h"
 
 auto registry = new QAK::ActionRegistry(this);
 registry->setExtensions({coreActions()});

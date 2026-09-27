@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- expect: success -->
+<!-- options: function=actions namespace=hello::daw export-directive=TEST_EXPORT export-file-name=test/global.h -->
+<!-- header: #include <test/global\.h> -->
+<!-- header: namespace hello::daw \{\s*TEST_EXPORT const QAK::ActionExtension \*actions\(\);\s*\} -->
+<actionExtension>
+    <version>1.0</version>
+    <id>test.allFunctionOptions</id>
+    <items>
+        <action id="test.open" />
+    </items>
+</actionExtension>

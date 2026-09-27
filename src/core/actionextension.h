@@ -199,8 +199,9 @@ namespace QAK {
     /// The compiled form of an action extension manifest, holding every item and insertion from
     /// which the registry builds the catalog and the layouts.
     ///
-    /// The Action Extension Compiler emits it as static data in a generated C++ source file, and
-    /// \c QAK_STATIC_ACTION_EXTENSION returns it.
+    /// The Action Extension Compiler emits it as static data in a generated C++ source file. The
+    /// function named by the \c FUNCTION option of \c qak_add_action_extension() returns it, and
+    /// the generated header declares that function.
     class QAK_CORE_EXPORT ActionExtension {
     public:
         QString version() const;
@@ -225,21 +226,5 @@ namespace QAK {
     };
 
 }
-
-/// Returns the static action extension \a name , the identifier passed to the Action Extension
-/// Compiler for the manifest.
-/// \warning The macro declares an extern function, so it cannot be used inside a namespace.
-///
-/// \code
-///     static auto getActionExtension() {
-///         return QAK_STATIC_ACTION_EXTENSION(core_actions);
-///     }
-/// \endcode
-#define QAK_STATIC_ACTION_EXTENSION(name)                                                          \
-    []() {                                                                                         \
-        extern const QAK::ActionExtension *QT_MANGLE_NAMESPACE(                                    \
-            qakGetStaticActionExtension_##name)();                                                 \
-        return QT_MANGLE_NAMESPACE(qakGetStaticActionExtension_##name)();                          \
-    }()
 
 #endif // ACTIONEXTENSION_H

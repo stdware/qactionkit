@@ -118,6 +118,46 @@ static QByteArray escapeString(const QByteArray &bytes) {
     fprintf(out, STRING_12_SPACE "// " #NAME "\n");                                                \
     fprintf(out, STRING_12_SPACE "%s,\n", VALUE ? "true" : "false");
 
+static void writeBanner(FILE *out, const QString &inputFileName) {
+    fprintf(out,
+            "/****************************************************************************\n"
+            "** Action extension structure code from reading XML file '%s'\n**\n",
+            qPrintable(inputFileName));
+    fprintf(out, "** Created by: QActionKit Action Extension Compiler version %s (Qt %s)\n**\n",
+            APP_VERSION, QT_VERSION_STR);
+    fprintf(out, "** WARNING! All changes made in this file will be lost!\n"
+                 "*************************************************************************"
+                 "****/\n");
+}
+
+// Writes the declaration of the function that returns the extension, preceded by the header that
+// defines the export directive.
+static void writeDeclaration(FILE *out, const Generator &q) {
+    if (!q.exportFileName.isEmpty()) {
+        fprintf(out, "#include <%s>\n\n", qPrintable(q.exportFileName));
+    }
+    const char *indent = "";
+    if (!q.nameSpace.isEmpty()) {
+        fprintf(out, "namespace %s {\n", qPrintable(q.nameSpace));
+        indent = STRING_4_SPACE;
+    }
+    fprintf(out, "%s", indent);
+    if (!q.exportDirective.isEmpty()) {
+        fprintf(out, "%s ", qPrintable(q.exportDirective));
+    }
+    fprintf(out, "const QAK::ActionExtension *%s();\n", qPrintable(q.function));
+    if (!q.nameSpace.isEmpty()) {
+        fprintf(out, "}\n");
+    }
+}
+
+void Generator::generateHeader(FILE *header) const {
+    writeBanner(header, inputFileName);
+    fprintf(header, "\n#pragma once\n\n");
+    fprintf(header, "#include <QAKCore/actionextension.h>\n\n");
+    writeDeclaration(header, *this);
+}
+
 class GeneratorPrivate {
 public:
     GeneratorPrivate(Generator &q) : q(q) {}
@@ -323,27 +363,26 @@ public:
         auto &msg = q.parseResult.extension;
         auto out = q.out;
 
-        // Warning
-        fprintf(out,
-                "/****************************************************************************\n"
-                "** Action extension structure code from reading XML file '%s'\n**\n",
-                qPrintable(q.inputFileName));
-        fprintf(out, "** Created by: QActionKit Action Extension Compiler version %s (Qt %s)\n**\n",
-                APP_VERSION, QT_VERSION_STR);
-        fprintf(out, "** WARNING! All changes made in this file will be lost!\n"
-                     "*************************************************************************"
-                     "****/\n");
+        writeBanner(out, q.inputFileName);
 
-        // Headers
-        fprintf(out, R"(
-#include <QtCore/QString>
+        // Headers. Without a generated header, the declaration is written here, because the
+        // definition below may be qualified by a namespace.
+        fprintf(out, "\n");
+        if (!q.headerInclude.isEmpty()) {
+            fprintf(out, "#include \"%s\"\n\n", qPrintable(q.headerInclude));
+        }
+        fprintf(out, R"(#include <QtCore/QString>
 #include <QtCore/QCoreApplication>
 
 #include <QAKCore/private/actionextension_p.h>
 
 )");
+        if (q.headerInclude.isEmpty()) {
+            writeDeclaration(out, q);
+            fprintf(out, "\n");
+        }
 
-        fprintf(out, "namespace qakStaticActionExtension_%s {\n", qPrintable(q.identifier));
+        fprintf(out, "namespace {\n");
 
         fprintf(out, R"(
 using namespace QAK;
@@ -391,14 +430,12 @@ static ActionExtensionData *get_data() {
 
 )");
 
-        fprintf(out,
-                "const QAK::ActionExtension "
-                "*QT_MANGLE_NAMESPACE(qakGetStaticActionExtension_%s)() {\n",
-                qPrintable(q.identifier));
+        const QString qualifiedFunction =
+            q.nameSpace.isEmpty() ? q.function : q.nameSpace + QStringLiteral("::") + q.function;
+        fprintf(out, "const QAK::ActionExtension *%s() {\n", qPrintable(qualifiedFunction));
         fprintf(out, STRING_4_SPACE "static QAK::ActionExtension extension{\n");
         fprintf(out, STRING_8_SPACE "{\n");
-        fprintf(out, STRING_12_SPACE "qakStaticActionExtension_%s::get_data(),\n",
-                qPrintable(q.identifier));
+        fprintf(out, STRING_12_SPACE "get_data(),\n");
         fprintf(out, STRING_8_SPACE "},\n");
         fprintf(out, STRING_4_SPACE "};\n");
 
@@ -409,7 +446,7 @@ static ActionExtensionData *get_data() {
 // This field is only used to generate translation files for the Qt linguist tool
 )");
 
-        fprintf(out, "static void qakStaticActionTranslations_%s() {\n", qPrintable(q.identifier));
+        fprintf(out, "static void qakActionTranslations() {\n");
         generateTranslations(out, msg.items);
         fprintf(out, R"(}
 #endif

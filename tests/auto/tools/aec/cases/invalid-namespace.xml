@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- expect: error the namespace "hello::daw-widgets" is not valid -->
+<!-- options: function=actions namespace=hello::daw-widgets -->
+<actionExtension>
+    <version>1.0</version>
+    <id>test.invalidNamespace</id>
+</actionExtension>

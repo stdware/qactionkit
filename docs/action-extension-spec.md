@@ -72,7 +72,6 @@ manifest.xml ──qak_aec──> qak_manifest.cpp ──> ActionExtension ─�
 | --- | --- |
 | `_ID_` | 扩展的标识 |
 | `_VERSION_` | 清单的版本 |
-| `_IDENTIFIER_` | 以 `-i` 传入的标识符，未传入时为清单的基本文件名 |
 | `_FILENAME_` | 清单的文件名 |
 | `_FILEBASENAME_` | 清单去掉后缀的文件名 |
 
@@ -220,40 +219,57 @@ qak_aec [options] <manifest>
 
 | 选项 | 含义 |
 | --- | --- |
-| `-o <file>` | 写入文件，而非标准输出 |
-| `-i <identifier>` | 指定扩展的标识符，默认为清单的基本文件名 |
+| `-o <file>` | 将源文件写入文件，而非标准输出 |
+| `--header <file>` | 同时生成声明获取函数的头文件。省略时，源文件自行声明该函数 |
+| `--function <name>` | 获取函数的名称，必需 |
+| `--namespace <namespace>` | 获取函数所在的命名空间，例如 `hello::daw`，省略时为全局命名空间 |
+| `--export-directive <macro>` | 放在函数声明之前的宏，用于从动态库导出或隐藏该函数 |
+| `--export-file-name <header>` | 定义该宏的头文件，以尖括号包含。只给出本选项而没有 `--export-directive` 时报错 |
 | `-D <key>[=<value>]` | 定义变量。省略值时，值为键本身，为真 |
 | `--text-translation-context <ctx>` | 覆盖 `text` 的翻译上下文 |
 | `--category-translation-context <ctx>` | 覆盖 `category` 的翻译上下文 |
 | `--description-translation-context <ctx>` | 覆盖 `description` 的翻译上下文 |
 
-任何错误都输出到标准错误，并以退出码 `1` 结束。
+函数名、命名空间的各段与导出宏须为由 ASCII 字母、数字与 `_` 组成、不以数字开头的标识符，否则报错。任何错误都输出到标准错误，并以退出码 `1` 结束。
 
 在 CMake 中：
 
 ```cmake
-qak_add_action_extension(_src "actions.xml"
-    IDENTIFIER core_actions
+qak_add_action_extension(_src "core-actions.xml"
+    FUNCTION coreActions
+    NAMESPACE hello::daw
+    EXPORT_DIRECTIVE HELLOUTAU_WIDGETS_EXPORT
+    EXPORT_FILE_NAME helloutau/Widgets/HelloUtauWidgetsGlobal.h
     DEFINES ENABLE_DEBUG_ACTIONS=1
 )
 target_sources(MyApp PRIVATE ${_src})
+target_include_directories(MyApp PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 ```
 
-标识符须能作为 C++ 标识符的一部分。字母、数字与 `_` 以外的字符一律替换为 `_`。
+`FUNCTION` 必需，其余选项与命令行选项一一对应。输出变量包含生成的源文件与头文件。头文件名为清单去掉后缀的文件名加 `.qak.h`，位于 `CMAKE_CURRENT_BINARY_DIR`，包含它的目标须将该目录加入包含路径。
 
 ## 使用编译结果
 
-生成的文件定义一个函数，通过宏访问。该宏必须在**任何命名空间之外**使用：
+生成的头文件声明获取函数，源文件定义它：
 
 ```cpp
-static auto coreActions() {
-    return QAK_STATIC_ACTION_EXTENSION(core_actions);
-}
+// core-actions.qak.h
+#include <QAKCore/actionextension.h>
 
-registry->addExtension(coreActions());
+#include <helloutau/Widgets/HelloUtauWidgetsGlobal.h>
+
+namespace hello::daw {
+    HELLOUTAU_WIDGETS_EXPORT const QAK::ActionExtension *coreActions();
+}
 ```
 
-传给宏的名称即编译时指定的标识符。
+```cpp
+#include "core-actions.qak.h"
+
+registry->addExtension(hello::daw::coreActions());
+```
+
+导出宏在构建库与使用库时分别展开为什么，由定义它的头文件决定。
 
 `ActionExtension::hash()` 是清单字节的 SHA-256 摘要。`ActionRegistry` 将其与用户保存的布局一同存储，扩展增加或修改时只合并新的条目，用户的其余自定义保持不变。
 

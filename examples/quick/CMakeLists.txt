@@ -8,10 +8,12 @@ qm_find_qt(Core)
 qak_add_action_extension(
     _core_action_src
     "../shared/core-actions.xml"
+    FUNCTION coreActions
 )
 qak_add_action_extension(
     _plugin_action_src
     "../shared/plugin-actions.xml"
+    FUNCTION pluginActions
 )
 list(APPEND _src ${_core_action_src} ${_plugin_action_src})
 
