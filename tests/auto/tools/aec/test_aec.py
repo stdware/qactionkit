@@ -43,6 +43,8 @@ OPTIONS = re.compile(r"<!--\s*options:(.*?)-->", re.DOTALL)
 HEADER = re.compile(r"<!--\s*header:\s*(.*?)\s*-->", re.DOTALL)
 SOURCE = re.compile(r"<!--\s*source:\s*(.*?)\s*-->", re.DOTALL)
 DEFAULT_OPTIONS = ["--function", "testExtension"]
+# Seconds that a run of AEC may take. A case that takes longer fails, and the others still run.
+TIMEOUT = 60
 
 
 def expectation(path):
@@ -67,7 +69,7 @@ def expectation(path):
 def run(aec, path, options, output, header):
     command = [aec, *options, "-o", output, "--header", header, path]
     return subprocess.run(command, capture_output=True, text=True, encoding="utf-8",
-                          errors="replace", timeout=60)
+                          errors="replace", timeout=TIMEOUT)
 
 
 def check(aec, path, directory):
@@ -75,7 +77,10 @@ def check(aec, path, directory):
     kind, pattern, options, files = expectation(path)
     paths = {"header": os.path.join(directory, "out.qak.h"),
              "source": os.path.join(directory, "out.cpp")}
-    result = run(aec, path, options, paths["source"], paths["header"])
+    try:
+        result = run(aec, path, options, paths["source"], paths["header"])
+    except subprocess.TimeoutExpired:
+        return f"AEC did not finish within {TIMEOUT} seconds"
     if kind == "success":
         if result.returncode != 0:
             return f"expected success, but AEC failed: {result.stderr.strip()}"
