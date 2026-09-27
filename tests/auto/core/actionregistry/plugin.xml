@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<actionExtension>
+
+    <version>1.0</version>
+    <id>org.qactionkit.test.plugin</id>
+
+    <items>
+        <!-- A menu of the extension in actions.xml, declared again as a catalog of this one -->
+        <phony id="test.file" text="Plugin File" />
+        <action id="test.plugin.export" catalog="test.file" />
+        <!-- Declared by the extension in actions.xml as well, which is a conflict -->
+        <action id="test.file.openFile" text="Plugin Open" />
+    </items>
+
+</actionExtension>

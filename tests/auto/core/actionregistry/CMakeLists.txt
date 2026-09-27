@@ -13,4 +13,10 @@ qak_add_action_extension(_insertion_src "insertions.xml"
     NAMESPACE qak::test
 )
 
-qak_add_auto_test(SOURCES ${_action_src} ${_insertion_src})
+# A plugin that declares items of actions.xml again
+qak_add_action_extension(_plugin_src "plugin.xml"
+    FUNCTION testPlugin
+    NAMESPACE qak::test
+)
+
+qak_add_auto_test(SOURCES ${_action_src} ${_insertion_src} ${_plugin_src})

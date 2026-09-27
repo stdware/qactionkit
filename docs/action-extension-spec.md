@@ -237,6 +237,8 @@ AEC 检查以下规则：
 </items>
 ```
 
+多个扩展声明同一标识时，registry 优先采用不是 phony 的声明，因为拥有节点的扩展才会将它声明为 menu 或 group，与登记的先后无关。同为 phony 时采用先登记的。两个都不是 phony 的声明相冲突，registry 以 `qCWarning` 报告，保留先登记的。
+
 ## 编译
 
 ```

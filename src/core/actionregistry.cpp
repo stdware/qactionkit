@@ -238,15 +238,35 @@ namespace QAK {
         extensionsDirty = false;
 
         actionItems.clear();
+        // The extension whose declaration of each item is used, for the warning on a conflict
+        QHash<QString, QString> declaringExtensions;
         for (const auto &pair : std::as_const(extensions)) {
             auto &e = pair.second;
             for (int i = 0; i < e->itemCount(); ++i) {
                 const auto &item = e->item(i);
                 QString id = item.id();
-                if (actionItems.contains(id)) {
+                auto existing = actionItems.find(id);
+                if (existing == actionItems.end()) {
+                    actionItems.append(id, item);
+                    declaringExtensions.insert(id, e->id());
                     continue;
                 }
-                actionItems.append(id, item);
+
+                // An extension declares a node of another extension again as a phony, which gives
+                // way to the declaration of the extension that owns the node, whatever the order
+                // of registration
+                if (item.type() == ActionItemInfo::Phony) {
+                    continue;
+                }
+                if (existing->second.type() == ActionItemInfo::Phony) {
+                    existing->second = item;
+                    declaringExtensions.insert(id, e->id());
+                    continue;
+                }
+                qCWarning(qActionKitLog).noquote().nospace()
+                    << "Action item \"" << id << "\" is declared by both \""
+                    << declaringExtensions.value(id) << "\" and \"" << e->id()
+                    << "\", and the first declaration is kept";
             }
         }
         catalog = defaultCatalog();

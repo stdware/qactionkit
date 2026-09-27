@@ -5,6 +5,7 @@
 
 #include "actions.qak.h"
 #include "insertions.qak.h"
+#include "plugin.qak.h"
 
 using namespace QAK;
 
@@ -117,6 +118,58 @@ private Q_SLOTS:
 
         // Both insertions are skipped
         QVERIFY(layouts.adjacencyMap().value(QStringLiteral("test.plugin.menu")).isEmpty());
+    }
+
+    void testOwnerTakesPrecedenceOverPhony() {
+        ActionRegistry registry;
+        // The plugin is registered first, and the menu of the other extension still takes
+        // precedence over its phony
+        registry.setExtensions({qak::test::testPlugin(), qak::test::testActions()});
+
+        QTest::ignoreMessage(QtWarningMsg,
+                             "Action item \"test.file.openFile\" is declared by both "
+                             "\"org.qactionkit.test.plugin\" and \"org.qactionkit.test.registry\", "
+                             "and the first declaration is kept");
+        const auto file = registry.actionInfo(QStringLiteral("test.file"));
+        QVERIFY(file);
+        QCOMPARE(file->type(), ActionItemInfo::Menu);
+        QCOMPARE(file->text().source, QStringLiteral("File"));
+
+        // Two declarations of other types conflict, and the first one is kept
+        const auto openFile = registry.actionInfo(QStringLiteral("test.file.openFile"));
+        QVERIFY(openFile);
+        QCOMPARE(openFile->text().source, QStringLiteral("Plugin Open"));
+
+        QCOMPARE(
+            registry.catalog().parent(QStringLiteral("test.plugin.export")).value_or(QString()),
+            QStringLiteral("test.file"));
+    }
+
+    void testPhonyAfterOwner() {
+        ActionRegistry registry;
+        registry.setExtensions({qak::test::testActions(), qak::test::testPlugin()});
+
+        // The phony registered later neither replaces the menu nor conflicts with it
+        QTest::failOnWarning(QRegularExpression(QStringLiteral("\"test\\.file\" is declared")));
+        QTest::ignoreMessage(QtWarningMsg,
+                             "Action item \"test.file.openFile\" is declared by both "
+                             "\"org.qactionkit.test.registry\" and \"org.qactionkit.test.plugin\", "
+                             "and the first declaration is kept");
+        const auto file = registry.actionInfo(QStringLiteral("test.file"));
+        QVERIFY(file);
+        QCOMPARE(file->type(), ActionItemInfo::Menu);
+        QCOMPARE(file->text().source, QStringLiteral("File"));
+    }
+
+    void testPhonyWithoutOwner() {
+        ActionRegistry registry;
+        registry.addExtension(qak::test::testPlugin());
+
+        // Without the extension that owns the node, the phony of the plugin supplies it
+        const auto file = registry.actionInfo(QStringLiteral("test.file"));
+        QVERIFY(file);
+        QCOMPARE(file->type(), ActionItemInfo::Phony);
+        QCOMPARE(file->text().source, QStringLiteral("Plugin File"));
     }
 
     void testAttributes() {
