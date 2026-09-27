@@ -22,5 +22,5 @@
 
 ## 代码整理
 
-- `parser.cpp` 中的 `simplifyActionText()` 与 `isStringDigits()` 未被使用。
+- `parser.cpp` 中的 `isStringDigits()` 未被使用。
 - `ActionFamily::actionIcon(theme, id)` 以同一个字符串同时查找用户覆盖与主题图标，前者需要动作标识，后者需要图标标识。调用方传入 `info.icon()`，因此条目的图标标识与其自身标识不同时，覆盖查找的结果错误。
