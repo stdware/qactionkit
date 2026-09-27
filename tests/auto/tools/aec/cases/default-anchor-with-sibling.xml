@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- expect: error insertion with anchor "last" shouldn't have a relative sibling -->
+<!-- The anchor is omitted, which means last -->
+<actionExtension>
+    <version>1.0</version>
+    <id>test.defaultAnchorWithSibling</id>
+    <items>
+        <action id="test.hello" />
+    </items>
+    <insertions>
+        <insertion target="host.help" relativeTo="host.about">
+            <action id="test.hello" />
+        </insertion>
+    </insertions>
+</actionExtension>

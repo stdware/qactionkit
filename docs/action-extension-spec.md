@@ -213,7 +213,7 @@ AEC 检查以下规则：
 | --- | --- | --- |
 | `target` | 是 | 插入目标条目的标识 |
 | `anchor` | 否 | `last` / `back`、`first` / `front`、`before`、`after`，默认为 `last` |
-| `relativeTo` | `before` 与 `after` 时必需 | `target` 中作为插入位置参照的条目 |
+| `relativeTo` | `before` 与 `after` 时必需，其他锚点不得带有 | `target` 中作为插入位置参照的条目 |
 
 `target` 不存在的插入不报错，直接跳过，插件因此可以为宿主中不一定存在的菜单提供插入。`relativeTo` 不存在的 `after` 或 `before` 插入同样跳过。
 

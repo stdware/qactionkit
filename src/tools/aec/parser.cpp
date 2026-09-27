@@ -628,6 +628,12 @@ struct ParserPrivate {
                   qPrintable(q.fileName), qPrintable(anchorToken));
             std::exit(1);
         }
+        // A relative sibling has no effect at either end, which suggests a mistaken anchor
+        if (!needRelative && root.properties.contains(QStringLiteral("relativeTo"))) {
+            error("%s: insertion with anchor \"%s\" shouldn't have a relative sibling\n",
+                  qPrintable(q.fileName), anchorToken.isEmpty() ? "last" : qPrintable(anchorToken));
+            std::exit(1);
+        }
 
         ActionInsertionMessage insertion;
         insertion.anchor = anchor;

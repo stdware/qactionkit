@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- expect: error insertion with anchor "first" shouldn't have a relative sibling -->
+<actionExtension>
+    <version>1.0</version>
+    <id>test.firstWithSibling</id>
+    <items>
+        <action id="test.hello" />
+    </items>
+    <insertions>
+        <insertion target="host.help" anchor="first" relativeTo="host.about">
+            <action id="test.hello" />
+        </insertion>
+    </insertions>
+</actionExtension>
