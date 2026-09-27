@@ -104,6 +104,19 @@ private Q_SLOTS:
         QVERIFY(saveFile->category().source.isEmpty());
     }
 
+    void testExternal() {
+        ActionRegistry registry;
+        registry.addExtension(qak::test::testActions());
+
+        const auto recentFiles = registry.actionInfo(QStringLiteral("test.file.recentFiles"));
+        QVERIFY(recentFiles);
+        QVERIFY(recentFiles->isExternal());
+
+        const auto openFile = registry.actionInfo(QStringLiteral("test.file.openFile"));
+        QVERIFY(openFile);
+        QVERIFY(!openFile->isExternal());
+    }
+
     void testSkippedInsertionsAreReported() {
         ActionRegistry registry;
         registry.addExtension(qak::test::testInsertions());

@@ -11,7 +11,7 @@ Q_LOGGING_CATEGORY(qActionKitLog, "qactionkit")
 namespace QAK {
 
     static ActionItemInfoData sharedNullItemInfoData = {
-        {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},
+        {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},
     };
 
     static int sharedNullLayoutEntryIndex = 0;
@@ -88,6 +88,9 @@ namespace QAK {
     }
     bool ActionItemInfo::topLevel() const {
         return e->items[i].topLevel;
+    }
+    bool ActionItemInfo::isExternal() const {
+        return e->items[i].external;
     }
     QMap<ActionAttributeKey, QString> ActionItemInfo::attributes() const {
         return e->items[i].attributes;

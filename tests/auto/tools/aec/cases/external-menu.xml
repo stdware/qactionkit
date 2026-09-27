@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- expect: error item "test\.recent" has the attribute "external", which only applies to actions -->
+<actionExtension>
+    <version>1.0</version>
+    <id>test.externalMenu</id>
+    <items>
+        <menu id="test.recent" external="true" />
+    </items>
+</actionExtension>

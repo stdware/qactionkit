@@ -32,6 +32,7 @@ struct ActionItemInfoMessage {
     QString catalog;
 
     bool topLevel = false;
+    bool external = false;
 
     QMap<QAK::ActionAttributeKey, QString> attributes;
 

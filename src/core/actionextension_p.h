@@ -31,6 +31,7 @@ namespace QAK {
         QList<QKeySequence> shortcuts;
         QString catalog;
         bool topLevel;
+        bool external;
         QMap<ActionAttributeKey, QString> attributes;
 
         QVector<ActionLayoutEntry> children;

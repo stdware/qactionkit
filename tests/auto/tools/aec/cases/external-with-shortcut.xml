@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- expect: error item "test\.recent" is external, which cannot have a shortcut -->
+<actionExtension>
+    <version>1.0</version>
+    <id>test.externalWithShortcut</id>
+    <items>
+        <action id="test.recent" external="true" shortcut="Ctrl+R" />
+    </items>
+</actionExtension>

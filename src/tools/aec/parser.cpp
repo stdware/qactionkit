@@ -338,6 +338,18 @@ struct ParserPrivate {
             }
         }
 
+        // external, which stands for a menu maintained by the application and takes no shortcut
+        if (info.type == QAK::ActionItemInfo::Action) {
+            info.external =
+                resolve(e.properties.value(QStringLiteral("external"))) == QStringLiteral("true");
+            if (info.external && (e.properties.contains(QStringLiteral("shortcut")) ||
+                                  e.properties.contains(QStringLiteral("shortcuts")))) {
+                error("%s: item \"%s\" is external, which cannot have a shortcut\n",
+                      qPrintable(q.fileName), qPrintable(info.id));
+                std::exit(1);
+            }
+        }
+
         // catalog
         if (auto catalog = resolve(e.properties.value(QStringLiteral("catalog")));
             !catalog.isEmpty()) {
@@ -362,10 +374,8 @@ struct ParserPrivate {
             QStringLiteral("if"),
         };
         static const QSet<QString> actionKeys = {
-            QStringLiteral("category"),
-            QStringLiteral("categoryTr"),
-            QStringLiteral("shortcut"),
-            QStringLiteral("shortcuts"),
+            QStringLiteral("category"),  QStringLiteral("categoryTr"), QStringLiteral("shortcut"),
+            QStringLiteral("shortcuts"), QStringLiteral("external"),
         };
         static const QSet<QString> containerKeys = {
             QStringLiteral("topLevel"),

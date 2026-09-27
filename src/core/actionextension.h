@@ -159,6 +159,13 @@ namespace QAK {
         /// is \c false.
         bool topLevel() const;
 
+        /// Returns whether the action stands for a menu whose contents the application maintains,
+        /// such as a menu of recent files. The application adds the menu action of that menu with
+        /// \c addAction() of its context, and QActionKit neither clears nor fills the menu. Such
+        /// an action has no shortcut and is not a command, which a command palette lists. The
+        /// value of other items is \c false.
+        bool isExternal() const;
+
         /// Returns the custom attributes of the item, keyed by name and namespace URI. A custom
         /// attribute always has a namespace, since AEC rejects any other attribute without one
         /// that the manifest format does not define.
