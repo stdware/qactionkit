@@ -4,7 +4,7 @@
 
 排列顺序大致按照「越晚修改代价越高」。第 17、18、19 条应当最先处理。
 
-## 17. 条目的声明类型与布局中的形态
+## 17. 条目的声明类型与布局中的形态（已定）
 
 **现状。** 条目有两级类型：声明类型（`ActionItemInfo::Type`）是条目的**身份**，即 registry 认定的条目种类；布局条目的类型（`ActionLayoutEntry::Type`）是条目在某一位置的**形态**。Menu 与 Group 可以互换形态：声明为 menu 的条目可以在布局中写作 `<group>`，作为组展开；声明为 group 的条目可以写作 `<menu>`，显示为子菜单。设置页也可以在运行时修改形态（`ActionLayoutsModel::setData()`）。Action 的形态固定为 Action，AEC 拒绝以其他标签引用 action。
 
@@ -178,6 +178,8 @@ struct ActionText {
 `ActionLayoutEntry` 声明了 `Q_PROPERTY(ActionLayoutEntry::Type type ...)`，却没有 `Q_ENUM(Type)`，元类型系统不认识该枚举，QML 与 `QVariant` 的转换无法取得其值。`ActionLayouts` 的 `Q_GADGET` 中没有任何属性。
 
 **决定：** 为 `ActionLayoutEntry` 补上 `Q_ENUM(Type)`。`ActionLayouts` 的内容随第 19 条重新设计，其 `Q_GADGET` 届时再定。
+
+**实现中的发现。** 只补 `Q_ENUM` 并不足够：属性原先声明为 `Q_PROPERTY(ActionLayoutEntry::Type ...)`，moc 记录的作用域是 `ActionLayoutEntry`，而类的全名是 `QAK::ActionLayoutEntry`，`QMetaProperty` 按作用域查找枚举时找不到，`isEnumType()` 仍为假。属性类型须写作类内的 `Type`。
 
 ## 29. 插入不可组合（已定）
 
