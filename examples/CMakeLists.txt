@@ -13,5 +13,10 @@ macro(qak_add_example _target)
     target_include_directories(${_target} PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 endmacro()
 
-add_subdirectory(mainwindow)
-add_subdirectory(quick)
+# Each example requires the module that it demonstrates.
+if(QACTIONKIT_BUILD_WIDGETS)
+    add_subdirectory(mainwindow)
+endif()
+if(QACTIONKIT_BUILD_QUICK)
+    add_subdirectory(quick)
+endif()
