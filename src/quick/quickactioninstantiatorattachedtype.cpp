@@ -21,7 +21,8 @@ namespace QAK {
     void QuickActionInstantiatorAttachedType::init(const ActionItemInfo &info, QuickActionContext *context, int property) {
         setId(info.id());
         if (property & QuickActionInstantiatorPrivate::Text) {
-            auto text = info.text().toString();
+            // The item shows the short text, because it appears in menus and tool bars.
+            auto text = info.shortText().toString();
             if (text.isEmpty()) {
                 text = info.id();
             }

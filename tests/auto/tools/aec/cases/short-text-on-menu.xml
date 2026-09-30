@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- expect: error item "test\.export" has the attribute "shortText", which only applies to actions -->
+<actionExtension>
+    <version>1.0</version>
+    <id>test.shortTextOnMenu</id>
+    <items>
+        <menu id="test.export" shortText="E&amp;xport" />
+    </items>
+</actionExtension>

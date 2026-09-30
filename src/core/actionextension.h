@@ -131,6 +131,14 @@ namespace QAK {
         /// \c translationContext in the configuration of the manifest, and
         /// \c QActionKit::ActionText. An empty text has no translation.
         ActionText text() const;
+        /// Returns the text of the action in menus and tool bars and its translation, in the
+        /// context of \c text(). The \c shortText attribute specifies it. If the manifest specifies
+        /// none, \c text() is returned. In a menu, the title of the menu and the neighboring items
+        /// provide context, and the short text may omit the words that they state, as the item
+        /// UST... of an Export menu omits Export. \c text() names the command completely for a
+        /// command palette. The two correspond to the \c shortTitle and the \c title of a command
+        /// in VS Code. Only actions carry a short text, and other items return \c text().
+        ActionText shortText() const;
         /// Returns the category of the action, a label that a command palette shows before the
         /// text, such as File in File: Open, and its translation, in a context chosen as that of
         /// \c text() is, from \c categoryTr, \c category and \c QActionKit::ActionCategory. Only

@@ -11,7 +11,7 @@ Q_LOGGING_CATEGORY(qActionKitLog, "qactionkit")
 namespace QAK {
 
     static ActionItemInfoData sharedNullItemInfoData = {
-        {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},
+        {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},
     };
 
     static ActionInsertionData sharedNullInsertion = {
@@ -60,6 +60,14 @@ namespace QAK {
     ActionText ActionItemInfo::text() const {
         auto &d = e->items[i];
         return translateString(d.text, d.textContext, e->textContext,
+                               ActionExtensionData::defaultTextContext);
+    }
+    ActionText ActionItemInfo::shortText() const {
+        auto &d = e->items[i];
+        if (d.shortText.isEmpty()) {
+            return text();
+        }
+        return translateString(d.shortText, d.textContext, e->textContext,
                                ActionExtensionData::defaultTextContext);
     }
     ActionText ActionItemInfo::category() const {

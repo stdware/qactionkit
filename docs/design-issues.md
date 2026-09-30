@@ -272,3 +272,9 @@ namespace hello::daw {
 - 头文件名为 `<清单文件名>.qak.h`，位于生成目录中，该目录加入调用方的包含路径。生成的源文件包含该头文件，使定义处可以看到带有宏的声明。
 - 删除 `QAK_STATIC_ACTION_EXTENSION` 宏，以及生成代码中的 `QT_MANGLE_NAMESPACE`。
 - 删除 `IDENTIFIER` 选项与 AEC 的 `-i` 选项。标识符原本用于区分同名清单的获取函数，该作用由 `FUNCTION` 与 `NAMESPACE` 承担。生成代码内部的命名空间改为匿名命名空间，只供 lupdate 扫描的翻译声明函数使用固定的名字。保留变量 `_IDENTIFIER_` 一并删除。
+
+## 49. 菜单项与命令面板共用一个文本（已定）
+
+**现状。** 条目只有 `text` 一个文本，菜单与命令面板都显示它。菜单项的上下文由菜单的标题与相邻的条目提供，命令面板中的命令则没有上下文。例如「Export」菜单中写作 `&UST...` 的菜单项，在命令面板中显示为「File: UST...」，不能表明它是导出。若改写为 `Export &UST...`，菜单中又重复了菜单的标题。
+
+**决定。** 为 action 增加 `shortText` 属性，即菜单与工具栏中显示的文本，`text` 为命令面板中显示的完整名称，同 VS Code 中命令的 `shortTitle` 与 `title`。未指定时 `shortText` 等于 `text`，已有的清单不受影响。`shortText` 在 `text` 的翻译上下文中翻译，不另设 `shortTextTr`，因为二者是同一个命令的两种写法。`ActionItemInfo::shortText()` 返回它，Widgets 与 Quick 后端的 action 显示它，命令面板由应用程序实现，继续使用 `text()`。只适用于 action：菜单、组与 phony 不进入命令面板，没有两种写法之分，写在其他标签上时 AEC 报错，同第 21 条。

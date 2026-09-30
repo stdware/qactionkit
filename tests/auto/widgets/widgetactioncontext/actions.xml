@@ -9,7 +9,8 @@
         <action id="test.saveFile" text="Save File" shortcut="Ctrl+S" />
         <action id="test.exit" text="Exit" description="Exit the application" />
         <action id="test.about" text="About" />
-        <action id="test.checkUpdate" text="Check Update" />
+        <!-- The menu shows the short text, and a command palette the text -->
+        <action id="test.checkUpdate" text="Check for Updates" shortText="Check Update" />
 
         <menu id="test.mainMenu" topLevel="true" />
         <menu id="test.mainToolBar" topLevel="true" />

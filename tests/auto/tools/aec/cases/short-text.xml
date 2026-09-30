@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- expect: success -->
+<!-- The short text is written after the text -->
+<!-- source: // text\s*QStringLiteral\("Export &UST\.\.\."\),\s*// shortText\s*QStringLiteral\("&UST\.\.\."\), -->
+<!-- The short text is looked up in the context of the text -->
+<!-- source: translate\("QActionKit::ActionText", "&UST\.\.\."\); -->
+<!-- source: translate\("Test::Other", "Sa&ve"\); -->
+<actionExtension>
+    <version>1.0</version>
+    <id>test.shortText</id>
+    <items>
+        <action id="test.exportUst" text="Export &amp;UST..." shortText="&amp;UST..." />
+        <action id="test.save" text="Save the Project" shortText="Sa&amp;ve" textTr="Test::Other" />
+    </items>
+</actionExtension>

@@ -300,8 +300,9 @@ struct ParserPrivate {
             info.text = itemIdToText(info.rawId);
         }
 
-        // category
+        // short text and category
         if (info.type == QAK::ActionItemInfo::Action) {
+            info.shortText = resolve(e.properties.value(QStringLiteral("shortText")));
             info.category = resolve(e.properties.value(QStringLiteral("category")));
         }
 
@@ -365,8 +366,8 @@ struct ParserPrivate {
             QStringLiteral("if"),
         };
         static const QSet<QString> actionKeys = {
-            QStringLiteral("category"),  QStringLiteral("categoryTr"), QStringLiteral("shortcut"),
-            QStringLiteral("shortcuts"), QStringLiteral("external"),
+            QStringLiteral("shortText"), QStringLiteral("category"),  QStringLiteral("categoryTr"),
+            QStringLiteral("shortcut"),  QStringLiteral("shortcuts"), QStringLiteral("external"),
         };
         static const QSet<QString> containerKeys = {
             QStringLiteral("topLevel"),

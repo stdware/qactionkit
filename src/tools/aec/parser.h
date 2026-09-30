@@ -19,6 +19,8 @@ struct ActionItemInfoMessage {
     QAK::ActionItemInfo::Type type;
 
     QString text;
+    // The text of an action in menus, empty if the manifest specifies none
+    QString shortText;
     QString category;
     QString description;
 

@@ -400,6 +400,14 @@ private Q_SLOTS:
         QVERIFY(revert->text().translation);
         QCOMPARE(revert->text().source, QStringLiteral("Revert"));
 
+        // The short text is translated in the context of the text, and the text stands for a
+        // short text that the manifest does not specify
+        QCOMPARE(revert->shortText().toString(), QStringLiteral("Test::RevertText|Re&vert"));
+        QCOMPARE(openFile->shortText().toString(), QStringLiteral("Test::Text|Open File"));
+        const auto file = registry.actionInfo(QStringLiteral("test.file"));
+        QVERIFY(file);
+        QCOMPARE(file->shortText().source, QStringLiteral("File"));
+
         // The contexts are not attributes
         QVERIFY(openFile->attributes().isEmpty());
         QVERIFY(revert->attributes().isEmpty());

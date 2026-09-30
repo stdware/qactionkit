@@ -15,7 +15,8 @@
         <action id="test.file.openFile" text="Open File" category="File" />
         <action id="test.file.saveFile" text="Save File" />
         <action id="test.file.revert" text="Revert" category="File" description="Revert the file"
-                textTr="Test::RevertText" categoryTr="Test::RevertCategory" />
+                textTr="Test::RevertText" categoryTr="Test::RevertCategory"
+                shortText="Re&amp;vert" />
         <action id="test.file.close" if="ENABLED" x:tag="close" />
         <action id="test.file.recentFiles" external="true" />
         <menu id="test.file" text="File" />

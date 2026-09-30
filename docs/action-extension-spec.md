@@ -124,6 +124,7 @@ manifest.xml ──qak_aec──> qak_manifest.cpp ──> ActionExtension ─�
 | --- | --- | --- |
 | `id` | 全部 | 必需 |
 | `text` | 全部 | 由标识推导，见下文 |
+| `shortText` | action | 与 `text` 相同 |
 | `category` | action | 空 |
 | `description` | 全部 | 空 |
 | `icon` | 全部 | 条目的标识 |
@@ -138,6 +139,8 @@ manifest.xml ──qak_aec──> qak_manifest.cpp ──> ActionExtension ─�
 `shortcuts` 为以 `;` 分隔的列表，优先于 `shortcut`。`\` 转义其后的一个字符，字面的分号写作 `\;`。
 
 `category` 是命令面板显示在文本之前的类别标签，例如「File: Open」中的 `File`。它与 `catalog` 无关，后者决定条目在设置页层级中的位置。
+
+`shortText` 是 action 在菜单与工具栏中显示的文本，`text` 则是命令面板中显示的完整名称。菜单的标题与相邻的条目提供了上下文，菜单项因此可以省去其中已有的词，例如「Export」菜单中的 `&UST...`，其 `text` 为 `Export &UST...`。二者对应 VS Code 中命令的 `shortTitle` 与 `title`。`shortText` 与 `text` 在同一个翻译上下文中翻译，没有单独的 `shortTextTr`。未指定时菜单显示 `text`。运行时由 `ActionItemInfo::shortText()` 读取，Widgets 与 Quick 后端的 action 显示它。
 
 `topLevel` 只有在展开后恰为字符串 `true` 时才为真。顶层的 menu 作为菜单栏、工具栏还是弹出菜单，由应用程序登记时决定，例如 `WidgetActionContext::addMenuBar()` 与 `addToolBar()`。
 

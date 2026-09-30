@@ -172,9 +172,10 @@ namespace QAK {
         const auto info = reg->actionInfo(id);
 
         if (element == AE_Layouts || element == AE_Texts) {
+            // The action shows the short text, because it appears in menus and tool bars.
             QString text;
             if (info) {
-                text = info->text().toString();
+                text = info->shortText().toString();
             }
             if (text.isEmpty()) {
                 text = id;

@@ -95,6 +95,14 @@ private Q_SLOTS:
                  QStringList({"About", "Check Update"}));
     }
 
+    // The menu shows the short text of an action, and the text remains for a command palette.
+    void testShortTextInMenus() {
+        QCOMPARE(context->action(QStringLiteral("test.checkUpdate"))->text(),
+                 QStringLiteral("Check Update"));
+        QCOMPARE(registry->actionInfo(QStringLiteral("test.checkUpdate"))->text().source,
+                 QStringLiteral("Check for Updates"));
+    }
+
     void testToolBarStretch() {
         QCOMPARE(contents(toolBar), QStringList({"Open File", "...", "About"}));
     }

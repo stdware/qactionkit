@@ -179,6 +179,7 @@ public:
             GENERATE_STRING(id, item.id);
             GENERATE_ENUM(type, "ActionItemInfo", itemInfoTypeToString(item.type));
             GENERATE_STRING(text, item.text);
+            GENERATE_STRING(shortText, item.shortText);
             GENERATE_STRING(category, item.category);
             GENERATE_STRING(description, item.description);
             GENERATE_STRING(textContext, item.textContext);
@@ -281,6 +282,10 @@ public:
     void generateTranslations(FILE *out, const QVector<ActionItemInfoMessage> &items) {
         const auto &result = q.parseResult;
         generateTranslationCalls(out, "Action Text", items, &ActionItemInfoMessage::text,
+                                 &ActionItemInfoMessage::textContext, result.textTranslationContext,
+                                 QAK::ActionExtensionData::defaultTextContext);
+        // The short text is looked up in the context of the text.
+        generateTranslationCalls(out, "Action Short Text", items, &ActionItemInfoMessage::shortText,
                                  &ActionItemInfoMessage::textContext, result.textTranslationContext,
                                  QAK::ActionExtensionData::defaultTextContext);
         generateTranslationCalls(out, "Action Category", items, &ActionItemInfoMessage::category,
