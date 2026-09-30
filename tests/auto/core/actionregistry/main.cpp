@@ -8,6 +8,7 @@
 #include "plugin.qak.h"
 #include "priority-a.qak.h"
 #include "priority-b.qak.h"
+#include "same-id.qak.h"
 
 using namespace QAK;
 
@@ -200,6 +201,54 @@ private Q_SLOTS:
                           "b.last",
                           "a.late",
                       }));
+    }
+
+    void testRemoveExtension() {
+        ActionRegistry registry;
+        registry.setExtensions({qak::test::testActions(), qak::test::testPriorityA()});
+        QVERIFY(registry.actionInfo(QStringLiteral("a.first")));
+        QVERIFY(childrenOf(registry.layouts(), "test.file").contains(QStringLiteral("a.first")));
+
+        // The items and the insertions of the extension go, and the others stay
+        registry.removeExtension(qak::test::testPriorityA());
+        QCOMPARE(registry.extensions(), QList<const ActionExtension *>({qak::test::testActions()}));
+        QVERIFY(!registry.actionInfo(QStringLiteral("a.first")));
+        QVERIFY(!registry.actionIds().contains(QStringLiteral("a.first")));
+        QCOMPARE(childrenOf(registry.layouts(), "test.file"),
+                 QStringList({"test.file.openFile", "test.file.saveFile", "test.file.revert"}));
+        QVERIFY(registry.actionInfo(QStringLiteral("test.file.openFile")));
+
+        // An extension that is not registered is ignored, even with the id of a registered one
+        registry.removeExtension(qak::test::testPriorityB());
+        QCOMPARE(registry.extensions().size(), 1);
+        registry.addExtension(qak::test::testPriorityA());
+        registry.removeExtension(qak::test::testSameId());
+        QVERIFY(registry.actionInfo(QStringLiteral("a.first")));
+        registry.removeExtension(qak::test::testPriorityA());
+
+        // A change of the user that refers to an item of the extension applies while the
+        // extension is registered, and is skipped once it is removed, which happens at once
+        registry.addExtension(qak::test::testPriorityA());
+        registry.addLayoutChange(
+            layoutChange(ActionLayoutChange::Remove, "test.file", action("a.first")));
+        const auto withChange = childrenOf(registry.layouts(), "test.file");
+        QVERIFY(!withChange.contains(QStringLiteral("a.first")));
+        QVERIFY(withChange.contains(QStringLiteral("a.after")));
+
+        static QStringList warnings;
+        warnings.clear();
+        const auto previous = qInstallMessageHandler(
+            [](QtMsgType type, const QMessageLogContext &, const QString &message) {
+                if (type == QtWarningMsg) {
+                    warnings.append(message);
+                }
+            });
+        registry.removeExtension(qak::test::testPriorityA());
+        qInstallMessageHandler(previous);
+        QCOMPARE(warnings.size(), 1);
+        QVERIFY(warnings.first().contains(QStringLiteral("is skipped")));
+        QCOMPARE(childrenOf(registry.layouts(), "test.file"),
+                 QStringList({"test.file.openFile", "test.file.saveFile", "test.file.revert"}));
     }
 
     void testSkippedInsertionsAreReported() {

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<actionExtension>
+
+    <version>1.0</version>
+    <!-- The id of priority-a.xml, which makes another extension of the same id -->
+    <id>org.qactionkit.test.priorityA</id>
+
+    <items>
+        <action id="same.action" />
+    </items>
+
+</actionExtension>

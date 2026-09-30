@@ -136,6 +136,9 @@ namespace QAK {
         QList<const ActionExtension *> extensions() const;
         void setExtensions(const QList<const ActionExtension *> &extensions);
         void addExtension(const ActionExtension *extension);
+        /// Removes \a extension with its items and insertions, keeping no view into it. An
+        /// extension that is not registered is ignored.
+        void removeExtension(const ActionExtension *extension);
 
         QStringList actionIds() const;
         /// Returns the item \a id, or \c std::nullopt if no registered extension declares it.

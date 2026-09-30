@@ -847,6 +847,18 @@ namespace QAK {
         d->extensionsDirty = true;
     }
 
+    // Flushed at once, since the library of the extension may be unloaded before the next query
+    void ActionRegistry::removeExtension(const ActionExtension *extension) {
+        Q_D(ActionRegistry);
+        const auto it = d->extensions.find(extension->id());
+        if (it == d->extensions.end() || it->second != extension) {
+            return;
+        }
+        d->extensions.erase(it);
+        d->extensionsDirty = true;
+        d->flushActionItems();
+    }
+
     QStringList ActionRegistry::actionIds() const {
         Q_D(const ActionRegistry);
         d->flushActionItems();

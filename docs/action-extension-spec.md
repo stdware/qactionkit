@@ -320,6 +320,8 @@ registry->addExtension(hello::daw::coreActions());
 
 导出宏在构建库与使用库时分别展开为什么，由定义它的头文件决定。
 
+清单编译进可卸载的库（例如插件）时，库卸载前须以 `ActionRegistry::removeExtension()` 移除该扩展，并以 `updateContext()` 更新各 context。生成的字符串位于该库的静态存储中，由其条目取得的 `QString` 与之共享数据，不得在库卸载后继续使用。
+
 用户对菜单的自定义以改动记录（`ActionLayoutChange`）保存，而不是保存整份布局。registry 每次由已登记的扩展重新计算默认布局，再按顺序回放改动记录，因此扩展增加或更新之后，新条目按默认布局出现，用户的自定义保持不变。设置页编辑整份布局，保存时以 `ActionRegistry::computeLayoutChanges()` 比较出改动记录。无法回放的记录，例如所引用的条目已不再有扩展声明，被跳过并以 `qCWarning` 报告。
 
 ## 翻译

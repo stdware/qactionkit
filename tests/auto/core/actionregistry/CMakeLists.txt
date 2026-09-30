@@ -29,5 +29,11 @@ qak_add_action_extension(_priority_b_src "priority-b.xml"
     NAMESPACE qak::test
 )
 
+# Another extension with the id of priority-a.xml
+qak_add_action_extension(_same_id_src "same-id.xml"
+    FUNCTION testSameId
+    NAMESPACE qak::test
+)
+
 qak_add_auto_test(SOURCES ${_action_src} ${_insertion_src} ${_plugin_src} ${_priority_a_src}
-    ${_priority_b_src})
+    ${_priority_b_src} ${_same_id_src})
