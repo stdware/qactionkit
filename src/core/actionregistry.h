@@ -122,9 +122,9 @@ namespace QAK {
         static std::optional<ActionLayoutChange> fromJsonObject(const QJsonObject &obj);
     };
 
-    /// The central repository of the action extensions of an application, holding the catalog, the
-    /// layouts and the customizations made by the user. An application normally has one registry,
-    /// with one \c ActionContext per window registered with it.
+    /// The action extensions of one kind of window, with their catalog, their layouts and the
+    /// customizations made by the user. Each window of that kind registers an \c ActionContext with
+    /// it, and an application with several kinds of windows has one registry per kind.
     class QAK_CORE_EXPORT ActionRegistry : public ActionFamily {
         Q_OBJECT
         Q_DECLARE_PRIVATE(ActionRegistry)
