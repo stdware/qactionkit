@@ -182,6 +182,9 @@ namespace QAK {
             }
             action->setText(text);
 
+            if (info && info->shortText().toString() != info->text().toString()) {
+                action->setToolTip(info->text().toString());
+            }
             if (info && (attrs & WidgetActionContext::UpdateToolTipWithDescription)) {
                 const QString description = info->description().toString();
                 if (!description.isEmpty()) {

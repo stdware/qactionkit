@@ -103,6 +103,12 @@ private Q_SLOTS:
                  QStringLiteral("Check for Updates"));
     }
 
+    void testShortTextUsesFullTextAsToolTip() {
+        auto action = context->action(QStringLiteral("test.checkUpdate"));
+        QVERIFY(action);
+        QCOMPARE(action->toolTip(), QStringLiteral("Check for Updates"));
+    }
+
     void testToolBarStretch() {
         QCOMPARE(contents(toolBar), QStringList({"Open File", "...", "About"}));
     }
