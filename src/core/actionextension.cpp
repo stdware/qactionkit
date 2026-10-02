@@ -46,6 +46,25 @@ namespace QAK {
         return QPlatformTheme::removeMnemonics(toString());
     }
 
+    QString ActionText::mnemonicText() const {
+        const QString value = toString();
+        QString result = withoutMnemonic();
+        for (qsizetype i = 0; i + 1 < value.size(); ++i) {
+            if (value.at(i) != QLatin1Char('&'))
+                continue;
+            if (value.at(i + 1) == QLatin1Char('&')) {
+                ++i;
+                continue;
+            }
+            const QChar mnemonic = value.at(i + 1);
+            if (!mnemonic.isSpace()) {
+                result += QStringLiteral(" (%1)").arg(mnemonic.toUpper());
+                break;
+            }
+        }
+        return result;
+    }
+
     ActionItemInfo::ActionItemInfo() : e(&sharedNullExtensionData), i(0) {
     }
     bool ActionItemInfo::isNull() const {

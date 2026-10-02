@@ -11,6 +11,7 @@
         <action id="test.about" text="About" />
         <!-- The menu shows the short text, and a command palette the text -->
         <action id="test.checkUpdate" text="Check for Updates" shortText="Check Update" />
+        <action id="test.reset" text="Reset &amp;Envelopes" shortText="&amp;Envelopes" />
 
         <menu id="test.mainMenu" topLevel="true" />
         <menu id="test.mainToolBar" topLevel="true" />
@@ -33,6 +34,7 @@
             </menu>
             <menu id="test.help">
                 <action id="test.about" />
+                <action id="test.reset" />
             </menu>
         </menu>
 

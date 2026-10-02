@@ -104,6 +104,10 @@ namespace QAK {
         /// in parentheses, such as \c (&O) in a Chinese text, is removed with the spaces before it.
         /// An ellipsis is kept.
         QString withoutMnemonic() const;
+
+        /// Returns the text without mnemonic markers, preserving the mnemonic as a
+        /// parenthesized key.
+        QString mnemonicText() const;
     };
 
     /// The metadata of a single item declared by an \c ActionExtension.

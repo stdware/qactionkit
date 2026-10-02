@@ -92,7 +92,7 @@ private Q_SLOTS:
 
     void testInsertionWithoutAnchorAppends() {
         QCOMPARE(contents(subMenu(QStringLiteral("test.help"))),
-                 QStringList({"About", "Check Update"}));
+                 QStringList({"About", "&Envelopes", "Check Update"}));
     }
 
     // The menu shows the short text of an action, and the text remains for a command palette.
@@ -107,6 +107,10 @@ private Q_SLOTS:
         auto action = context->action(QStringLiteral("test.checkUpdate"));
         QVERIFY(action);
         QCOMPARE(action->toolTip(), QStringLiteral("Check for Updates"));
+
+        action = context->action(QStringLiteral("test.reset"));
+        QVERIFY(action);
+        QCOMPARE(action->toolTip(), QStringLiteral("Reset Envelopes (E)"));
     }
 
     void testToolBarStretch() {
