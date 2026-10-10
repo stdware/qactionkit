@@ -26,6 +26,7 @@ namespace QAK {
         Q_PROPERTY(QString id READ id CONSTANT)
         Q_PROPERTY(QString text READ text NOTIFY textChanged)
         Q_PROPERTY(QString description READ description NOTIFY descriptionChanged)
+        Q_PROPERTY(QString toolTip READ toolTip NOTIFY toolTipChanged)
         Q_PROPERTY(QQuickIcon icon READ icon NOTIFY iconChanged)
         Q_PROPERTY(QList<QKeySequence> shortcuts READ shortcuts NOTIFY shortcutsChanged)
         Q_PROPERTY(QVariantList attributes READ attributes CONSTANT)
@@ -46,6 +47,9 @@ namespace QAK {
         QString description() const;
         void setDescription(const QString &description);
 
+        QString toolTip() const;
+        void setToolTip(const QString &toolTip);
+
         QQuickIcon icon() const;
 
         QList<QKeySequence> shortcuts() const;
@@ -64,6 +68,7 @@ namespace QAK {
     signals:
         void textChanged();
         void descriptionChanged();
+        void toolTipChanged();
         void iconChanged();
         void shortcutsChanged();
 

@@ -107,6 +107,15 @@ private Q_SLOTS:
         QCOMPARE(openFile->property("actionDescription").toString(), QStringLiteral("Open a file"));
     }
 
+    // The tool tip is the full text, stripped as QAction strips it, as in the Widgets backend.
+    void testToolTipIsAttached() {
+        registry->updateContext(QAK::AE_Layouts);
+
+        const auto openFile = objectAt(0);
+        QVERIFY(openFile);
+        QCOMPARE(openFile->property("actionToolTip").toString(), QStringLiteral("Open File"));
+    }
+
     void testTranslatedTexts() {
         ContextTranslator translator;
         QCoreApplication::installTranslator(&translator);

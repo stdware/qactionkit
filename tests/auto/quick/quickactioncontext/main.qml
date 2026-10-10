@@ -13,6 +13,7 @@ Item {
 
     readonly property Component action: Action {
         readonly property string actionDescription: ActionInstantiator.description
+        readonly property string actionToolTip: ActionInstantiator.toolTip
     }
     readonly property Component menu: Menu {}
     readonly property Component separator: MenuSeparator {}

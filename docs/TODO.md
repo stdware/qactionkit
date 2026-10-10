@@ -7,6 +7,7 @@
 - **设置界面。** `src/widgets/settings/keymapsettingswidget.cpp` 与 `layoutssettingswidget.cpp` 是空文件。作为其数据来源的 `ActionCatalogModel` 与 `ActionLayoutsModel` 已经实现。
 - **图标主题。** 图标清单按主题声明图标，`ActionFamily` 也按主题存储，但两种后端一律使用默认主题，见 `quickactioninstantiatorattachedtype.cpp` 与 `widgetactioncontext.cpp` 中的 `// TODO: theme`。上下文需要记录当前主题，并在主题改变时重建图标。
 - **布局中的控件工厂。** `WidgetActionContext::addWidgetFactory()` 登记工厂后，构建出的布局会放置其动作，但清单中无法声明「此处放置一个控件」，该标识只能声明为 action。
+- **Quick 附加对象的完整文字。** `ActionInstantiator` 的附加对象只提供 `text`（即 `shortText`，与 QML `Action.text` 对应）与去掉加速键和省略号的 `toolTip`，没有带加速键的完整文字，QML 中的命令面板因此无法显示它。另一种设计是按清单的命名提供 `text`（完整文字）与 `shortText`，但会改变现有 `text` 的含义，提示仍须另行提供。
 
 ## 测试覆盖
 

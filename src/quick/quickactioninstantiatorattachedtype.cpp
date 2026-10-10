@@ -28,6 +28,13 @@ namespace QAK {
             }
             setText(text);
             setDescription(info.description().toString());
+            // The full text, stripped as QAction strips the text of an action without a tool
+            // tip, which is the tool tip of the Widgets backend
+            auto toolTip = info.text().strippedText();
+            if (toolTip.isEmpty()) {
+                toolTip = info.id();
+            }
+            setToolTip(toolTip);
         }
         if (property & QuickActionInstantiatorPrivate::Icon) {
             // TODO: theme
@@ -80,6 +87,17 @@ namespace QAK {
         if (d->description != description) {
             d->description = description;
             emit descriptionChanged();
+        }
+    }
+    QString QuickActionInstantiatorAttachedType::toolTip() const {
+        Q_D(const QuickActionInstantiatorAttachedType);
+        return d->toolTip;
+    }
+    void QuickActionInstantiatorAttachedType::setToolTip(const QString &toolTip) {
+        Q_D(QuickActionInstantiatorAttachedType);
+        if (d->toolTip != toolTip) {
+            d->toolTip = toolTip;
+            emit toolTipChanged();
         }
     }
     QQuickIcon QuickActionInstantiatorAttachedType::icon() const {

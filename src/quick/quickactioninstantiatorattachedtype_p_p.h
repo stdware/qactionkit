@@ -13,6 +13,7 @@ namespace QAK {
         QString id;
         QString text;
         QString description;
+        QString toolTip;
         QUrl iconSource;
         QList<QKeySequence> shortcuts;
         QVariantList attributes;
