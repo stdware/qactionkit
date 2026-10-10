@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- expect: error item "test\.recent" has the attribute "triggerable", which only applies to actions -->
+<actionExtension>
+    <version>1.0</version>
+    <id>test.triggerableMenu</id>
+    <items>
+        <menu id="test.recent" triggerable="false" />
+    </items>
+</actionExtension>

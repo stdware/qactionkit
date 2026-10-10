@@ -21,6 +21,7 @@
    - 身份与形态都是 Action，因此不能以 Menu 或 Group 形态出现，也不能在布局中带有子项，这两条由 action 的现有规则保证。
    - 不能带有 `shortcut` 或 `shortcuts` 属性，AEC 报错。`external` 用于 action 以外的标签也是错误。
    - `ActionItemInfo` 提供查询该属性的访问函数。
+   - 第 50 条将该属性改名为 `triggerable`，`external="true"` 改写为 `triggerable="false"`。
 4. 身份为 Action 且不是 external 的条目是命令：进入命令面板，可以绑定快捷键。external action、Menu、Group 与 Phony 都不是命令。
 
 身份、标签与形态的合法组合：
@@ -192,7 +193,7 @@ struct ActionText {
 
 `shortcuts` 只对 Action 解析，`category` 只对 Action 读取，而 `ActionItemInfo` 对所有类型都提供这些访问函数，非 Action 条目返回空值。这一约束依靠约定，而不是类型。
 
-**决定：** 保持一个类。只对某些类型有意义的访问函数（`shortcuts()`、`category()`、external 的查询、`topLevel()`、`children()`）在接口注释中写明适用的类型，以及其他类型返回的空值。第 21 条之后 AEC 拒绝将这些属性写在不适用的标签上，运行时不会出现被静默忽略的值。
+**决定：** 保持一个类。只对某些类型有意义的访问函数（`shortcuts()`、`category()`、`isTriggerable()`、`topLevel()`、`children()`）在接口注释中写明适用的类型，以及其他类型返回的空值。第 21 条之后 AEC 拒绝将这些属性写在不适用的标签上，运行时不会出现被静默忽略的值。
 
 ## 43. 身份与形态的不变量在持久化边界失效（已定）
 
@@ -222,7 +223,7 @@ registry 同时持有条目表与布局，是唯一能够进行这一检查的�
 
 `WidgetActionContextPrivate::updateLayouts()` 对每个登记的容器（菜单、菜单栏、工具栏）先移除全部动作，再按布局重新填充。应用程序自行加入容器的动作因此在每次更新布局时被清除。
 
-**决定：维持现状。** 登记给 context 的容器，其内容一律由 QActionKit 管理，应用程序不得自行向其中加入动作。`WidgetActionContext` 的接口文档写明这一约定。内容由应用程序维护的菜单（如最近打开的文件）声明为 external action，以 `addAction()` 登记其 `menuAction()`，不经 `addMenu()` 登记，因此不受本条影响，见第 17 条。
+**决定：维持现状。** 登记给 context 的容器，其内容一律由 QActionKit 管理，应用程序不得自行向其中加入动作。`WidgetActionContext` 的接口文档写明这一约定。内容由应用程序维护的菜单（如最近打开的文件）声明为不可触发的 action（第 50 条），以 `addAction()` 登记其 `menuAction()`，不经 `addMenu()` 登记，因此不受本条影响，见第 17 条。
 
 ## 46. `menuBar` 与 `toolBar` 编译后没有区别（已定）
 
@@ -278,3 +279,9 @@ namespace hello::daw {
 **现状。** 条目只有 `text` 一个文本，菜单与命令面板都显示它。菜单项的上下文由菜单的标题与相邻的条目提供，命令面板中的命令则没有上下文。例如「Export」菜单中写作 `&UST...` 的菜单项，在命令面板中显示为「File: UST...」，不能表明它是导出。若改写为 `Export &UST...`，菜单中又重复了菜单的标题。
 
 **决定。** 为 action 增加 `shortText` 属性，即菜单与工具栏中显示的文本，`text` 为命令面板中显示的完整名称，同 VS Code 中命令的 `shortTitle` 与 `title`。未指定时 `shortText` 等于 `text`，已有的清单不受影响。`shortText` 在 `text` 的翻译上下文中翻译，不另设 `shortTextTr`，因为二者是同一个命令的两种写法。`ActionItemInfo::shortText()` 返回它，Widgets 与 Quick 后端的 action 显示它，命令面板由应用程序实现，继续使用 `text()`。只适用于 action：菜单、组与 phony 不进入命令面板，没有两种写法之分，写在其他标签上时 AEC 报错，同第 21 条。
+
+## 50. `external` 的名称只适用于菜单（已定）
+
+**现状。** 第 17 条为 `<action>` 增加的 `external` 属性表示一个内容由应用程序维护的菜单。工具栏中的控件同样由应用程序提供：应用程序以 `addWidgetFactory()` 登记该条目，触发它没有意义。控件的条目没有声明为 external，因此被当作命令，出现在快捷键设置中，绑定快捷键后不执行任何操作。`external` 描述的是内容的来源，用于控件时名称不再准确。
+
+**决定。** 属性改名为 `triggerable`，默认为 `true`，`triggerable="false"` 表示用户不能触发该 action。它同时适用于以 `addAction()` 登记 `menuAction()` 的菜单与以 `addWidgetFactory()` 登记的控件。QActionKit 不区分这两种情形，因为条目以何种对象出现由应用程序登记时决定，同第 17 条决定 1 中菜单栏与工具栏的区别。其余规则不变：不可触发的 action 不得带有快捷键，不是命令，写在 action 以外的标签上时 AEC 报错。`ActionItemInfo::isExternal()` 改为 `isTriggerable()`，不保留旧名称。

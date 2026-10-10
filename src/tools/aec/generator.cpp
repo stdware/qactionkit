@@ -198,7 +198,7 @@ public:
 
             GENERATE_STRING(catalog, item.catalog);
             GENERATE_BOOL(topLevel, item.topLevel);
-            GENERATE_BOOL(external, item.external);
+            GENERATE_BOOL(triggerable, item.triggerable);
 
             // attributes
             fprintf(out, STRING_12_SPACE "// attributes\n");

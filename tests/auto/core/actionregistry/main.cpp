@@ -141,24 +141,24 @@ private Q_SLOTS:
         QVERIFY(saveFile->category().source.isEmpty());
     }
 
-    void testExternal() {
+    void testTriggerable() {
         ActionRegistry registry;
         registry.addExtension(qak::test::testActions());
 
         const auto recentFiles = registry.actionInfo(QStringLiteral("test.file.recentFiles"));
         QVERIFY(recentFiles);
-        QVERIFY(recentFiles->isExternal());
+        QVERIFY(!recentFiles->isTriggerable());
 
         const auto openFile = registry.actionInfo(QStringLiteral("test.file.openFile"));
         QVERIFY(openFile);
-        QVERIFY(!openFile->isExternal());
+        QVERIFY(openFile->isTriggerable());
     }
 
     void testCommand() {
         ActionRegistry registry;
         registry.addExtension(qak::test::testActions());
 
-        // Only an action that is not external is a command
+        // Only a triggerable action is a command
         const auto openFile = registry.actionInfo(QStringLiteral("test.file.openFile"));
         QVERIFY(openFile);
         QVERIFY(openFile->isCommand());

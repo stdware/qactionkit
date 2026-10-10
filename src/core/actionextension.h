@@ -179,14 +179,14 @@ namespace QAK {
         /// is \c false.
         bool topLevel() const;
 
-        /// Returns whether the action stands for a menu whose contents the application maintains,
-        /// such as a menu of recent files. The application adds the menu action of that menu with
-        /// \c addAction() of its context, and QActionKit neither clears nor fills the menu. Such
-        /// an action has no shortcut and is not a command, which a command palette lists. The
-        /// value of other items is \c false.
-        bool isExternal() const;
+        /// Returns whether the user can trigger the action. An action that is not triggerable
+        /// stands for an object that the application registers with its context, such as the menu
+        /// action of a menu of recent files or a widget in a tool bar. QActionKit neither clears
+        /// nor fills such a menu. Such an action has no shortcut and is not a command. The value
+        /// of other items is \c false.
+        bool isTriggerable() const;
 
-        /// Returns whether the item is a command, an action that is not external. A command
+        /// Returns whether the item is a command, an action that is triggerable. A command
         /// appears in a command palette and can be bound to shortcuts.
         bool isCommand() const;
 

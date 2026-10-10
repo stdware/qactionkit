@@ -330,13 +330,14 @@ struct ParserPrivate {
             }
         }
 
-        // external, which stands for a menu maintained by the application and takes no shortcut
+        // triggerable, false for an action that stands for an object provided by the application.
+        // Such an action takes no shortcut.
         if (info.type == QAK::ActionItemInfo::Action) {
-            info.external =
-                resolve(e.properties.value(QStringLiteral("external"))) == QStringLiteral("true");
-            if (info.external && (e.properties.contains(QStringLiteral("shortcut")) ||
-                                  e.properties.contains(QStringLiteral("shortcuts")))) {
-                error("%s: item \"%s\" is external, which cannot have a shortcut\n",
+            info.triggerable = resolve(e.properties.value(QStringLiteral("triggerable"))) !=
+                               QStringLiteral("false");
+            if (!info.triggerable && (e.properties.contains(QStringLiteral("shortcut")) ||
+                                      e.properties.contains(QStringLiteral("shortcuts")))) {
+                error("%s: item \"%s\" is not triggerable and cannot have a shortcut\n",
                       qPrintable(q.fileName), qPrintable(info.id));
                 std::exit(1);
             }
@@ -367,7 +368,7 @@ struct ParserPrivate {
         };
         static const QSet<QString> actionKeys = {
             QStringLiteral("shortText"), QStringLiteral("category"),  QStringLiteral("categoryTr"),
-            QStringLiteral("shortcut"),  QStringLiteral("shortcuts"), QStringLiteral("external"),
+            QStringLiteral("shortcut"),  QStringLiteral("shortcuts"), QStringLiteral("triggerable"),
         };
         static const QSet<QString> containerKeys = {
             QStringLiteral("topLevel"),

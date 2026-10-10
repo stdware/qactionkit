@@ -106,12 +106,12 @@ namespace QAK {
     bool ActionItemInfo::topLevel() const {
         return e->items[i].topLevel;
     }
-    bool ActionItemInfo::isExternal() const {
-        return e->items[i].external;
+    bool ActionItemInfo::isTriggerable() const {
+        return e->items[i].triggerable;
     }
     bool ActionItemInfo::isCommand() const {
         const auto &d = e->items[i];
-        return d.type == Action && !d.external;
+        return d.type == Action && d.triggerable;
     }
     QMap<ActionAttributeKey, QString> ActionItemInfo::attributes() const {
         return e->items[i].attributes;

@@ -111,7 +111,7 @@ manifest.xml ──qak_aec──> qak_manifest.cpp ──> ActionExtension ─�
 
 | 标签 | 类型 | 说明 |
 | --- | --- | --- |
-| `action` | Action | 用户可以触发的叶节点 |
+| `action` | Action | 叶节点，默认可由用户触发 |
 | `group` | Group | 具名的条目列表，其子项直接放入父节点 |
 | `menu` | Menu | 菜单，`topLevel` 表示弹出菜单、菜单栏或工具栏 |
 | `phony` | Phony | 只作为目录节点，不出现在任何视图中 |
@@ -131,7 +131,7 @@ manifest.xml ──qak_aec──> qak_manifest.cpp ──> ActionExtension ─�
 | `shortcut`、`shortcuts` | action | 无 |
 | `catalog` | 全部 | 见[目录](#目录) |
 | `topLevel` | group、menu | `false` |
-| `external` | action | `false` |
+| `triggerable` | action | `true` |
 | `textTr`、`descriptionTr` | 全部 | 取自 `configuration` |
 | `categoryTr` | action | 取自 `configuration` |
 | `if` | 全部 | 无，见[条件元素](#条件元素) |
@@ -144,9 +144,9 @@ manifest.xml ──qak_aec──> qak_manifest.cpp ──> ActionExtension ─�
 
 `topLevel` 只有在展开后恰为字符串 `true` 时才为真。顶层的 menu 作为菜单栏、工具栏还是弹出菜单，由应用程序登记时决定，例如 `WidgetActionContext::addMenuBar()` 与 `addToolBar()`。
 
-`external` 同样只有展开后恰为 `true` 时才为真。它表示该 action 代表一个内容由应用程序维护的菜单，例如最近打开的文件。应用程序以 context 的 `addAction()` 登记该菜单的 `menuAction()`，QActionKit 不清空也不生成它的内容。external action 不得带有 `shortcut` 或 `shortcuts`，应用程序通过 `ActionItemInfo::isExternal()` 查询该属性。
+`triggerable` 只有展开后恰为 `false` 时才为假。不可触发的 action 代表一个由应用程序提供的对象，例如内容由应用程序维护的菜单（最近打开的文件），或工具栏中的控件。应用程序以 context 的 `addAction()` 登记该菜单的 `menuAction()`，或以 `WidgetActionContext::addWidgetFactory()` 登记该控件。QActionKit 不清空也不生成这种菜单的内容。不可触发的 action 不得带有 `shortcut` 或 `shortcuts`，应用程序通过 `ActionItemInfo::isTriggerable()` 查询该属性。
 
-不是 external 的 action 是命令：它进入命令面板，可以绑定快捷键。external action、menu、group 与 phony 都不是命令。`ActionItemInfo::isCommand()` 返回条目是否为命令。
+可触发的 action 是命令：它进入命令面板，可以绑定快捷键。不可触发的 action、menu、group 与 phony 都不是命令。`ActionItemInfo::isCommand()` 返回条目是否为命令。
 
 属性写在不适用的类型上，例如 menu 上的 `shortcut`，AEC 报错。不属于命名空间的属性只能是上表中的属性，其他的均导致 AEC 报错，拼错的属性因此不会被当作自定义属性。
 

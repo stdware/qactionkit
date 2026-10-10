@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- expect: error item "test\.recent" is not triggerable and cannot have a shortcut -->
+<actionExtension>
+    <version>1.0</version>
+    <id>test.notTriggerableWithShortcut</id>
+    <items>
+        <action id="test.recent" triggerable="false" shortcut="Ctrl+R" />
+    </items>
+</actionExtension>
