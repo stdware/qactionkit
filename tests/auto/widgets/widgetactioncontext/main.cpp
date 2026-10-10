@@ -103,6 +103,8 @@ private Q_SLOTS:
                  QStringLiteral("Check for Updates"));
     }
 
+    // An action with a short text has its full text as its tool tip, stripped as QAction strips
+    // the text of an action without a tool tip.
     void testShortTextUsesFullTextAsToolTip() {
         auto action = context->action(QStringLiteral("test.checkUpdate"));
         QVERIFY(action);
@@ -110,7 +112,7 @@ private Q_SLOTS:
 
         action = context->action(QStringLiteral("test.reset"));
         QVERIFY(action);
-        QCOMPARE(action->toolTip(), QStringLiteral("Reset Envelopes (E)"));
+        QCOMPARE(action->toolTip(), QStringLiteral("Reset Envelopes"));
     }
 
     void testToolBarStretch() {

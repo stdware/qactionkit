@@ -182,8 +182,10 @@ namespace QAK {
             }
             action->setText(text);
 
+            // QAction derives its tool tip from its text, which is the short text. An action with
+            // a short text therefore gets the full text instead, stripped as QAction strips it.
             if (info && info->shortText().toString() != info->text().toString()) {
-                action->setToolTip(info->text().mnemonicText());
+                action->setToolTip(info->text().strippedText());
             }
             if (info && (attrs & WidgetActionContext::UpdateToolTipWithDescription)) {
                 const QString description = info->description().toString();

@@ -99,15 +99,23 @@ namespace QAK {
         }
 
         /// Returns the result of \c toString() without mnemonic markers, for display outside
-        /// menus, such as in a command palette or a tool tip. An \c & before a character is
-        /// removed and \c && becomes \c &, as \c QPlatformTheme::removeMnemonics() does. A marker
-        /// in parentheses, such as \c (&O) in a Chinese text, is removed with the spaces before it.
-        /// An ellipsis is kept.
+        /// menus, such as in a command palette. An \c & before a character is removed and \c &&
+        /// becomes \c &, as \c QPlatformTheme::removeMnemonics() does. A marker in parentheses,
+        /// such as \c (&O) in a Chinese text, is removed with the spaces before it. An ellipsis
+        /// is kept.
+        ///
+        /// \sa strippedText()
         QString withoutMnemonic() const;
 
-        /// Returns the text without mnemonic markers, preserving the mnemonic as a
-        /// parenthesized key.
-        QString mnemonicText() const;
+        /// Returns the result of \c toString() as \c QAction shows it as the tool tip of an
+        /// action without one: each \c & and ellipsis is removed, and the spaces around the
+        /// text. Of \c &&, one \c & remains. Unlike withoutMnemonic(), a marker in parentheses
+        /// leaves the parentheses and the key, so that \c (&O) becomes \c (O).
+        ///
+        /// The rule is that of \c qt_strippedText() of Qt 6.11.1, so that a tool tip set to this
+        /// text reads as the tool tips that \c QAction derives:
+        /// https://github.com/qt/qtbase/blob/59c81a3c2247b821b9b84b4eb8d939b77e07e276/src/gui/kernel/qaction.cpp:31
+        QString strippedText() const;
     };
 
     /// The metadata of a single item declared by an \c ActionExtension.

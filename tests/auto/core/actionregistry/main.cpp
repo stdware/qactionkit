@@ -372,6 +372,24 @@ private Q_SLOTS:
                  QString::fromUtf8("\xE6\x89\x93\xE5\xBC\x80\xE6\x96\x87\xE4\xBB\xB6..."));
     }
 
+    // The rule of the tool tip that QAction derives from its text
+    void testStrippedText() {
+        const auto strip = [](const QString &text) {
+            return ActionText{text, std::nullopt}.strippedText();
+        };
+        QCOMPARE(strip(QStringLiteral("&Open File...")), QStringLiteral("Open File"));
+        QCOMPARE(strip(QStringLiteral("Save && Close")), QStringLiteral("Save & Close"));
+        QCOMPARE(strip(QStringLiteral(" Open ")), QStringLiteral("Open"));
+        QCOMPARE(strip(QString::fromUtf8("Export\xE2\x80\xA6")), QStringLiteral("Export"));
+
+        // A marker in parentheses leaves the parentheses and the key
+        const ActionText text{QStringLiteral("&Open File..."),
+                              QString::fromUtf8("\xE6\x89\x93\xE5\xBC\x80\xE6\x96\x87\xE4\xBB\xB6 "
+                                                "(&O)...")};
+        QCOMPARE(text.strippedText(),
+                 QString::fromUtf8("\xE6\x89\x93\xE5\xBC\x80\xE6\x96\x87\xE4\xBB\xB6 (O)"));
+    }
+
     void testTranslationContexts() {
         ActionRegistry registry;
         registry.addExtension(qak::test::testActions());
