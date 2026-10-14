@@ -1,11 +1,12 @@
 #ifndef QUICKACTIONINSTANTIATORATTACHEDTYPE_P_P_H
 #define QUICKACTIONINSTANTIATORATTACHEDTYPE_P_P_H
 
+#include <QAKQuick/private/quickactioninstantiatorattachedtype_p.h>
+
+#include <QtCore/QPointer>
 #include <QtCore/QVariant>
 #include <QtCore/QUrl>
 #include <QtQuickTemplates2/private/qquickaction_p.h>
-
-#include <QAKQuick/private/quickactioninstantiatorattachedtype_p.h>
 
 namespace QAK {
     class QuickActionInstantiatorAttachedTypePrivate {
@@ -17,7 +18,10 @@ namespace QAK {
         QUrl iconSource;
         QList<QKeySequence> shortcuts;
         QVariantList attributes;
-        QuickActionInstantiator *instantiator;
+        QuickActionInstantiator *instantiator = nullptr;
+        QPointer<QuickActionContext> context;
+        QMetaObject::Connection keymapConnection;
+        QMetaObject::Connection textConnection;
 
         QQuickIcon icons[4];
     };

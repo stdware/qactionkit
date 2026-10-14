@@ -7,9 +7,9 @@
 #include <QtQuickTemplates2/private/qquickaction_p.h>
 #include <QtQuickTemplates2/private/qquickmenu_p.h>
 
-#include "quickactioncontext.h"
-#include "quickactioninstantiatorattachedtype_p.h"
-#include "quickmenuactioninstantiator_p.h"
+#include <QAKQuick/private/quickactioninstantiatorattachedtype_p.h>
+#include <QAKQuick/private/quickmenuactioninstantiator_p.h>
+#include <QAKQuick/quickactioncontext.h>
 
 namespace QAK {
 
@@ -84,64 +84,13 @@ namespace QAK {
     }
     QObject *QuickActionInstantiatorPrivate::createAction(const QString &actionId, QQmlComponent *component) const {
         auto object = component->create(component->creationContext());
-        auto attachedInfoObject = attachInfoObjectTo(actionId, object, All);
-        if (auto action = qobject_cast<QQuickAction *>(object)) {
-            action->setText(attachedInfoObject->text());
-            QObject::connect(attachedInfoObject, &QuickActionInstantiatorAttachedType::textChanged,
-                             action, [=] { action->setText(attachedInfoObject->text()); });
-            QObject::connect(attachedInfoObject,
-                             &QuickActionInstantiatorAttachedType::shortcutsChanged, action, [=] {
-                                 const auto shortcuts = attachedInfoObject->shortcuts();
-                                 action->setShortcut(shortcuts.isEmpty() ? QKeySequence()
-                                                                         : shortcuts.first());
-                             });
-            auto icon = action->icon();
-            icon.setSource(attachedInfoObject->icon().source());
-            QObject::connect(attachedInfoObject, &QuickActionInstantiatorAttachedType::iconChanged, action, [=] {
-                auto icon = action->icon();
-                icon.setSource(attachedInfoObject->icon().source());
-                action->setIcon(icon);
-            });
-            if (attachedInfoObject->icon().color().isValid()) {
-                icon.setColor(attachedInfoObject->icon().color());
-            }
-            action->setIcon(icon);
-            if (!attachedInfoObject->shortcuts().isEmpty()) {
-                action->setShortcut(attachedInfoObject->shortcuts().first());
-            }
-        } else if (auto menu = qobject_cast<QQuickMenu *>(object)) {
-            menu->setTitle(attachedInfoObject->text());
-            QObject::connect(attachedInfoObject, &QuickActionInstantiatorAttachedType::textChanged,
-                             menu, [=] { menu->setTitle(attachedInfoObject->text()); });
-            auto icon = menu->icon();
-            icon.setSource(attachedInfoObject->icon().source());
-            QObject::connect(attachedInfoObject, &QuickActionInstantiatorAttachedType::iconChanged, menu, [=] {
-                auto icon = menu->icon();
-                icon.setSource(attachedInfoObject->icon().source());
-                menu->setIcon(icon);
-            });
-            if (attachedInfoObject->icon().color().isValid()) {
-                icon.setColor(attachedInfoObject->icon().color());
-            }
-            menu->setIcon(icon);
-        }
+        attachInfoObjectTo(actionId, object, All);
         return object;
     }
     QObject *QuickActionInstantiatorPrivate::createMenu(const QString &menuId) const {
         Q_Q(const QuickActionInstantiator);
         auto menu = menuComponent()->create(context->menuComponent()->creationContext());
         auto attachedInfoObject = attachInfoObjectTo(menuId, menu, All);
-        if (auto menuMenu = qobject_cast<QQuickMenu *>(menu)) {
-            menuMenu->setTitle(attachedInfoObject->text());
-            QObject::connect(attachedInfoObject, &QuickActionInstantiatorAttachedType::textChanged,
-                             menuMenu, [=] { menuMenu->setTitle(attachedInfoObject->text()); });
-            auto icon = menuMenu->icon();
-            icon.setSource(attachedInfoObject->icon().source());
-            if (attachedInfoObject->icon().color().isValid()) {
-                icon.setColor(attachedInfoObject->icon().color());
-            }
-            menuMenu->setIcon(icon);
-        }
         auto instantiator = new QuickMenuActionInstantiator(menu);
         attachedInfoObject->setInstantiator(instantiator);
         instantiator->setId(menuId);

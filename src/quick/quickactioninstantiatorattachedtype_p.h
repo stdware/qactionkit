@@ -73,6 +73,9 @@ namespace QAK {
         void shortcutsChanged();
 
     private:
+        void updateShortcuts();
+        void updateText();
+        void updateIcon();
         QScopedPointer<QuickActionInstantiatorAttachedTypePrivate> d_ptr;
     };
 
