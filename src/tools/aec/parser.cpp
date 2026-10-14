@@ -5,6 +5,7 @@
 
 #include <QtCore/QCoreApplication>
 #include <QtCore/QRegularExpression>
+#include <QtCore/QSet>
 #include <QtCore/QStringView>
 #include <QtCore/QFile>
 #include <QtCore/QFileInfo>
@@ -583,11 +584,21 @@ struct ParserPrivate {
             path.append(id, {});
 
             QVector<ActionLayoutEntryMessage> children;
+            QSet<QString> childIds;
             for (const auto &child : e->children) {
                 if (shouldSkipElement(*child)) {
                     continue;
                 }
-                children.append(parseLayoutRecursively(child.data(), id, path));
+                auto childEntry = parseLayoutRecursively(child.data(), id, path);
+                if (!childEntry.id.isEmpty()) {
+                    if (childIds.contains(childEntry.id)) {
+                        error("%s: layout element \"%s\" contains \"%s\" more than once\n",
+                              qPrintable(q.fileName), qPrintable(id), qPrintable(childEntry.id));
+                        std::exit(1);
+                    }
+                    childIds.insert(childEntry.id);
+                }
+                children.append(std::move(childEntry));
             }
             path.erase(std::prev(path.end()));
 
@@ -660,6 +671,7 @@ struct ParserPrivate {
             }
         }
 
+        QSet<QString> itemIds;
         for (const auto &item : root.children) {
             auto &e = *item;
             if (shouldSkipElement(e)) {
@@ -678,6 +690,12 @@ struct ParserPrivate {
                           qPrintable(q.fileName), qPrintable(id));
                     std::exit(1);
                 }
+                if (itemIds.contains(id)) {
+                    error("%s: insertion into \"%s\" contains \"%s\" more than once\n",
+                          qPrintable(q.fileName), qPrintable(target), qPrintable(id));
+                    std::exit(1);
+                }
+                itemIds.insert(id);
                 entry.id = id;
                 entry.type = entryType(info, e.name);
             }

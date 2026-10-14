@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- expect: error layout element "test\.mainMenu" contains "test\.file" more than once -->
+<!-- The two references take different forms of the same item -->
+<actionExtension>
+    <version>1.0</version>
+    <id>test.duplicateInLayout</id>
+    <items>
+        <menu id="test.mainMenu" topLevel="true" />
+        <menu id="test.file" />
+    </items>
+    <layouts>
+        <menu id="test.mainMenu">
+            <menu id="test.file" />
+            <separator />
+            <group id="test.file" />
+        </menu>
+    </layouts>
+</actionExtension>

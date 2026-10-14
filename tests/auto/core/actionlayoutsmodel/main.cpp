@@ -124,8 +124,8 @@ private Q_SLOTS:
         QCOMPARE(at({0, 1, 0}).data().toString(), QStringLiteral("t.save"));
 
         // A menu brings its children
-        QVERIFY(model->setData(at({0, 1, 0}), QVariant::fromValue(menu("t.recent")), Qt::UserRole));
-        QCOMPARE(rowsOf(at({0, 1, 0})), QStringList({"t.clear"}));
+        QVERIFY(model->setData(at({0, 1, 0}), QVariant::fromValue(menu("t.file")), Qt::UserRole));
+        QCOMPARE(rowsOf(at({0, 1, 0})), QStringList({"t.open", "t.save"}));
     }
 
     void testSetDataOnARowNeverExpanded() {
@@ -177,6 +177,18 @@ private Q_SLOTS:
             !model->setData(at({0, 1, 1, 0}), QVariant::fromValue(menu("t.edit")), Qt::UserRole));
         QVERIFY(!model->moveRows(at({0}), 1, 1, at({0, 1, 1}), 0));
         QCOMPARE(childrenOf("t.recent"), QStringList({"t.clear"}));
+    }
+
+    void testDuplicatesAreRejected() {
+        // The main menu holds the file menu at row 0
+        QVERIFY(!model->setData(at({0, 3}), QVariant::fromValue(menu("t.file")), Qt::UserRole));
+        QVERIFY(!model->moveRows(at({1}), 1, 1, at({0}), 0));
+        QCOMPARE(childrenOf("t.main"), QStringList({"t.file", "t.edit", "|", "t.about"}));
+
+        // The form of a row changes without the row counting as a duplicate of itself
+        const ActionLayoutEntry fileGroup(QStringLiteral("t.file"), ActionLayoutEntry::Group);
+        QVERIFY(model->setData(at({0, 0}), QVariant::fromValue(fileGroup), Qt::UserRole));
+        QCOMPARE(at({0, 0}).data(Qt::UserRole).value<ActionLayoutEntry>(), fileGroup);
     }
 
     void testCycleInTheLayouts() {

@@ -366,33 +366,47 @@ namespace QAK {
         return ActionCatalog(nodeParentLinks);
     }
 
-    enum class InsertionResult {
-        Applied,
-        MissingTarget,
-        MissingRelativeTo,
+    static bool isAnonymous(const ActionLayoutEntry &entry) {
+        return entry.type() == ActionLayoutEntry::Separator ||
+               entry.type() == ActionLayoutEntry::Stretch;
+    }
+
+    // Returns whether children hold an entry with the id in any form. An id appears at most once
+    // among the children of a container, so that a change can refer to an entry by its id.
+    static bool containsId(const QVector<ActionLayoutEntry> &children, const QString &id) {
+        return std::any_of(children.begin(), children.end(), [&id](const ActionLayoutEntry &entry) {
+            return !isAnonymous(entry) && entry.id() == id;
+        });
+    }
+
+    struct InsertionResult {
+        enum Kind {
+            Applied,
+            MissingTarget,
+            MissingRelativeTo,
+        };
+        Kind kind;
+        QStringList presentIds; // The ids skipped because the target already holds them
     };
 
-    // Applies the insertion, or skips it if its target or its relative sibling does not exist
+    // Applies the insertion, or skips it if its target or its relative sibling does not exist. An
+    // entry that the target already holds is skipped, and the earlier one stays.
     static InsertionResult applyInsertion(const ActionInsertion &insertion,
                                           QMap<QString, QVector<ActionLayoutEntry>> &input) {
         const auto &target = insertion.target();
         auto it = input.find(target);
         if (it == input.end()) {
-            return InsertionResult::MissingTarget;
+            return {InsertionResult::MissingTarget, {}};
         }
 
         auto &targetItems = it.value();
-        const auto &insertItems = insertion.items();
+        int index = 0;
         switch (insertion.anchor()) {
-            case ActionInsertion::Last: {
-                targetItems.append(insertItems);
+            case ActionInsertion::Last:
+                index = int(targetItems.size());
                 break;
-            }
-            case ActionInsertion::First: {
-                targetItems.insert(0, insertItems.size(), {});
-                std::copy(insertItems.begin(), insertItems.end(), targetItems.begin());
+            case ActionInsertion::First:
                 break;
-            }
             case ActionInsertion::After:
             case ActionInsertion::Before: {
                 const auto &relativeTo = insertion.relativeTo();
@@ -401,20 +415,29 @@ namespace QAK {
                                                    return entry.id() == relativeTo;
                                                });
                 if (relativeIt == targetItems.end()) {
-                    return InsertionResult::MissingRelativeTo;
+                    return {InsertionResult::MissingRelativeTo, {}};
                 }
 
-                int index = relativeIt - targetItems.begin();
+                index = int(relativeIt - targetItems.begin());
                 if (insertion.anchor() == ActionInsertion::After) {
                     index++;
                 }
-
-                targetItems.insert(index, insertItems.size(), {});
-                std::copy(insertItems.begin(), insertItems.end(), targetItems.begin() + index);
                 break;
             }
         }
-        return InsertionResult::Applied;
+
+        InsertionResult result{InsertionResult::Applied, {}};
+        QVector<ActionLayoutEntry> insertItems;
+        for (const auto &entry : insertion.items()) {
+            if (!isAnonymous(entry) && containsId(targetItems, entry.id())) {
+                result.presentIds.append(entry.id());
+                continue;
+            }
+            insertItems.append(entry);
+        }
+        targetItems.insert(index, insertItems.size(), {});
+        std::copy(insertItems.begin(), insertItems.end(), targetItems.begin() + index);
+        return result;
     }
 
     struct PendingInsertion {
@@ -477,8 +500,15 @@ namespace QAK {
 
         // Apply insertions
         for (const auto &[e, insertion] : orderInsertions(extensionList)) {
-            switch (applyInsertion(insertion, oldAdjacencyMap)) {
+            const auto result = applyInsertion(insertion, oldAdjacencyMap);
+            switch (result.kind) {
                 case InsertionResult::Applied:
+                    for (const auto &id : result.presentIds) {
+                        qCWarning(qActionKitLog).noquote().nospace()
+                            << "Action extension \"" << e->id() << "\" inserts \"" << id
+                            << "\" into \"" << insertion.target()
+                            << "\", which already contains it";
+                    }
                     break;
                 case InsertionResult::MissingTarget:
                     qCWarning(qActionKitLog).noquote().nospace()
@@ -500,11 +530,6 @@ namespace QAK {
             buildGraph<LayoutsTrait>(it.key(), it.value(), oldAdjacencyMap, adjacencyMap, visiting);
         }
         return ActionLayouts(adjacencyMap);
-    }
-
-    static bool isAnonymous(const ActionLayoutEntry &entry) {
-        return entry.type() == ActionLayoutEntry::Separator ||
-               entry.type() == ActionLayoutEntry::Stretch;
     }
 
     // A position within the children of a container, and the direction in which its offset passes
@@ -637,6 +662,12 @@ namespace QAK {
                 return;
             }
             --it.value();
+        }
+        // The default layouts take precedence, so that an entry that an extension has placed in
+        // the container since the change was made stays where the extension places it
+        if (!isAnonymous(entry) && containsId(children, entry.id())) {
+            skip("the entry is already in the container");
+            return;
         }
         // A missing anchor puts the entry at the end, as for an insertion
         const auto position = positionOf(change, children);

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- expect: success -->
+<!-- An item may appear in several containers, and a skipped reference does not count -->
+<actionExtension>
+    <version>1.0</version>
+    <id>test.repeatedReferences</id>
+    <items>
+        <menu id="test.file" />
+        <menu id="test.edit" />
+        <action id="test.find" />
+    </items>
+    <layouts>
+        <menu id="test.file">
+            <action id="test.find" />
+            <separator />
+            <action id="test.find" if="ENABLE_DEBUG" />
+        </menu>
+        <menu id="test.edit">
+            <action id="test.find" />
+        </menu>
+    </layouts>
+    <insertions>
+        <insertion target="core.tools">
+            <action id="test.find" />
+            <action id="test.find" if="ENABLE_DEBUG" />
+        </insertion>
+    </insertions>
+</actionExtension>

@@ -158,14 +158,17 @@ namespace QAK {
         QVector<ActionLayoutChange> layoutChanges() const;
         /// Sets the changes of the user, which are replayed in order on the default layouts. A
         /// change that cannot apply, for example because an extension no longer declares its
-        /// entry, is skipped with a warning.
+        /// entry, is skipped with a warning. An id appears at most once among the children of a
+        /// container, and the default layouts take precedence: an addition of an entry that the
+        /// container already holds is skipped.
         void setLayoutChanges(const QVector<ActionLayoutChange> &changes);
         /// Appends \a change to the changes of the user and replays it.
         void addLayoutChange(const ActionLayoutChange &change);
         /// Returns the changes that turn the default layouts into \a edited, for a settings page
         /// that edits the layouts as a whole. Set as the changes of the user, they reproduce
         /// \a edited as long as the default layouts stay the same. A container that \a edited
-        /// omits keeps its default children.
+        /// omits keeps its default children. \a edited must hold each id at most once among the
+        /// children of a container, as \c ActionLayoutsModel ensures.
         QVector<ActionLayoutChange> computeLayoutChanges(const ActionLayouts &edited) const;
 
         inline QList<QKeySequence> actionShortcuts(const QString &id) const;

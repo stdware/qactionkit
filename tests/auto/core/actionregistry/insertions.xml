@@ -6,8 +6,15 @@
 
     <items>
         <action id="test.plugin.hello" />
+        <action id="test.plugin.bye" />
         <menu id="test.plugin.menu" />
     </items>
+
+    <layouts>
+        <menu id="test.plugin.menu">
+            <action id="test.plugin.hello" />
+        </menu>
+    </layouts>
 
     <insertions>
         <!-- The target does not exist -->
@@ -16,6 +23,12 @@
         </insertion>
         <!-- The target exists, but the sibling does not -->
         <insertion target="test.plugin.menu" anchor="after" relativeTo="test.missing">
+            <action id="test.plugin.hello" />
+        </insertion>
+        <!-- The target already contains one of the entries -->
+        <insertion target="test.plugin.menu" anchor="first">
+            <separator />
+            <action id="test.plugin.bye" />
             <action id="test.plugin.hello" />
         </insertion>
     </insertions>

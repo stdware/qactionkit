@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- expect: error insertion into "core\.file" contains "test\.hello" more than once -->
+<actionExtension>
+    <version>1.0</version>
+    <id>test.duplicateInInsertion</id>
+    <items>
+        <action id="test.hello" />
+    </items>
+    <insertions>
+        <insertion target="core.file">
+            <action id="test.hello" />
+            <separator />
+            <action id="test.hello" />
+        </insertion>
+    </insertions>
+</actionExtension>

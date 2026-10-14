@@ -48,7 +48,8 @@ namespace QAK {
 
         bool isShared(const LayoutNode *node) const;
         bool hasPath(const QString &from, const QString &to) const;
-        bool acceptsEntry(const LayoutNode *container, const ActionLayoutEntry &entry) const;
+        bool acceptsEntry(const LayoutNode *container, const ActionLayoutEntry &entry,
+                          int replacedRow = -1) const;
     };
 
     void ActionLayoutsModelPrivate::resetTree() {
@@ -156,8 +157,11 @@ namespace QAK {
         return false;
     }
 
+    // The entry at replacedRow is excluded from the check for an id held twice, since setting a
+    // row may change the form of its entry
     bool ActionLayoutsModelPrivate::acceptsEntry(const LayoutNode *container,
-                                                 const ActionLayoutEntry &entry) const {
+                                                 const ActionLayoutEntry &entry,
+                                                 int replacedRow) const {
         if (container == &root || !isContainer(container->entry)) {
             return false;
         }
@@ -166,6 +170,13 @@ namespace QAK {
         }
         if (entry.id().isEmpty() || hasPath(entry.id(), container->entry.id())) {
             return false;
+        }
+        const auto siblings = adjacencyMap.value(container->entry.id());
+        for (int row = 0; row < siblings.size(); ++row) {
+            if (row != replacedRow && !isAnonymous(siblings[row]) &&
+                siblings[row].id() == entry.id()) {
+                return false;
+            }
         }
         if (!registry) {
             return true;
@@ -309,7 +320,8 @@ namespace QAK {
         if (!index.isValid() || role != Qt::UserRole || !value.canConvert<ActionLayoutEntry>()) {
             return false;
         }
-        return d->acceptsEntry(d->nodeOf(index)->parent, value.value<ActionLayoutEntry>());
+        return d->acceptsEntry(d->nodeOf(index)->parent, value.value<ActionLayoutEntry>(),
+                               index.row());
     }
 
     // The entry of the row is replaced, and so are the rows under it, which show the children of

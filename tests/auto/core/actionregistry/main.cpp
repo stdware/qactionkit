@@ -261,10 +261,16 @@ private Q_SLOTS:
         QTest::ignoreMessage(QtWarningMsg,
                              "Action extension \"org.qactionkit.test.insertions\" inserts relative "
                              "to \"test.missing\", which \"test.plugin.menu\" does not contain");
+        QTest::ignoreMessage(QtWarningMsg,
+                             "Action extension \"org.qactionkit.test.insertions\" inserts "
+                             "\"test.plugin.hello\" into \"test.plugin.menu\", which already "
+                             "contains it");
         const auto layouts = registry.layouts();
 
-        // Both insertions are skipped
-        QVERIFY(layouts.adjacencyMap().value(QStringLiteral("test.plugin.menu")).isEmpty());
+        // The first two insertions are skipped, and the third one skips the entry in the target
+        // only, which stays where the layout places it
+        QCOMPARE(childrenOf(layouts, "test.plugin.menu"),
+                 QStringList({"|", "test.plugin.bye", "test.plugin.hello"}));
     }
 
     void testOwnerTakesPrecedenceOverPhony() {
@@ -653,6 +659,14 @@ private Q_SLOTS:
             << layoutChange(Change::Remove, "test.file", separator(), ActionInsertion::After,
                             "test.file.openFile")
             << "the entry is not in the container";
+        QTest::newRow("entry already in the container")
+            << layoutChange(Change::Add, "test.file", action("test.file.openFile"),
+                            ActionInsertion::First)
+            << "the entry is already in the container";
+        QTest::newRow("entry already in the container in another form")
+            << layoutChange(Change::Add, "test.mainMenu",
+                            ActionLayoutEntry("test.file", ActionLayoutEntry::Group))
+            << "the entry is already in the container";
         QTest::newRow("moved entry never removed")
             << layoutChange(Change::Add, "test.file", action("test.file.close"),
                             ActionInsertion::Last, "", 0, true)

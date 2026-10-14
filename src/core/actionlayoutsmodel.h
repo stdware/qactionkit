@@ -21,7 +21,7 @@ namespace QAK {
     /// The top-level nodes are read-only, and only a menu or a group holds children. With a
     /// registry, an entry must be declared and take a form that its declared type allows, as in
     /// a manifest. Without one, only the structure is checked: a separator or stretch has no id,
-    /// any other entry has one, and no edit makes a cycle.
+    /// any other entry has one, no container holds an id twice, and no edit makes a cycle.
     class QAK_CORE_EXPORT ActionLayoutsModel : public QAbstractItemModel {
         Q_OBJECT
         Q_DECLARE_PRIVATE(ActionLayoutsModel)
