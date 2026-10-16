@@ -6,8 +6,8 @@
     <version>1.0</version>
     <id>test.defaultPlatform</id>
     <items>
-        <action id="test.reveal" if="_WINDOWS_" text="Reveal in File Explorer" />
-        <action id="test.reveal" if="_MACOS_" text="Reveal in Finder" />
-        <action id="test.reveal" if="_LINUX_" text="Open Containing Folder" />
+        <action id="test.reveal" if="_OS_WINDOWS_" text="Reveal in File Explorer" />
+        <action id="test.reveal" if="_OS_MACOS_" text="Reveal in Finder" />
+        <action id="test.reveal" if="_OS_LINUX_" text="Open Containing Folder" />
     </items>
 </actionExtension>

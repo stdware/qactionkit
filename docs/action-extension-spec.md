@@ -74,9 +74,9 @@ manifest.xml ──qak_aec──> qak_manifest.cpp ──> ActionExtension ─�
 | `_VERSION_` | 清单的版本 |
 | `_FILENAME_` | 清单的文件名 |
 | `_FILEBASENAME_` | 清单去掉后缀的文件名 |
-| `_WINDOWS_` | 目标平台为 Windows 时为 `true`，否则为 `false` |
-| `_MACOS_` | 目标平台为 macOS 时为 `true`，否则为 `false` |
-| `_LINUX_` | 目标平台为 Linux 时为 `true`，否则为 `false` |
+| `_OS_WINDOWS_` | 目标平台为 Windows 时为 `true`，否则为 `false` |
+| `_OS_MACOS_` | 目标平台为 macOS 时为 `true`，否则为 `false` |
+| `_OS_LINUX_` | 目标平台为 Linux 时为 `true`，否则为 `false` |
 
 目标平台由 AEC 的 `--platform` 选项指定，省略时为构建 AEC 时的平台，见[编译](#编译)。macOS 以外的 Unix 系统记作 Linux，因此三个平台变量中恰有一个为真。
 
@@ -104,9 +104,9 @@ manifest.xml ──qak_aec──> qak_manifest.cpp ──> ActionExtension ─�
 被跳过的声明仍须是有效的声明，AEC 照常检查它的属性，并将它的文本、短文本、类别与描述写入翻译声明，见[翻译](#翻译)。同一标识可以有多份带不同 `if` 的声明，未被跳过的至多一份，例如按平台给出不同的文本：
 
 ```xml
-<action id="app.reveal" if="_WINDOWS_" text="Reveal in File &amp;Explorer" />
-<action id="app.reveal" if="_MACOS_" text="Reveal in &amp;Finder" />
-<action id="app.reveal" if="_LINUX_" text="&amp;Open Containing Folder" />
+<action id="app.reveal" if="_OS_WINDOWS_" text="Reveal in File &amp;Explorer" />
+<action id="app.reveal" if="_OS_MACOS_" text="Reveal in &amp;Finder" />
+<action id="app.reveal" if="_OS_LINUX_" text="&amp;Open Containing Folder" />
 ```
 
 ## 条目
@@ -294,7 +294,7 @@ qak_aec [options] <manifest>
 | `--export-directive <macro>` | 放在函数声明之前的宏，用于从动态库导出或隐藏该函数 |
 | `--export-file-name <header>` | 定义该宏的头文件，以尖括号包含。只给出本选项而没有 `--export-directive` 时报错 |
 | `-D <key>[=<value>]` | 定义变量。省略值时，值为键本身，为真 |
-| `--platform <platform>` | 目标平台，为 `windows`、`macos` 或 `linux`，决定 `_WINDOWS_`、`_MACOS_` 与 `_LINUX_` 的值。省略时为构建 AEC 时的平台，其他值报错 |
+| `--platform <platform>` | 目标平台，为 `windows`、`macos` 或 `linux`，决定 `_OS_WINDOWS_`、`_OS_MACOS_` 与 `_OS_LINUX_` 的值。省略时为构建 AEC 时的平台，其他值报错 |
 | `--text-translation-context <ctx>` | 覆盖 `text` 的翻译上下文 |
 | `--category-translation-context <ctx>` | 覆盖 `category` 的翻译上下文 |
 | `--description-translation-context <ctx>` | 覆盖 `description` 的翻译上下文 |

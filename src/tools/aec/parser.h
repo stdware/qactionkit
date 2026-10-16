@@ -81,7 +81,7 @@ public:
     QString fileName;
     QHash<QString, QString> variables;
     // The target platform, windows, macos or linux, which gives the values of the reserved
-    // variables _WINDOWS_, _MACOS_ and _LINUX_
+    // variables _OS_WINDOWS_, _OS_MACOS_ and _OS_LINUX_
     QString platform;
 };
 

@@ -804,9 +804,9 @@ struct ParserPrivate {
             {QStringLiteral("_VERSION_"),      version                         },
             {QStringLiteral("_FILENAME_"),     QFileInfo(q.fileName).fileName()},
             {QStringLiteral("_FILEBASENAME_"), QFileInfo(q.fileName).baseName()},
-            {QStringLiteral("_WINDOWS_"),      isPlatform("windows")           },
-            {QStringLiteral("_MACOS_"),        isPlatform("macos")             },
-            {QStringLiteral("_LINUX_"),        isPlatform("linux")             },
+            {QStringLiteral("_OS_WINDOWS_"),   isPlatform("windows")           },
+            {QStringLiteral("_OS_MACOS_"),     isPlatform("macos")             },
+            {QStringLiteral("_OS_LINUX_"),     isPlatform("linux")             },
         };
         q.variables.insert(reservedVars);
         if (configElement) {
