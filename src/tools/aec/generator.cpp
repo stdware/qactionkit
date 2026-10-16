@@ -442,7 +442,7 @@ static ActionExtensionData *get_data() {
 )");
 
         fprintf(out, "static void qakActionTranslations() {\n");
-        generateTranslations(out, msg.items);
+        generateTranslations(out, msg.items + q.parseResult.skippedItems);
         fprintf(out, R"(}
 #endif
 )");

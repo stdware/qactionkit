@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- expect: error item "test\.debugDump" has an unknown attribute "txet" -->
+<!-- A declaration skipped by its if attribute is checked as any other declaration -->
+<actionExtension>
+    <version>1.0</version>
+    <id>test.skippedInvalidDeclaration</id>
+    <items>
+        <action id="test.debugDump" if="ENABLE_DEBUG" txet="Debug Dump" />
+    </items>
+</actionExtension>

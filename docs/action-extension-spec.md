@@ -96,6 +96,14 @@ manifest.xml ──qak_aec──> qak_manifest.cpp ──> ActionExtension ─�
 
 跳过 `items` 中的声明时，布局与插入中对它的引用也须带上 `if`，否则引用的是未声明的标识，AEC 报错。
 
+被跳过的声明仍须是有效的声明，AEC 照常检查它的属性，并将它的文本、短文本、类别与描述写入翻译声明，见[翻译](#翻译)。同一标识可以有多份带不同 `if` 的声明，未被跳过的至多一份，例如按平台给出不同的文本：
+
+```xml
+<action id="app.reveal" if="WINDOWS" text="Reveal in File &amp;Explorer" />
+<action id="app.reveal" if="MACOS" text="Reveal in &amp;Finder" />
+<action id="app.reveal" if="LINUX" text="&amp;Open Containing Folder" />
+```
+
 ## 条目
 
 ```xml
@@ -334,6 +342,6 @@ registry->addExtension(hello::daw::coreActions());
 
 ## 翻译
 
-生成文件的末尾有一个位于 `#if 0` 中的函数，对每个不同的文本、类别与描述，在运行时查找它的每个上下文中各调用一次 `QCoreApplication::translate()`。该函数不参与编译，只供 `lupdate` 提取字符串。`lupdate` 应处理生成的源文件，而非清单。
+生成文件的末尾有一个位于 `#if 0` 中的函数，对每个不同的文本、类别与描述，在运行时查找它的每个上下文中各调用一次 `QCoreApplication::translate()`。该函数不参与编译，只供 `lupdate` 提取字符串。`lupdate` 应处理生成的源文件，而非清单。被 `if` 跳过的声明同样写入该函数，因此以任何一组变量生成的源文件都含有每个变体的字符串，在一个平台上运行 `lupdate` 不会将只用于其他平台的字符串标为作废。
 
 运行时 `ActionItemInfo::text()` 在 `textTr` 属性指定的上下文中查找译文，未指定时使用 `configuration` 中的上下文，二者都未指定时使用内置的上下文。`category()` 与 `description()` 同理。三者都返回 `ActionText`：`source` 是清单中的原文；`translation` 是译文，没有译文时为 `std::nullopt`；`toString()` 在有译文时返回译文，否则返回原文，供显示使用。空字符串不翻译。

@@ -811,6 +811,9 @@ struct ParserPrivate {
             if (shouldSkipElement(*item)) {
                 skippedIds.insert(
                     parseItemId(resolve(item->properties.value(QStringLiteral("id")))));
+                // The strings of the declaration are extracted as well, because the translation
+                // files also serve the builds in which the declaration is not skipped.
+                result.skippedItems.append(parseItem(*item));
                 continue;
             }
             auto entity = parseItem(*item);

@@ -67,6 +67,10 @@ struct ParseResult {
     QString descriptionTranslationContext;
 
     ActionExtensionMessage extension;
+
+    // The declarations skipped by their if attribute, whose strings are written to the
+    // translations only
+    QVector<ActionItemInfoMessage> skippedItems;
 };
 
 class Parser {

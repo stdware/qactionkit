@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- expect: success -->
+<!-- options: function=testExtension D=MACOS -->
+<!-- A declaration skipped by its if attribute is written to the translations, so that lupdate
+     extracts the strings of every variant whichever variables are defined -->
+<!-- source: translate\("QActionKit::ActionText", "Reveal in File Explorer"\); -->
+<!-- source: translate\("QActionKit::ActionText", "Reveal in Finder"\); -->
+<!-- source: translate\("QActionKit::ActionText", "Open Containing Folder"\); -->
+<!-- source: translate\("QActionKit::ActionText", "Reveal"\); -->
+<!-- source: translate\("QActionKit::ActionCategory", "Explorer"\); -->
+<!-- source: translate\("QActionKit::ActionDescription", "Selects the file in Explorer"\); -->
+<!-- The data holds the declaration that is not skipped only -->
+<!-- source: \A(?![\s\S]*QStringLiteral\("Open Containing Folder"\))(?![\s\S]*QStringLiteral\("Reveal in File Explorer"\))[\s\S]*QStringLiteral\("Reveal in Finder"\) -->
+<actionExtension>
+    <version>1.0</version>
+    <id>test.skippedTranslations</id>
+    <items>
+        <action id="test.reveal" if="WINDOWS" text="Reveal in File Explorer" shortText="Reveal"
+                category="Explorer" description="Selects the file in Explorer" />
+        <action id="test.reveal" if="MACOS" text="Reveal in Finder" />
+        <action id="test.reveal" if="LINUX" text="Open Containing Folder" />
+    </items>
+</actionExtension>
