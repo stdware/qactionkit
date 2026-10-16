@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- expect: success -->
+<!-- Without the option, the platform of AEC makes one of the platform variables true -->
+<!-- source: QStringLiteral\("(Reveal in File Explorer|Reveal in Finder|Open Containing Folder)"\) -->
+<actionExtension>
+    <version>1.0</version>
+    <id>test.defaultPlatform</id>
+    <items>
+        <action id="test.reveal" if="_WINDOWS_" text="Reveal in File Explorer" />
+        <action id="test.reveal" if="_MACOS_" text="Reveal in Finder" />
+        <action id="test.reveal" if="_LINUX_" text="Open Containing Folder" />
+    </items>
+</actionExtension>

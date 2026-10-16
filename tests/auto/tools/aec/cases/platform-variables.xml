@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- expect: success -->
+<!-- options: function=testExtension platform=linux D=_MACOS_=true -->
+<!-- The platform selects the declaration of its variable, and neither -D nor <var> overrides a
+     platform variable -->
+<!-- source: \A(?![\s\S]*QStringLiteral\("Reveal in Finder"\))(?![\s\S]*QStringLiteral\("Reveal in File Explorer"\))[\s\S]*QStringLiteral\("Open Containing Folder"\) -->
+<actionExtension>
+    <version>1.0</version>
+    <id>test.platformVariables</id>
+    <configuration>
+        <vars>
+            <var key="_WINDOWS_" value="true" />
+        </vars>
+    </configuration>
+    <items>
+        <action id="test.reveal" if="_WINDOWS_" text="Reveal in File Explorer" />
+        <action id="test.reveal" if="_MACOS_" text="Reveal in Finder" />
+        <action id="test.reveal" if="_LINUX_" text="Open Containing Folder" />
+    </items>
+</actionExtension>

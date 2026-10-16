@@ -25,6 +25,18 @@ static bool isIdentifier(const QString &text) {
     return true;
 }
 
+// Returns the platform for which AEC is built, which is the target platform unless --platform
+// specifies another one for a cross compilation.
+static QString buildPlatform() {
+#if defined(Q_OS_WINDOWS)
+    return QStringLiteral("windows");
+#elif defined(Q_OS_MACOS)
+    return QStringLiteral("macos");
+#else
+    return QStringLiteral("linux");
+#endif
+}
+
 static FILE *openForWriting(const QString &path) {
     FILE *file = nullptr;
 #if defined(_MSC_VER)
@@ -94,6 +106,12 @@ int main(int argc, char *argv[]) {
     defineOption.setFlags(QCommandLineOption::ShortOptionStyle);
     parser.addOption(defineOption);
 
+    QCommandLineOption platformOption(QStringLiteral("platform"));
+    platformOption.setDescription(QStringLiteral(
+        "Target platform, windows, macos or linux. The platform of AEC if omitted."));
+    platformOption.setValueName(QStringLiteral("platform"));
+    parser.addOption(platformOption);
+
     QCommandLineOption textTranslationContextOption(QStringLiteral("text-translation-context"));
     textTranslationContextOption.setDescription(QStringLiteral("Action text translation context."));
     textTranslationContextOption.setValueName(QStringLiteral("context"));
@@ -152,6 +170,14 @@ int main(int argc, char *argv[]) {
             parser.showHelp(1);
         }
         pp.variables.insert(name, value);
+    }
+
+    pp.platform = parser.isSet(platformOption) ? parser.value(platformOption) : buildPlatform();
+    if (pp.platform != QStringLiteral("windows") && pp.platform != QStringLiteral("macos") &&
+        pp.platform != QStringLiteral("linux")) {
+        error("the platform \"%s\" is not one of windows, macos and linux\n",
+              qPrintable(pp.platform));
+        return 1;
     }
 
     const QString function = parser.value(functionOption);

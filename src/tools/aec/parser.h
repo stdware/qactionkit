@@ -80,6 +80,9 @@ public:
 
     QString fileName;
     QHash<QString, QString> variables;
+    // The target platform, windows, macos or linux, which gives the values of the reserved
+    // variables _WINDOWS_, _MACOS_ and _LINUX_
+    QString platform;
 };
 
 #endif // PARSER_H

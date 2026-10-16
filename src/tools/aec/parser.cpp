@@ -795,11 +795,18 @@ struct ParserPrivate {
         result.extension.id = id;
 
         // Parse configuration
+        const auto isPlatform = [this](const char *platform) {
+            return q.platform == QLatin1String(platform) ? QStringLiteral("true")
+                                                         : QStringLiteral("false");
+        };
         const QHash<QString, QString> reservedVars = {
             {QStringLiteral("_ID_"),           id                              },
             {QStringLiteral("_VERSION_"),      version                         },
             {QStringLiteral("_FILENAME_"),     QFileInfo(q.fileName).fileName()},
             {QStringLiteral("_FILEBASENAME_"), QFileInfo(q.fileName).baseName()},
+            {QStringLiteral("_WINDOWS_"),      isPlatform("windows")           },
+            {QStringLiteral("_MACOS_"),        isPlatform("macos")             },
+            {QStringLiteral("_LINUX_"),        isPlatform("linux")             },
         };
         q.variables.insert(reservedVars);
         if (configElement) {

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- expect: error the platform "haiku" is not one of windows, macos and linux -->
+<!-- options: function=testExtension platform=haiku -->
+<actionExtension>
+    <version>1.0</version>
+    <id>test.invalidPlatform</id>
+</actionExtension>

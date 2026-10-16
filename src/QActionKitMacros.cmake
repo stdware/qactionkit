@@ -62,6 +62,9 @@ Compile an action extension manifest with AEC.
     declares "const QAK::ActionExtension *<name>()" in <namespace>. The target that includes the
     header needs CMAKE_CURRENT_BINARY_DIR in its include directories. EXPORT_DIRECTIVE is placed
     before the declaration, and EXPORT_FILE_NAME is the header that defines it.
+
+    In a cross compilation, the target platform of CMAKE_SYSTEM_NAME is passed to AEC by
+    --platform, as windows, macos, or linux for Linux and the other systems.
 ]] #
 function(qak_add_action_extension _outfiles _manifest)
     set(options)
@@ -129,6 +132,18 @@ function(qak_add_action_extension _outfiles _manifest)
 
     if(FUNC_EXPORT_FILE_NAME)
         list(APPEND _options --export-file-name ${FUNC_EXPORT_FILE_NAME})
+    endif()
+
+    # AEC defaults to the platform for which it is built, which differs from the target platform
+    # only in a cross compilation.
+    if(CMAKE_CROSSCOMPILING)
+        if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+            list(APPEND _options --platform windows)
+        elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+            list(APPEND _options --platform macos)
+        else()
+            list(APPEND _options --platform linux)
+        endif()
     endif()
 
     if(FUNC_DEFINES)
