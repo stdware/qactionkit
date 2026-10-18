@@ -100,13 +100,28 @@ function(qak_add_action_extension _outfiles _manifest)
 
         set(_cmd ${QAK_AEC_EXECUTABLE} ${_options} -o "${_outfile}" --header "${_header}" "${_infile}")
 
+        # AEC links Qt Core, which an installed AEC may have no run path to. vcpkg replaces the run
+        # paths of a tool with one to its own library directory, and Qt is not a package of vcpkg.
+        # The directory of Qt Core is therefore given to the dynamic loader on every system.
         if(WIN32)
             # Add Qt Core to PATH
             get_target_property(_loc Qt${QT_VERSION_MAJOR}::Core IMPORTED_LOCATION_RELEASE)
             get_filename_component(_dir ${_loc} DIRECTORY)
             set(_cmd COMMAND set "Path=${_dir}\;%Path%\;" COMMAND ${_cmd})
         else()
-            set(_cmd COMMAND ${_cmd})
+            get_target_property(_loc Qt${QT_VERSION_MAJOR}::Core LOCATION)
+            get_filename_component(_dir "${_loc}" DIRECTORY)
+
+            if(NOT _loc)
+                set(_cmd COMMAND ${_cmd})
+            elseif(APPLE)
+                # A framework is found in the directory that contains the framework.
+                string(REGEX REPLACE "/[^/]+\\.framework(/.*)?$" "" _dir "${_dir}")
+                set(_cmd COMMAND ${CMAKE_COMMAND} -E env
+                    "DYLD_FRAMEWORK_PATH=${_dir}" "DYLD_LIBRARY_PATH=${_dir}" ${_cmd})
+            else()
+                set(_cmd COMMAND ${CMAKE_COMMAND} -E env "LD_LIBRARY_PATH=${_dir}" ${_cmd})
+            endif()
         endif()
 
         # The command depends on AEC as a file, so that a rebuilt AEC regenerates the output. A
